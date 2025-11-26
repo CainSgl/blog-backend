@@ -1,0 +1,48 @@
+spring:
+  elasticsearch:
+    username: elastic
+    password: l3ccY0dUP7zlnhQ3
+    restclient:
+      ssl:
+        bundle:
+  profiles:
+    active: dev
+  datasource:
+    username: postgres
+    password: 123456
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+    hibernate:
+      ddl-auto: update
+  data:
+    redis:
+      password: 123456
+      timeout: 3000ms
+
+mybatis-plus:
+  global-config:
+    db-config:
+      id-type: ASSIGN_ID
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info  # 暴露的端点
+  endpoint:
+    health:
+      show-details: always  # 显示详细健康信息
+      probes:
+        enabled: true       # 启用探针支持
+  health:
+    elasticsearch:
+      enabled: false
+    livenessState:
+      enabled: true         # 启用存活状态
+    readinessState:
+      enabled: true        # 启用就绪状态

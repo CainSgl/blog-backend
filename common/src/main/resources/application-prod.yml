@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://my-postgres-postgresql.default.cluster.local:5432/blog?useSSL=false&serverTimezone=Asia/Shanghai
+  data:
+    redis:
+      host: redis-service.default.cluster.local
+      port: 6379
+  elasticsearch:
+    uris: https://elasticsearch-master.default.cluster.local:9200

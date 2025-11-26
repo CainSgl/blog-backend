@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://129.226.208.121:32701/blog?useSSL=false&serverTimezone=Asia/Shanghai
+  data:
+    redis:
+      host: 129.226.208.121
+      port: 30229
+  elasticsearch:
+    uris: https://43.163.122.45:32031
