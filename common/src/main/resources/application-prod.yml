@@ -7,3 +7,6 @@ spring:
       port: 6379
   elasticsearch:
     uris: https://elasticsearch-master.default.cluster.local:9200
+logstash:
+  host: logstash-logstash.default.cluster.local
+  port: 5044

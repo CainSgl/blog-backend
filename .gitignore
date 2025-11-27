@@ -4,11 +4,11 @@ target/
 !**/src/test/**/target/
 
 ### IntelliJ IDEA ###
-.idea
+.idea/
 *.iws
 *.iml
 *.ipr
-
+logs
 ### Eclipse ###
 .apt_generated
 .classpath

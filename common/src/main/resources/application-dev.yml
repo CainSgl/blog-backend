@@ -7,3 +7,6 @@ spring:
       port: 30229
   elasticsearch:
     uris: https://43.163.122.45:32031
+logstash:
+  host: 43.163.122.45
+  port: 31111

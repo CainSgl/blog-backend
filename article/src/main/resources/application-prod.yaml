@@ -1,3 +1,3 @@
 spring:
   application:
-    name: test-normal
+    name: article-prod
