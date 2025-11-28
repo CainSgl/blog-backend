@@ -20,6 +20,10 @@
             <artifactId>common</artifactId>
             <version>1.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -30,6 +34,7 @@
                 <configuration>
                     <skip>false</skip>
                     <mainClass>com.cainsgl.user.Application</mainClass>
+                    <classifier>exec</classifier>
                 </configuration>
                 <executions>
                     <execution>
@@ -46,6 +51,7 @@
                     <skip>false</skip>
                 </configuration>
             </plugin>
+
         </plugins>
     </build>
 

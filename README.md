@@ -21,3 +21,21 @@ actuator
 1未设置lombok编译器，导致setter等失效，并且因为还写业务，只有config用上了setter导致配置注入失效，害我以为是配置文件的问题
 2common模块的application文件名冲突，打包后会被覆盖，导致common模块的配置全部失效，解决方法，我是直接改的后缀，我感觉这种方法是真优雅
 3logstash日志异常，始终无法把日志记录在es里，通过各种链路分析，最后发现，原来是端口映射错了，helm安装的端口是5044默认端口，配置文件里是却是其他的，导致端口没有被监听
+4UNIMPLEMENTED: Method not found: com.cainsgl.grpc。grpc框架一直调试不通，调试半天，最后打开日志，发现是客户端address的端口配置错误（跑在docker里映射的9093，配置却是9092，ai配的 ），只有ip是对的，但是这个报错却是找不到方法，
+
+如何扩展一个Service？（与项目规范兼容，前提是你的模块已经建立好了）
+1在common的proto下创建一个proto文件，规定暴露的api
+2使用maven 编译自动生成类
+3在xxx模块的api里继承自动生成的grpc类，编写对应的业务
+4在common下的service模块下创建一个接口
+5在对应模块下创建对应的本地实现，也就是xxxServiceImpl，注解为@ Service
+6在common里创建对应的Grpc代理Service，也就是xxxGrpcService,注解为@ Service和@ConditionalOnMissingBean(type = "com.cainsgl.test.xxx.xxxServiceImpl")(这个是为了和单体架构兼容)
+7上面的两个service分别实现对应的接口，代理类的实现可以参考TestGrpcService
+8在common的application.yml文件下，配置对应grpc的ip，或域名
+(简单来说就3步，创建proto文件，暴露对应的接口，实现自动生成的grpc服务暴露代码，为了兼容单体架构创建对应的代理类，他就是自动的帮我们发送代码给对应的模块)
+其中有些步骤很重复，你可以将下面的promot发送给ai为你自动生成代码
+前提是你的对应模块已经实现，并且service已经实现了
+详情请查看GRPC_GENERATOR_PROMPT.md
+
+如果只想使用单体架构
+你可以直接将功能加在对应的aggregate模块里，而无需考虑其他。所有的api在单体架构下都会在前面加上/api，这是为了和前端的请求进行区分，方便和nginx做集成

@@ -48,6 +48,7 @@
                 <configuration>
                     <skip>false</skip>
                     <mainClass>com.cainsgl.user.Application</mainClass>
+                    <classifier>exec</classifier>
                 </configuration>
                 <executions>
                     <execution>
@@ -64,6 +65,7 @@
                     <skip>false</skip>
                 </configuration>
             </plugin>
+
         </plugins>
     </build>
 </project>

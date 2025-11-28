@@ -19,6 +19,12 @@
             <artifactId>common</artifactId>
             <version>1.0</version>
         </dependency>
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <!-- Redis集成 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -38,16 +44,14 @@
     </dependencies>
 
     <build>
-
         <plugins>
-
-
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <skip>false</skip>
                     <mainClass>com.cainsgl.test.Application</mainClass>
+                    <classifier>exec</classifier>
                 </configuration>
                 <executions>
                     <execution>
@@ -57,9 +61,6 @@
                     </execution>
                 </executions>
             </plugin>
-
-
-
         </plugins>
     </build>
 </project>

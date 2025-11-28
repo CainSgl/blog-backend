@@ -10,3 +10,9 @@ spring:
 logstash:
   host: logstash-logstash.default.cluster.local
   port: 5044
+grpc:
+  client:
+    TestService:
+      address: 'static://127.0.0.1:9093'
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true

@@ -11,15 +11,17 @@ import org.springframework.context.annotation.FilterType;
  */
 @SpringBootApplication
 @ComponentScan(
-    basePackages = {"com.cainsgl"},
-    excludeFilters = {
-        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
-            com.cainsgl.user.Application.class,
-            com.cainsgl.user.Application.AppNamePrinter.class,
-            com.cainsgl.article.Application.class,
-            com.cainsgl.article.Application.AppNamePrinter.class,
-        })
-    }
+        basePackages = {"com.cainsgl"},
+        excludeFilters = {
+                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
+                        com.cainsgl.user.Application.class,
+                        com.cainsgl.user.Application.AppNamePrinter.class,
+                        com.cainsgl.article.Application.class,
+                        com.cainsgl.article.Application.AppNamePrinter.class,
+                        com.cainsgl.test.Application.class,
+                        com.cainsgl.test.Application.AppNamePrinter.class,
+                })
+        }
 )
 public class Application
 {

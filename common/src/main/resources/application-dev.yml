@@ -10,3 +10,10 @@ spring:
 logstash:
   host: 43.163.122.45
   port: 31111
+grpc:
+  client:
+    TestService:
+      address: 'static://127.0.0.1:9093'
+      negotiationType: PLAINTEXT
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true

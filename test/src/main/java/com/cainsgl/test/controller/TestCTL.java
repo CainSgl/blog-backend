@@ -1,10 +1,9 @@
 package com.cainsgl.test.controller;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import com.cainsgl.test.entity.TestEntity;
+import com.cainsgl.common.service.TestService;
 import jakarta.annotation.Resource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,13 +17,18 @@ import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/test")
+@Slf4j
 public class TestCTL {
 
-    private static final Logger log = LoggerFactory.getLogger(TestCTL.class);
     @Resource
     private ElasticsearchClient elasticsearchClient;
     @Resource
     private RedisTemplate<String, String> redisTemplate;
+
+    @Resource
+    private TestService testService;
+
+
     @GetMapping("/es")
     public Map<String, Object> testEsIndexExists() {
         Map<String, Object> result = new HashMap<>();
@@ -62,16 +66,14 @@ public class TestCTL {
         // 仅返回最简单的提示
         return result;
     }
-    @GetMapping("/lombok")
-    public  TestEntity  testLombok() {
-        TestEntity testEntity = new TestEntity();
-        testEntity.setAge(17);
-        testEntity.setName("test");
-        return testEntity;
-    }
+
     @GetMapping("/logstash")
     public Object testlogstash(@RequestParam(required = false) String message) {
         log.error("测试日志: {}", message != null ? message : "此信息请忽略，仅用于测试logstash接受日志能力");
         return "success";
+    }
+    @GetMapping("/service")
+    public Object testService() {
+        return testService.getClass().getName();
     }
 }

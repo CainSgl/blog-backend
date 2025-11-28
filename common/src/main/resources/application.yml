@@ -54,8 +54,13 @@ server:
     threads:
       virtual:
         enabled: true
-        max-count: 100000
+        max-count: 30000
     # 读取K8s注入的CPU_CORES环境变量，配置IO线程
     acceptors: ${CPU_CORES:4}  # 默认4核，未注入时兜底
     selectors: ${CPU_CORES:4}
   port: 8080
+grpc:
+  server:
+    port: 9092
+    security:
+      enabled: false
