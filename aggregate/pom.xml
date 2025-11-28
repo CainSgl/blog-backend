@@ -9,45 +9,34 @@
         <version>1.0</version>
     </parent>
 
-    <artifactId>test</artifactId>
-    <name>测试服务(Test)</name>
-    <description>Test模块</description>
-
+    <artifactId>aggregate</artifactId>
+    <name>单体模块</name>
+    <description>聚合服务模块</description>
+    <properties>
+        <maven.compiler.source>23</maven.compiler.source>
+        <maven.compiler.target>23</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>com.cainsgl</groupId>
-            <artifactId>common</artifactId>
+            <artifactId>user</artifactId>
             <version>1.0</version>
         </dependency>
-        <!-- Redis集成 -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!-- Elasticsearch集成 -->
-        <dependency>
-            <groupId>org.springframework.data</groupId>
-            <artifactId>spring-data-elasticsearch</artifactId>
+            <groupId>com.cainsgl</groupId>
+            <artifactId>article</artifactId>
+            <version>1.0</version>
         </dependency>
     </dependencies>
-
     <build>
-
         <plugins>
-
-
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <skip>false</skip>
-                    <mainClass>com.cainsgl.test.Application</mainClass>
+                    <mainClass>com.cainsgl.aggregate.Application</mainClass>
                 </configuration>
                 <executions>
                     <execution>
@@ -57,9 +46,6 @@
                     </execution>
                 </executions>
             </plugin>
-
-
-
         </plugins>
     </build>
 </project>

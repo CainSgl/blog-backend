@@ -23,6 +23,7 @@
         <module>user</module>
         <module>test</module>
         <module>article</module>
+        <module>aggregate</module>
     </modules>
 
     <properties>
