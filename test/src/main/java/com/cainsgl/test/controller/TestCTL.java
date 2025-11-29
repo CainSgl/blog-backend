@@ -1,7 +1,7 @@
 package com.cainsgl.test.controller;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import com.cainsgl.common.service.TestService;
+import com.cainsgl.common.service.test.TestService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;

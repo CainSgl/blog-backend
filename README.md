@@ -22,7 +22,7 @@ actuator
 2common模块的application文件名冲突，打包后会被覆盖，导致common模块的配置全部失效，解决方法，我是直接改的后缀，我感觉这种方法是真优雅
 3logstash日志异常，始终无法把日志记录在es里，通过各种链路分析，最后发现，原来是端口映射错了，helm安装的端口是5044默认端口，配置文件里是却是其他的，导致端口没有被监听
 4UNIMPLEMENTED: Method not found: com.cainsgl.grpc。grpc框架一直调试不通，调试半天，最后打开日志，发现是客户端address的端口配置错误（跑在docker里映射的9093，配置却是9092，ai配的 ），只有ip是对的，但是这个报错却是找不到方法，
-
+5由于最开始不小心引入了JPA，所以sqlsession创建有冲突，后面移除了，结果ai帮我把mybatis从boot3退回了1，导致一直报String的错，后面修复了
 如何扩展一个Service？（与项目规范兼容，前提是你的模块已经建立好了）
 1在common的proto下创建一个proto文件，规定暴露的api
 2使用maven 编译自动生成类

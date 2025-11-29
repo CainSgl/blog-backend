@@ -1,7 +1,6 @@
 spring:
-  opentelemetry:
-    tracing:
-      enabled: true
+  jackson:
+    default-property-inclusion: non_null
   threads:
     virtual:
       enabled: true  # 启用虚拟线程
@@ -21,20 +20,15 @@ spring:
       minimum-idle: 1
       maximum-pool-size: 10
       connection-timeout: 3000
-  jpa:
-    open-in-view: false
-    properties:
-      hibernate:
-        format_sql: true
-        show_sql: true
-    hibernate:
-      ddl-auto: update
   data:
     redis:
       password: 123456
       timeout: 3000ms
 
 mybatis-plus:
+  type-handlers-package: com.cainsgl.common.handler
+  configuration:
+    map-underscore-to-camel-case: true
   global-config:
     db-config:
       id-type: ASSIGN_ID
@@ -78,12 +72,12 @@ sa-token:
   # token 有效期（单位：秒） 默认30天，-1 代表永久有效
   timeout: 1296000
   # token 最低活跃频率（单位：秒），如果 token 超过此时间没有访问系统就会被冻结，默认-1 代表不限制，永不冻结
-  active-timeout: -1
+  # 设置为7天（604800秒），每次请求会自动续期，只要7天内有访问就不会过期
+  active-timeout: 1296000
   # 是否允许同一账号多地同时登录 （为 true 时允许一起登录, 为 false 时新登录挤掉旧登录）
   is-concurrent: true
-  # 在多人登录同一账号时，是否共用一个 token （为 true 时所有登录共用一个 token, 为 false 时每次登录新建一个 token）
+  # 多端登录时是否复用同一 token（false 为每次登录生成新 token，便于按设备维度下线）
   is-share: false
-  # token 风格（默认可取值：uuid、simple-uuid、random-32、random-64、random-128、tik）
+  # 令牌风格
   token-style: uuid
-  # 是否输出操作日志
   is-log: true

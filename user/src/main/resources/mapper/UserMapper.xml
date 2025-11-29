@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cainsgl.user.repository.UserMapper">
+
+<!--     映射 users 表到 UserEntity -->
+    <resultMap id="UserResultMap" type="com.cainsgl.common.entity.user.UserEntity" autoMapping="true">
+    </resultMap>
+
+    <!-- 通用列片段 -->
+    <sql id="Base_Column_List">
+        id, username, email, password_hash, nickname, avatar_url, bio,
+        "level", experience, roles, permissions, status, email_verified,
+        created_at, updated_at
+    </sql>
+
+    <!-- 根据用户名或邮箱查询用户 -->
+    <select id="selectByUsernameOrEmail" resultMap="UserResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM users
+        WHERE username = #{account} OR email = #{account}
+        LIMIT 1
+    </select>
+
+    <!-- 获取用户的extra字段 -->
+    <select id="selectExtraById" resultType="String">
+        SELECT extra
+        FROM users
+        WHERE id = #{id}
+    </select>
+
+
+
+</mapper>
+

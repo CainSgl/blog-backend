@@ -1,6 +1,8 @@
 package com.cainsgl.common.config;
 
+import com.alibaba.fastjson2.JSON;
 import com.cainsgl.common.dto.response.Result;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
@@ -48,7 +50,10 @@ public class GlobalResponseBodyAdvice implements ResponseBodyAdvice<Object>
         if (body instanceof Result) {
             return body;
         }
-        // 普通对象包装为Result.success()
-        return Result.success(body);
+        Result result = Result.success(body);
+        if (body instanceof String) {
+            return JSON.toJSONString(result);
+        }
+        return result;
     }
 }

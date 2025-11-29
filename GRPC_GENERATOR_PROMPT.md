@@ -135,7 +135,7 @@ service TestService {
 ```java
 package com.cainsgl.test.api;
 
-import com.cainsgl.common.service.TestService;
+import com.cainsgl.common.service.test.TestService;
 import com.cainsgl.grpc.api.*;
 import io.grpc.stub.StreamObserver;
 import jakarta.annotation.Resource;

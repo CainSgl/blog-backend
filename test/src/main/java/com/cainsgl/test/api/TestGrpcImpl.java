@@ -1,6 +1,6 @@
 package com.cainsgl.test.api;
 
-import com.cainsgl.common.service.TestService;
+import com.cainsgl.common.service.test.TestService;
 import com.cainsgl.grpc.api.TestRequest;
 import com.cainsgl.grpc.api.TestResponse;
 import com.cainsgl.grpc.api.TestServiceGrpc;

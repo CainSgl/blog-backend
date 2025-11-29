@@ -19,12 +19,6 @@
             <artifactId>common</artifactId>
             <version>1.0</version>
         </dependency>
-        <!-- Lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>
         <!-- Redis集成 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

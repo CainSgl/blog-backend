@@ -1,12 +1,11 @@
 package com.cainsgl.common.util;
 
 import org.slf4j.MDC;
-import org.springframework.stereotype.Component;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
 
-@Component
-public class TraceIdUtil
+
+public class TraceIdUtils
 {
     public static String getTraceId()
     {

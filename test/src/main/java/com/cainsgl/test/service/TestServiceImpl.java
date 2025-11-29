@@ -1,6 +1,6 @@
 package com.cainsgl.test.service;
 
-import com.cainsgl.common.service.TestService;
+import com.cainsgl.common.service.test.TestService;
 import org.springframework.stereotype.Service;
 
 @Service
