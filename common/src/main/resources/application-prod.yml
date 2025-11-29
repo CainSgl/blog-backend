@@ -1,18 +1,19 @@
 spring:
   datasource:
-    url: jdbc:postgresql://my-postgres-postgresql.default.cluster.local:5432/blog?useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:postgresql://my-postgres-postgresql:5432/blog?useSSL=false&serverTimezone=Asia/Shanghai
   data:
     redis:
-      host: redis-service.default.cluster.local
+      host: redis-service
       port: 6379
   elasticsearch:
-    uris: https://elasticsearch-master.default.cluster.local:9200
+    uris: https://elasticsearch-master:9200
 logstash:
-  host: logstash-logstash.default.cluster.local
+  host: logstash-logstash
   port: 5044
 grpc:
   client:
     TestService:
-      address: 'static://127.0.0.1:9093'
+      address: 'static://test:9092'
+      negotiationType: PLAINTEXT
       enableKeepAlive: true
       keepAliveWithoutCalls: true

@@ -1,14 +1,18 @@
 <Configuration status="WARN">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout charset="UTF-8" pattern="%clr{%d{yyyy-MM-dd HH:mm:ss.SSS}}{faint} %clr{%5p} %clr{---}{faint} %clr{[%15.15t]}{faint} %clr{%-40.40c{1.}}{cyan} %clr{:}{faint} %m%n"/>
+            <PatternLayout charset="UTF-8"
+                           pattern="[%X{traceId}]%clr{%d{yyyy-MM-dd HH:mm:ss.SSS}}{faint} %clr{%5p} %clr{---}{faint} %clr{[%15.15t]}{faint} %clr{%-40.40c{1.}}{cyan} %clr{:}{faint} %m%n"/>
         </Console>
         <Socket name="LOGSTASH"
                 host="${spring:logstash.host}"
                 port="${spring:logstash.port}"
                 protocol="TCP">
             <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
-            <JsonLayout complete="false" compact="true" charset="UTF-8" eventEol="true"/>
+            <JsonLayout complete="false" compact="true" charset="UTF-8" eventEol="true">
+                <!-- traceId 从 MDC 中读取；未设置时为空字符串，不影响日志。为避免强耦合，不依赖应用具体实现 -->
+                <KeyValuePair key="traceId" value="%X{traceId}"/>
+            </JsonLayout>
         </Socket>
     </Appenders>
 

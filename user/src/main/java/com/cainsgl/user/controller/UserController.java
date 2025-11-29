@@ -12,20 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class UserController
 {
-    @Resource
-    TestService testService;
 
-    @GetMapping("/test")
-    public Object test() {
-        try{
-            return testService.sayHello("test");
-        }catch (Exception e){
-            System.out.println(e.getMessage());
-            System.out.println(e.getCause());
-            e.printStackTrace();
-            return "error";
-        }
-
-    }
 
 }
