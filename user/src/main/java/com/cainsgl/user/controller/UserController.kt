@@ -8,16 +8,16 @@ import com.cainsgl.common.entity.user.UserEntity
 import com.cainsgl.common.exception.BusinessException
 import com.cainsgl.common.util.UserUtils
 import com.cainsgl.user.service.UserServiceImpl
+import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
-import org.slf4j.LoggerFactory
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.web.bind.annotation.*
-
+private val log = KotlinLogging.logger {}
 @RestController
 @RequestMapping("/user")
 class UserController
 {
-    private val log = LoggerFactory.getLogger(UserController::class.java)
+
     private val passwordEncoder = BCryptPasswordEncoder()
 
     @Resource
@@ -39,8 +39,8 @@ class UserController
         // 检查用户状态
         if (!user.isActive())
         {
-            val extra: UserEntity.Extra? = userService.getExtra(user.id!!);
-            val message: String = if (extra?.bannedTime == null)
+            val extra: UserEntity.Extra? = userService.getExtra(user.id);
+            val message = if (extra?.bannedTime == null)
             {
                 "账户已被禁用"
             } else
@@ -59,7 +59,7 @@ class UserController
         }
         StpUtil.login(user.id, device)
         UserUtils.setUserInfo(user)
-        log.info("用户登录成功: userId={}, device={}", user.id, device)
+        log.info { "${"用户登录成功: userId={}, device={}"} ${user.id} $device" }
         val token = StpUtil.getTokenValue()
         return LoginResponse(token, user)
     }
@@ -74,7 +74,7 @@ class UserController
         {
             val userId = StpUtil.getLoginIdAsLong()
             StpUtil.logout()
-            log.info("用户登出成功: userId={}", userId)
+            log.info { "${"用户登出成功: userId={}"} $userId" }
         }
         return "登出成功"
     }
@@ -99,7 +99,7 @@ class UserController
         {
             return ResultCode.MISSING_PARAM
         }
-        val user = userService.getUser(userId)
-        return user!!
+        val user = userService.getUser(userId) ?: return ResultCode.RESOURCE_NOT_FOUND
+        return user
     }
 }

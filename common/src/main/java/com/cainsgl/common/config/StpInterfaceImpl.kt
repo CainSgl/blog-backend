@@ -16,24 +16,15 @@ class StpInterfaceImpl : StpInterface
     {
         private const val USER_INFO_KEY = "userInfo"
     }
-
     override fun getPermissionList(loginId: Any, loginType: String): List<String>
     {
-        val user = StpUtil.getSession().get(USER_INFO_KEY) as? UserEntity
-        if (user?.permissions != null)
-        {
-            return user.permissions!!
-        }
-        return ArrayList()
+        val user = StpUtil.getSession().get(USER_INFO_KEY) as UserEntity? ?: return ArrayList()
+        return user.permissions
     }
 
     override fun getRoleList(loginId: Any, loginType: String): List<String>
     {
-        val user = StpUtil.getSession().get(USER_INFO_KEY) as? UserEntity
-        if (user?.roles != null)
-        {
-            return user.roles!!
-        }
-        return ArrayList()
+        val user = StpUtil.getSession().get(USER_INFO_KEY) as UserEntity? ?: return ArrayList()
+        return user.roles
     }
 }

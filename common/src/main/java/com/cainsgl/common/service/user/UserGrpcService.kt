@@ -10,20 +10,4 @@ class UserGrpcService : UserService {
 //    @GrpcClient("UserService")
 //    lateinit var testServiceGrpc: TestServiceGrpc.TestServiceBlockingStub
 
-    override fun getUser(id: Long): UserEntity? {
-        return null
-    }
-
-    override fun updateById(userEntity: UserEntity): Boolean {
-        return false
-    }
-
-    fun getUserByAccount(account: String): UserEntity? {
-        // TODO: 实现gRPC调用
-        return null
-    }
-
-    fun getExtra(id: Long): Map<*, *>? {
-        return null
-    }
 }

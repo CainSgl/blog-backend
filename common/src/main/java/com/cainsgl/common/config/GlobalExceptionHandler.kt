@@ -17,7 +17,7 @@ class GlobalExceptionHandler
     fun handleException(e: Exception): Result
     {
         log.error("系统异常", e)
-        return Result.error("系统异常，请联系管理员", e.message, TraceIdUtils.getTraceId())
+        return Result.error(e)
     }
 
     @ExceptionHandler(BusinessException::class)

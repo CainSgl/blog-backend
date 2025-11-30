@@ -14,18 +14,32 @@ import org.springframework.stereotype.Service
 @Service
 class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, IService<UserEntity>
 {
-    override fun getUser(id: Long): UserEntity?
+    /**
+     * 获取用户信息
+     * @param id
+     * @return
+     */
+    fun getUser(id: Long): UserEntity?
     {
         return baseMapper.selectById(id)
     }
-
+    /**
+     * 更新用户信息
+     * @param userEntity
+     * @return
+     */
     override fun updateById(userEntity: UserEntity): Boolean
     {
         val b = super<ServiceImpl>.updateById(userEntity)
         UserUtils.setUserInfo(userEntity)
         return b
     }
-
+    /**
+     * 根据账号和密码和邮件获取用户信息
+     * @param account
+     * @param hashPassword
+     * @return
+     */
     fun getUserByAccount(account: String, hashPassword: String): UserEntity?
     {
         //账号或用户名或邮件登录，密码唯一
@@ -37,13 +51,22 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
             .eq(UserEntity::phone, account).eq(UserEntity::passwordHash, hashPassword)
         return baseMapper.selectOne(queryWrapper)
     }
-
+    /**
+     * 获取用户扩展信息
+     * @param id
+     * @return
+     */
     fun getExtra(id: Long): UserEntity.Extra?
     {
         val s = baseMapper.selectExtraById(id)
         return JSON.parseObject(s, UserEntity.Extra::class.java)
     }
-
+    /**
+     * 设置用户扩展信息
+     * @param id
+     * @param extra
+     * @return
+     */
     fun setExtra(id: Long, extra: UserEntity.Extra): Boolean
     {
         val extraString = JSON.toJSONString(extra)

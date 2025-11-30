@@ -10,73 +10,72 @@ import kotlin.math.pow
 
 @TableName("users")
 data class UserEntity(
-    @TableId(type = IdType.ASSIGN_ID) var id: Long? = null,
+    @TableId(type = IdType.ASSIGN_ID)
+    var id: Long = 0,
 
     @TableField("username")
-    var username: String? = null,
+    var  username: String = "",
 
     @TableField("email")
-    var email: String? = null,
+    var email: String?,
 
     @JSONField(serialize = false)
     @TableField("password_hash")
-    var passwordHash: String? = null,
+    var passwordHash: String?,
 
     @TableField("nickname")
-    var nickname: String? = null,
+    var nickname: String = "",
 
     @TableField("avatar_url")
-    var avatarUrl: String? = null,
+    var avatarUrl: String = "",
 
     @TableField("bio")
-    var bio: String? = null,
+    var bio: String = "",
 
     @TableField("level")
-    var level: Int? = null,
+    var level: Int = 0,
 
     @TableField("experience")
-    var experience: Int? = null,
+    var experience: Int = 0,
 
     @TableField(value = "roles", typeHandler = StringListTypeHandler::class)
-    var roles: List<String>? = null,
+    var roles: List<String> = ArrayList(),
 
     @TableField(value = "permissions", typeHandler = StringListTypeHandler::class)
-    var permissions: List<String>? = null,
+    var permissions: List<String> = ArrayList(),
 
     @JSONField(serialize = false)
     @TableField("status")
-    var status: String? = null,
+    var status: String = "",
 
     @TableField("email_verified")
-    var emailVerified: Boolean? = null,
+    var emailVerified: Boolean = false,
 
     @TableField("phone")
-    var phone: String? = null,
+    var phone: String?,
 
+
+)
+{
     @TableField(value = "created_at", fill = FieldFill.INSERT)
-    var createdAt: OffsetDateTime? = null,
+    lateinit var createdAt: OffsetDateTime
 
     @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
-    var updatedAt: OffsetDateTime? = null,
-
-    //上面所有数据对应数据库里的字段
+    lateinit var updatedAt: OffsetDateTime
 
     //到下一级的总经验值
     @TableField(exist = false)
-    var nextLevelTotalExp: Int? = null,
-
+    var nextLevelTotalExp: Int?=null
     //从现在到下一级需要的经验值
-    @TableField(exist = false) var expToNextLevel: Int? = null
-)
-{
+    @TableField(exist = false)
+    var expToNextLevel: Int?=null
+
+
     //计算对应的成员变量
     fun calculateLevelInfo()
     {
-        if (this.level != null && this.experience != null)
-        {
-            this.nextLevelTotalExp = (2.0.pow(this.level!! + 1) + this.level!!).toInt()
-            this.expToNextLevel = max(0, this.nextLevelTotalExp!! - this.experience!!)
-        }
+        this.nextLevelTotalExp = (2.0.pow(this.level + 1) + this.level).toInt()
+        this.expToNextLevel = max(0, this.nextLevelTotalExp!! - this.experience)
     }
 
     //去除敏感字段

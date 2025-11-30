@@ -27,7 +27,12 @@ data class Result(
         {
             return SUCCESS_DEFAULT_RESULT
         }
-
+        //未捕获的异常
+        @JvmStatic
+        fun error(exception: Exception): Result
+        {
+            return Result(SYSTEM_ERROR.code, exception.message, null, TraceIdUtils.getTraceId())
+        }
         //业务异常
         @JvmStatic
         fun error(exception: BusinessException): Result

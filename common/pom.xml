@@ -70,10 +70,10 @@
             <artifactId>spring-boot-starter-jetty</artifactId>
         </dependency>
         <!-- Lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.projectlombok</groupId>-->
+<!--            <artifactId>lombok</artifactId>-->
+<!--        </dependency>-->
         <!-- PostgreSQL驱动 -->
         <dependency>
             <groupId>org.postgresql</groupId>

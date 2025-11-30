@@ -4,18 +4,18 @@ import org.springframework.util.StringUtils
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
 
-data class LoginRequest(
+class LoginRequest
+{
     /**
      * 用户名或邮箱
      */
-    var account: String? = null,
+    var account: String? = null
 
     /**
      * 密码
      */
     var password: String? = null
-)
-{
+
     /**
      * 校验参数是否完整
      * @return true-参数完整，false-参数不全
