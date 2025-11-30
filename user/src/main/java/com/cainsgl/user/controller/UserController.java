@@ -8,12 +8,13 @@ import com.cainsgl.common.exception.BSystemException;
 import com.cainsgl.common.exception.BusinessException;
 import com.cainsgl.common.service.user.UserService;
 import com.cainsgl.common.util.UserUtils;
+import com.cainsgl.user.service.UserServiceImpl;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -22,11 +23,10 @@ import java.util.Map;
 @RequestMapping("/user")
 public class UserController
 {
-    private static final String USER_INFO_KEY = "userInfo";
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Resource
-    private UserService userService;
+    private UserServiceImpl userService;
 
     /**
      * 用户登录
@@ -46,11 +46,11 @@ public class UserController
             throw new BusinessException("用户不存在或密码错误");
         }
         // 检查用户状态
-        if (!"active".equals(user.getStatus())) {
-            Map extra = userService.getExtra(user.getId());
+        if (!user.isActive()) {
+            UserEntity.Extra extra = userService.getExtra(user.getId());
             if (extra != null) {
-                Object o = extra.get("baned_time");
-                throw new BusinessException("账户已被封禁至 "+o);
+                LocalDateTime banedTime = extra.getBanedTime();
+                throw new BusinessException("账户已被封禁至 "+banedTime);
             }
             throw new BusinessException("账户已被禁用");
         }
@@ -93,14 +93,11 @@ public class UserController
         return UserUtils.getUserInfo();
     }
 
-
     @GetMapping
     public Object get()
     {
         UserEntity user = userService.getUser(1994765496125227008L);
-        user.calculateLevelInfo();
-        user.setExpToNextLevel(100);
-        userService.updateById(user);
         return user;
     }
+
 }

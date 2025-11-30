@@ -31,15 +31,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
         return b;
     }
 
-    @Override
+
     public UserEntity getUserByAccount(String account)
     {
         return baseMapper.selectByUsernameOrEmail(account);
     }
-    @Override
-    public Map getExtra(long id)
+
+    public UserEntity.Extra getExtra(long id)
     {
         String s = baseMapper.selectExtraById(id);
-        return JSON.parseObject(s, Map.class);
+        return JSON.parseObject(s, UserEntity.Extra.class);
     }
 }

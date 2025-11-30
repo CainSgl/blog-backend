@@ -1,6 +1,9 @@
 spring:
   jackson:
     default-property-inclusion: non_null
+    time-zone: GMT+8
+    serialization:
+      write-dates-as-timestamps: false
   threads:
     virtual:
       enabled: true  # 启用虚拟线程

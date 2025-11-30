@@ -16,7 +16,6 @@ public class UserUtils
         return null;
     }
     public static void setUserInfo(UserEntity userEntity){
-        userEntity.removeSensitiveFields();
         StpUtil.getSession().set(USER_INFO_KEY,userEntity);
     }
 }

@@ -4,6 +4,7 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
+import lombok.Setter;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -32,21 +33,12 @@ import java.security.cert.CertificateFactory;
 @ConfigurationProperties(prefix = "spring.elasticsearch")
 @ConditionalOnClass(ElasticsearchClient.class)
 public class ESClientConfig {
+    @Setter
     public String uris;
+    @Setter
     public String username;
+    @Setter
     public String password;
-
-    public void setUris(String uris) {
-        this.uris = uris;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
 
     private Logger log= LoggerFactory.getLogger(ESClientConfig.class);
     private HttpHost[] toHttpHost() {

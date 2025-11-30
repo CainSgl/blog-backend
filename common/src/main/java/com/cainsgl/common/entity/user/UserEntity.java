@@ -1,7 +1,9 @@
 package com.cainsgl.common.entity.user;
 
+import com.alibaba.fastjson2.annotation.JSONField;
 import com.baomidou.mybatisplus.annotation.*;
 import com.baomidou.mybatisplus.extension.handlers.FastjsonTypeHandler;
+import com.cainsgl.common.exception.BusinessException;
 import com.cainsgl.common.handler.StringListTypeHandler;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,6 +11,7 @@ import lombok.NoArgsConstructor;
 import org.apache.ibatis.type.ArrayTypeHandler;
 import org.apache.ibatis.type.JdbcType;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +20,8 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @TableName("users")
-public class UserEntity {
+public class UserEntity
+{
 
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
@@ -27,7 +31,7 @@ public class UserEntity {
 
     @TableField("email")
     private String email;
-
+    @JSONField(serialize = false)
     @TableField("password_hash")
     private String passwordHash;
 
@@ -52,6 +56,7 @@ public class UserEntity {
     @TableField(value = "permissions", typeHandler = StringListTypeHandler.class)
     private List<String> permissions;
 
+    @JSONField(serialize = false)
     @TableField("status")
     private String status;
 
@@ -63,23 +68,42 @@ public class UserEntity {
 
     @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
     private OffsetDateTime updatedAt;
+
+    //上面所有数据对应数据库里的字段
+
+
+
     //到下一级的总经验值
     @TableField(exist = false)
     private Integer nextLevelTotalExp;
     //从现在到下一级需要的经验值
     @TableField(exist = false)
     private Integer expToNextLevel;
+
     //计算对应的成员变量
-    public void calculateLevelInfo() {
-        if (this.level != null && this.experience != null) {
+    public void calculateLevelInfo()
+    {
+        if (this.level != null && this.experience != null)
+        {
             this.nextLevelTotalExp = (int) (Math.pow(2, this.level + 1) + this.level);
             this.expToNextLevel = Math.max(0, this.nextLevelTotalExp - this.experience);
         }
     }
+
     //去除敏感字段
-    public void removeSensitiveFields() {
-        this.passwordHash = null;
-         this.emailVerified = null;
-         this.status = null;
+    public void removePrivacyFields()
+    {
+       //TODO 根据用户的设置来
     }
+
+    public boolean isActive()
+    {
+        return "active".equals(this.status);
+    }
+    @Data
+    public static final class Extra{
+        public LocalDateTime banedTime;
+    }
+
+
 }
