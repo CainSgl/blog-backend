@@ -3,8 +3,7 @@
 <mapper namespace="com.cainsgl.user.repository.UserMapper">
 
 <!--     映射 users 表到 UserEntity -->
-    <resultMap id="UserResultMap" type="com.cainsgl.common.entity.user.UserEntity" autoMapping="true">
-    </resultMap>
+    <resultMap id="UserResultMap" type="com.cainsgl.common.entity.user.UserEntity" />
 
     <!-- 通用列片段 -->
     <sql id="Base_Column_List">
@@ -12,14 +11,6 @@
         "level", experience, roles, permissions, status, email_verified,
         created_at, updated_at
     </sql>
-
-    <!-- 根据用户名或邮箱查询用户 -->
-    <select id="selectByUsernameOrEmail" resultMap="UserResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM users
-        WHERE username = #{account} OR email = #{account}
-        LIMIT 1
-    </select>
 
     <!-- 获取用户的extra字段 -->
     <select id="selectExtraById" resultType="String">
