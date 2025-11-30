@@ -19,7 +19,7 @@ class StringListTypeHandler : BaseTypeHandler<List<String>>()
         ps: PreparedStatement,
         i: Int,
         parameter: List<String>,
-        jdbcType: JdbcType
+        jdbcType: JdbcType?
     )
     {
         // 将 List<String> 转换为 PostgreSQL 数组

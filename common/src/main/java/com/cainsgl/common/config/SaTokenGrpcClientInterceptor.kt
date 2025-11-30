@@ -18,11 +18,7 @@ class SaTokenGrpcClientInterceptor : ClientInterceptor
         private val SA_TOKEN_HEADER = Metadata.Key.of("token", Metadata.ASCII_STRING_MARSHALLER)
     }
 
-    override fun <ReqT, RespT> interceptCall(
-        method: MethodDescriptor<ReqT, RespT>,
-        callOptions: CallOptions,
-        next: Channel
-    ): ClientCall<ReqT, RespT>
+    override fun <ReqT, RespT> interceptCall(method: MethodDescriptor<ReqT, RespT>, callOptions: CallOptions, next: Channel): ClientCall<ReqT, RespT>
     {
 
         // 1. 获取当前上下文的 SaToken 令牌（未登录则为空）

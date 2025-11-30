@@ -8,9 +8,9 @@ import org.apache.ibatis.annotations.Param
 @Mapper
 interface UserMapper : BaseMapper<UserEntity>
 {
-
     /**
      * 获取用户的extra字段
      */
     fun selectExtraById(@Param("id") id: Long): String?
+
 }

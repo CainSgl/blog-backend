@@ -11,17 +11,17 @@ import kotlin.math.pow
 @TableName("users")
 data class UserEntity(
     @TableId(type = IdType.ASSIGN_ID)
-    var id: Long = 0,
+    var id: Long? = null,
 
     @TableField("username")
     var  username: String = "",
 
     @TableField("email")
-    var email: String?,
+    var email: String? = null,
 
     @JSONField(serialize = false)
     @TableField("password_hash")
-    var passwordHash: String?,
+    var passwordHash: String? = null,
 
     @TableField("nickname")
     var nickname: String = "",
@@ -52,16 +52,16 @@ data class UserEntity(
     var emailVerified: Boolean = false,
 
     @TableField("phone")
-    var phone: String?,
-
-
+    var phone: String? = null,
+    /**
+     * 这两个字段如果是在数据库是一定存在的
+     */
+    @TableField(value = "created_at", fill = FieldFill.INSERT)
+    var createdAt: OffsetDateTime?=null,
+    @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
+    var updatedAt: OffsetDateTime?=null
 )
 {
-    @TableField(value = "created_at", fill = FieldFill.INSERT)
-    lateinit var createdAt: OffsetDateTime
-
-    @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
-    lateinit var updatedAt: OffsetDateTime
 
     //到下一级的总经验值
     @TableField(exist = false)

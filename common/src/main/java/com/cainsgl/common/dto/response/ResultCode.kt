@@ -1,6 +1,6 @@
 package com.cainsgl.common.dto.response
 
-enum class ResultCode(val code: Int, val message: String, val codeScopeDesc: String, val defaultResult: Result = Result(code, message))
+enum class ResultCode(val code: Int, val message: String, val codeScopeDesc: String)
 {
     // ====================== 成功码段（200xx）======================
     SUCCESS(20000, "操作成功", "通用成功"),

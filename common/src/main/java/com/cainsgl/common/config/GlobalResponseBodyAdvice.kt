@@ -66,7 +66,7 @@ class GlobalResponseBodyAdvice : ResponseBodyAdvice<Any>
         }
         if(body is ResultCode)
         {
-            return body.defaultResult
+            return Result(body.code, body.message)
         }
         val result = Result.success(body)
         if (body is String)

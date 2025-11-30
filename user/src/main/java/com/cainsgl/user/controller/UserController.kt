@@ -1,5 +1,6 @@
 package com.cainsgl.user.controller
 
+import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.stp.StpUtil
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.user.dto.request.LoginRequest
@@ -12,17 +13,16 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.web.bind.annotation.*
+
+
 private val log = KotlinLogging.logger {}
 @RestController
 @RequestMapping("/user")
 class UserController
 {
-
-    private val passwordEncoder = BCryptPasswordEncoder()
-
+    val passwordEncoder = BCryptPasswordEncoder()
     @Resource
-    private lateinit var userService: UserServiceImpl
-
+    lateinit var userService: UserServiceImpl
     /**
      * 用户登录
      */
@@ -34,12 +34,16 @@ class UserController
             return ResultCode.MISSING_PARAM
         }
         // 查询用户并验证
-        val hashPassword = passwordEncoder.encode(loginRequest.password)
-        val user = userService.getUserByAccount(loginRequest.account!!,hashPassword) ?: throw BusinessException("用户不存在或密码错误")
+
+        val user = userService.getUserByAccount(loginRequest.account!!) ?: throw BusinessException("用户不存在或密码错误")
+        if (!passwordEncoder.matches(loginRequest.password!!, user.passwordHash))
+        {
+            throw BusinessException("用户不存在或密码错误")
+        }
         // 检查用户状态
         if (!user.isActive())
         {
-            val extra: UserEntity.Extra? = userService.getExtra(user.id);
+            val extra: UserEntity.Extra? = userService.getExtra(user.id!!);
             val message = if (extra?.bannedTime == null)
             {
                 "账户已被禁用"
@@ -82,6 +86,7 @@ class UserController
     /**
      * 获取当前登录用户信息
      */
+    @SaCheckRole("user")
     @GetMapping("/current")
     fun getCurrentUser(): Any
     {
@@ -93,13 +98,18 @@ class UserController
     }
 
     @GetMapping
-    fun get(@RequestParam userId: Long?): Any
+    fun get(@RequestParam(required = false) id: Long?): Any
     {
-        if(userId==null)
+        if(id==null)
         {
             return ResultCode.MISSING_PARAM
         }
-        val user = userService.getUser(userId) ?: return ResultCode.RESOURCE_NOT_FOUND
+        val userEntity = UserEntity()
+        userEntity.username = "test123"
+        userService.save(userEntity)
+        val user = userService.getUser(id) ?: return ResultCode.RESOURCE_NOT_FOUND
         return user
     }
+
+
 }

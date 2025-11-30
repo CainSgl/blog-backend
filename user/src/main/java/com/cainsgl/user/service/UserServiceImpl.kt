@@ -1,7 +1,7 @@
 package com.cainsgl.user.service
 
 import com.alibaba.fastjson2.JSON
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
@@ -37,19 +37,13 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
     /**
      * 根据账号和密码和邮件获取用户信息
      * @param account
-     * @param hashPassword
      * @return
      */
-    fun getUserByAccount(account: String, hashPassword: String): UserEntity?
+    fun getUserByAccount(account: String): UserEntity?
     {
-        //账号或用户名或邮件登录，密码唯一
-        val queryWrapper = LambdaQueryWrapper<UserEntity>()
-            .eq(UserEntity::username, account).eq(UserEntity::passwordHash, hashPassword)
-            .or()
-            .eq(UserEntity::email, account).eq(UserEntity::passwordHash, hashPassword)
-            .or()
-            .eq(UserEntity::phone, account).eq(UserEntity::passwordHash, hashPassword)
-        return baseMapper.selectOne(queryWrapper)
+        val queryWrapper: QueryWrapper<UserEntity>  = QueryWrapper<UserEntity>()
+        queryWrapper.eq("username", account).or().eq("email", account).or().eq("phone", account)
+        return this.getOne(queryWrapper)
     }
     /**
      * 获取用户扩展信息
