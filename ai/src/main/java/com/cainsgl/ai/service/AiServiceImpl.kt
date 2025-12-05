@@ -9,4 +9,13 @@ import org.springframework.stereotype.Service
 class AiServiceImpl : AiService {
     @Resource
     lateinit var embeddingModel: EmbeddingModel
+    override fun getEmbedding(text: String): FloatArray
+    {
+       return embeddingModel.embed(text)
+    }
+
+    override fun getEmbedding(texts: List<String>): List<FloatArray>
+    {
+        return embeddingModel.embed(texts)
+    }
 }

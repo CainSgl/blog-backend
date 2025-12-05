@@ -6,7 +6,16 @@ import org.springframework.stereotype.Service
 @Service
 @ConditionalOnMissingBean(type = ["com.cainsgl.ai.service.AiServiceImpl"])
 class AiGrpcService : AiService {
-//    @GrpcClient("AiService")
+    //    @GrpcClient("AiService")
 //    lateinit var aiServiceGrpc: AiServiceGrpc.AiServiceBlockingStub
+    override fun getEmbedding(text: String): FloatArray
+    {
+        TODO("Not yet implemented")
+    }
+
+    override fun getEmbedding(texts: List<String>): List<FloatArray>
+    {
+        TODO("Not yet implemented")
+    }
 
 }

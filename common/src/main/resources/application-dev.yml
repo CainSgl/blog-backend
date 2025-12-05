@@ -9,7 +9,7 @@ spring:
     uris: https://43.163.122.45:30589
 logstash:
   host: 43.163.122.45
-  port: 31111
+  port: 30646
 grpc:
   client:
     TestService:
