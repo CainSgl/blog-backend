@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cainsgl.article.repository.PostChunkVectorMapper">
+    <!-- 映射 post_chunk_vectors 表到 PostChunkVectorEntity -->
+    <resultMap id="PostChunkVectorResultMap" type="com.cainsgl.common.entity.article.PostChunkVectorEntity">
+    </resultMap>
+    <!-- 通用列片段 -->
+    <sql id="Base_Column_List">
+        id, post_id, vector
+    </sql>
+
+</mapper>

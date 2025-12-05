@@ -9,9 +9,10 @@
         <version>1.0</version>
     </parent>
 
-    <artifactId>article</artifactId>
-    <name>文章模块(article)</name>
-    <description>博客核心内容管理，专注文章 CRUD 与状态流转</description>
+    <artifactId>consumer</artifactId>
+    <name>消费者(consumer)</name>
+    <description>消费者</description>
+
     <dependencies>
         <dependency>
             <groupId>com.cainsgl</groupId>
@@ -20,8 +21,9 @@
         </dependency>
         <!-- Redis集成 -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <groupId>org.apache.rocketmq</groupId>
+            <artifactId>rocketmq-v5-client-spring-boot-starter</artifactId>
+            <version>2.3.4</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.springframework.boot</groupId>
@@ -29,17 +31,8 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- Elasticsearch集成 -->
-        <dependency>
-            <groupId>org.springframework.data</groupId>
-            <artifactId>spring-data-elasticsearch</artifactId>
-        </dependency>
     </dependencies>
-    <properties>
-        <maven.compiler.source>23</maven.compiler.source>
-        <maven.compiler.target>23</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
+
     <build>
         <plugins>
             <plugin>
@@ -47,7 +40,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <skip>false</skip>
-                    <mainClass>com.cainsgl.article.Application</mainClass>
+                    <mainClass>com.cainsgl.user.Application</mainClass>
                     <classifier>exec</classifier>
                 </configuration>
                 <executions>
@@ -68,4 +61,6 @@
 
         </plugins>
     </build>
+
+
 </project>

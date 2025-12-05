@@ -9,7 +9,7 @@ spring:
       enabled: true  # 启用虚拟线程
   elasticsearch:
     username: elastic
-    password: l3ccY0dUP7zlnhQ3
+    password: 3yKNDtviqwZjQoYT
     restclient:
       ssl:
         bundle:

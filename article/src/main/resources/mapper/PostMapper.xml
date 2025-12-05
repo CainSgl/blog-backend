@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cainsgl.article.repository.PostMapper">
+    <!-- 映射 post 表到 PostEntity -->
+    <resultMap id="PostResultMap" type="com.cainsgl.common.entity.article.PostEntity">
+    </resultMap>
+    <!-- 通用列片段 -->
+    <sql id="Base_Column_List">
+        id, title, content, summary, status, is_top, is_recommend, 
+        view_count, like_count, comment_count, tags, user_id, category_id, 
+        seo_keywords, seo_description, created_at, updated_at, published_at
+    </sql>
+
+</mapper>
