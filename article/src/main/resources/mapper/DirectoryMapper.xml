@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cainsgl.article.repository.DirectoryMapper">
+    <!-- 映射 directories 表到 DirectoryEntity -->
+    <resultMap id="DirectoryResultMap" type="com.cainsgl.common.entity.article.DirectoryEntity">
+    </resultMap>
+    
+    <!-- 映射目录树结果 -->
+    <resultMap id="DirectoryTreeResultMap" type="com.cainsgl.article.dto.DirectoryTreeDTO">
+        <result column="id" property="id"/>
+        <result column="kb_id" property="kbId"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="name" property="name"/>
+        <result column="post_id" property="postId"/>
+        <result column="sort_num" property="sortNum"/>
+    </resultMap>
+    
+    <!-- 通用列片段 -->
+    <sql id="Base_Column_List">
+        id, kb_id, parent_id, name, post_id, sort_num
+    </sql>
+
+    <!-- 递归查询知识库的完整目录树结构 -->
+    <select id="getDirectoryTreeByKbId" resultMap="DirectoryTreeResultMap">
+        WITH RECURSIVE dir_tree AS (
+            -- 递归基：根目录（parent_id IS NULL）
+            SELECT id, kb_id, parent_id, name, post_id, sort_num
+            FROM directories
+            WHERE kb_id = #{kbId}
+              AND parent_id IS NULL
+            UNION ALL
+            -- 递归体：子目录
+            SELECT d.id, d.kb_id, d.parent_id, d.name, d.post_id, d.sort_num
+            FROM directories d
+            JOIN dir_tree dt ON d.parent_id = dt.id
+        )
+        SELECT 
+            id,
+            kb_id,
+            parent_id,
+            name,
+            post_id,
+            sort_num
+        FROM dir_tree
+        ORDER BY sort_num
+    </select>
+
+    <!-- 更新目录信息（带权限校验） -->
+    <update id="updateDirectoryWithPermissionCheck">
+        UPDATE directories d
+        <set>
+            <if test="name != null">
+                name = #{name},
+            </if>
+                parent_id = #{parentId},
+            <if test="sortNum != null">
+                sort_num = #{sortNum},
+            </if>
+        </set>
+        WHERE d.id = #{directoryId}
+          AND d.kb_id = #{kbId}
+          AND EXISTS (
+              SELECT 1 
+              FROM knowledge_bases kb 
+              WHERE kb.id = #{kbId} 
+                AND kb.user_id = #{userId}
+          )
+    </update>
+
+</mapper>

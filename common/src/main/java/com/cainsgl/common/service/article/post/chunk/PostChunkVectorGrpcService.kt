@@ -1,12 +1,12 @@
-package com.cainsgl.common.service.article
+package com.cainsgl.common.service.article.post.chunk
 
-import com.cainsgl.common.entity.article.PostChunkVectorEntity
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.stereotype.Service
 
 @Service
 @ConditionalOnMissingBean(type = ["com.cainsgl.article.service.PostChunkVectorServiceImpl"])
-class PostChunkVectorGrpcService : PostChunkVectorService {
+class PostChunkVectorGrpcService : PostChunkVectorService
+{
 //    @GrpcClient("PostChunkVectorService")
 //    lateinit var postChunkVectorServiceGrpc: PostChunkVectorServiceGrpc.PostChunkVectorServiceBlockingStub
 

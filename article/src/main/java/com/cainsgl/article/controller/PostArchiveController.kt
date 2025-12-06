@@ -1,5 +1,6 @@
 package com.cainsgl.article.controller
 
+import cn.dev33.satoken.stp.StpUtil
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.article.service.PostArchiveServiceImpl
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -24,7 +25,15 @@ class PostArchiveController {
             return ResultCode.MISSING_PARAM
         }
         val archive = postArchiveService.getPostArchive(id) ?: return ResultCode.RESOURCE_NOT_FOUND
-        return archive
+        val userId = StpUtil.getLoginIdAsLong()
+        if (archive.operatorId==userId)
+        {
+            return archive
+        }else
+        {
+            log.info { "用户${userId}无权限访问归档记录${id}" }
+            return ResultCode.PERMISSION_DENIED
+        }
     }
 
 }
