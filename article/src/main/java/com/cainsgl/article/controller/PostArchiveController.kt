@@ -1,16 +1,19 @@
 package com.cainsgl.article.controller
 
 import cn.dev33.satoken.stp.StpUtil
-import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.article.service.PostArchiveServiceImpl
+import com.cainsgl.common.dto.response.ResultCode
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 
 private val log = KotlinLogging.logger {}
 
 @RestController
-@RequestMapping("/post-archive")
+@RequestMapping("/postArchive")
 class PostArchiveController {
 
     @Resource

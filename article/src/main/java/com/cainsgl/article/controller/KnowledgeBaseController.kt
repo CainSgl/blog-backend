@@ -1,11 +1,12 @@
 package com.cainsgl.article.controller
 
+import cn.dev33.satoken.annotation.SaCheckPermission
 import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper
 import com.cainsgl.article.dto.DirectoryTreeDTO
-import com.cainsgl.article.dto.request.CreateKnowledgeBaseRequest
-import com.cainsgl.article.dto.request.UpdateKnowledgeBaseRequest
+import com.cainsgl.article.dto.request.kb.CreateKnowledgeBaseRequest
+import com.cainsgl.article.dto.request.kb.UpdateKnowledgeBaseRequest
 import com.cainsgl.article.service.DirectoryServiceImpl
 import com.cainsgl.article.service.KnowledgeBaseServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
@@ -30,17 +31,14 @@ class KnowledgeBaseController
     @GetMapping
     fun get(@RequestParam(required = false) id: Long?): Any
     {
-        if (id == null)
-        {
-            return ResultCode.MISSING_PARAM
-        }
+        requireNotNull(id) { return ResultCode.MISSING_PARAM }
         val knowledgeBase: KnowledgeBaseEntity = knowledgeBaseService.getById(id)
             ?: return ResultCode.RESOURCE_NOT_FOUND
         val directoryTree: List<DirectoryTreeDTO> = directoryService.getDirectoryTreeByKbId(id)
         return Pair(knowledgeBase, directoryTree)
     }
 
-    @SaCheckRole("user")
+    @SaCheckPermission("kb.post")
     @PostMapping
     fun createKnowledgeBase(@RequestBody request: CreateKnowledgeBaseRequest): Any
     {

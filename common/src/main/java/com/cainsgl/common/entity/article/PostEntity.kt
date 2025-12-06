@@ -44,7 +44,7 @@ data class PostEntity(
     var tags: List<String> = ArrayList(),
 
     @TableField("user_id")
-    var userId: Long? = null,
+    var userId: Long ,
 
     @TableField("category_id")
     var categoryId: Long? = null,
@@ -63,5 +63,6 @@ data class PostEntity(
 
     @TableField("published_at")
     var publishedAt: OffsetDateTime? = null,
-
+    @TableField("kb_id")
+    var kbId: Long? = null,
 )

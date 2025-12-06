@@ -1,18 +1,17 @@
 package com.cainsgl.article.controller
 
+import cn.dev33.satoken.annotation.SaCheckPermission
 import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.stp.StpUtil
-import com.cainsgl.article.dto.request.UpdateDirectoryRequest
+import com.cainsgl.article.dto.request.dir.CreateDirectoryRequest
+import com.cainsgl.article.dto.request.dir.UpdateDirectoryRequest
 import com.cainsgl.article.service.DirectoryServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
 import jakarta.annotation.Resource
-import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/directory")
+@RequestMapping("/dir")
 class DirectoryController
 {
 
@@ -24,14 +23,9 @@ class DirectoryController
     @PutMapping
     fun updateDirectory(@RequestBody request: UpdateDirectoryRequest): Any
     {
-        if (request.id == null || request.id < 0)
-        {
-            return ResultCode.MISSING_PARAM
-        }
-        if (request.kbId == null)
-        {
-            return ResultCode.MISSING_PARAM
-        }
+        requireNotNull(request.id) { return ResultCode.MISSING_PARAM }
+        require(request.id >= 0) { return ResultCode.PARAM_INVALID }
+        requireNotNull(request.kbId) { return ResultCode.MISSING_PARAM }
         val userId = StpUtil.getLoginIdAsLong()
         if (directoryService.updateDirectory(request.id, request.kbId, userId, request.name, request.parentId, request.sortNum))
         {
@@ -48,4 +42,19 @@ class DirectoryController
         }
         return ResultCode.DB_ERROR
     }
+    @SaCheckPermission("directory.post")
+    @PostMapping
+    fun createDirectory(@RequestBody request: CreateDirectoryRequest): Any
+    {
+        requireNotNull(request.kbId) { return ResultCode.MISSING_PARAM }
+        require(request.kbId >= 0) { return ResultCode.PARAM_INVALID }
+        //创建新目录，先检查用户是否拥有该kb
+        val userId = StpUtil.getLoginIdAsLong()
+        if (directoryService.saveDirectory(request.kbId,userId, request.name, request.parentId))
+        {
+            return ResultCode.SUCCESS
+        }
+        return ResultCode.DB_ERROR
+    }
+
 }

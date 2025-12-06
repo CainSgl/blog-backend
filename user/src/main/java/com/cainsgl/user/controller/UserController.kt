@@ -3,11 +3,11 @@ package com.cainsgl.user.controller
 import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.stp.StpUtil
 import com.cainsgl.common.dto.response.ResultCode
-import com.cainsgl.user.dto.request.LoginRequest
-import com.cainsgl.user.dto.response.LoginResponse
 import com.cainsgl.common.entity.user.UserEntity
 import com.cainsgl.common.exception.BusinessException
 import com.cainsgl.common.util.UserUtils
+import com.cainsgl.user.dto.request.LoginRequest
+import com.cainsgl.user.dto.response.LoginResponse
 import com.cainsgl.user.service.UserServiceImpl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
@@ -29,14 +29,11 @@ class UserController
     @PostMapping("/login")
     fun login(@RequestBody loginRequest: LoginRequest): Any
     {
-        if (!loginRequest.validate())
-        {
-            return ResultCode.MISSING_PARAM
-        }
+        require(!loginRequest.account.isNullOrEmpty()) { return ResultCode.MISSING_PARAM }
+        require(!loginRequest.password.isNullOrEmpty()) { return ResultCode.MISSING_PARAM }
         // 查询用户并验证
-
-        val user = userService.getUserByAccount(loginRequest.account!!) ?: throw BusinessException("用户不存在或密码错误")
-        if (!passwordEncoder.matches(loginRequest.password!!, user.passwordHash))
+        val user = userService.getUserByAccount(loginRequest.account) ?: throw BusinessException("用户不存在或密码错误")
+        if (!passwordEncoder.matches(loginRequest.password, user.passwordHash))
         {
             throw BusinessException("用户不存在或密码错误")
         }
@@ -94,19 +91,13 @@ class UserController
         {
             throw BusinessException("未登录")
         }
-        return UserUtils.getUserInfo()!!
+        return UserUtils.getUserInfo()?:ResultCode.USER_NOT_LOGIN
     }
 
     @GetMapping
     fun get(@RequestParam(required = false) id: Long?): Any
     {
-        if(id==null)
-        {
-            return ResultCode.MISSING_PARAM
-        }
-        val userEntity = UserEntity()
-        userEntity.username = "test123"
-        userService.save(userEntity)
+        requireNotNull(id) { return ResultCode.MISSING_PARAM }
         val user = userService.getUser(id) ?: return ResultCode.RESOURCE_NOT_FOUND
         return user
     }

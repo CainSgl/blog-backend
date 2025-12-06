@@ -1,5 +1,6 @@
 package com.cainsgl.article.service
 
+import com.baomidou.mybatisplus.core.toolkit.IdWorker
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.article.dto.DirectoryTreeDTO
@@ -53,36 +54,55 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
     }
 
 
-    fun updateDirectory(id:Long,kbId: Long,userId: Long,name:String?,parentId: Long?,sortNum:Short?): Boolean
+    fun updateDirectory(id: Long, kbId: Long, userId: Long, name: String?, parentId: Long?, sortNum: Short?): Boolean
     {
         val baseMapper = getBaseMapper()
-        if (name != null&&name.isEmpty())
+        if (name != null && name.isEmpty())
         {
             //这里是有问题的，因为name不为null，说明要更新，但是这里的name却是""
             return false
         }
-        if(sortNum != null&&sortNum<0)
+        if (sortNum != null && sortNum < 0)
         {
             //排序号不能小于0
             return false
         }
         try
         {
-           return baseMapper.updateDirectoryWithPermissionCheck(
+            return baseMapper.updateDirectoryWithPermissionCheck(
                 id,
                 kbId,
                 userId,
                 name,
                 parentId,
                 sortNum
-            )>0
-        }catch (e: Exception)
+            ) > 0
+        } catch (e: Exception)
         {
             //可能是参数不对或者null
             log.warn(e.message)
             return false
         }
-
     }
 
+    fun saveDirectory(kbId: Long, userId: Long, name: String, parentId: Long?=null, postId: Long?=null): Boolean
+    {
+        val baseMapper = getBaseMapper()
+        try
+        {
+            return baseMapper.insertDirectoryWithValidation(
+                id = IdWorker.getId(),
+                kbId = kbId,
+                userId = userId,
+                parentId = parentId,
+                name = name,
+                postId = postId
+            ) > 0
+        } catch (e: Exception)
+        {
+            //可能是参数不对或者null
+            log.warn(e.message)
+            return false
+        }
+    }
 }

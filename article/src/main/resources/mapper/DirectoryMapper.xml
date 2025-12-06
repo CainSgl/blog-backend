@@ -45,7 +45,7 @@
         ORDER BY sort_num
     </select>
 
-    <!-- 更新目录信息（带权限校验） -->
+    <!-- 更新目录信息（带知识库检验） -->
     <update id="updateDirectoryWithPermissionCheck">
         UPDATE directories d
         <set>
@@ -66,5 +66,39 @@
                 AND kb.user_id = #{userId}
           )
     </update>
-
+    <insert id="insertDirectoryWithValidation">
+        INSERT INTO directories (id, kb_id, parent_id, name, post_id, sort_num)
+        SELECT
+            #{id},
+            #{kbId},
+            #{parentId},
+            #{name},
+            #{postId},
+            -- 计算排序序号，默认为当前目录的子目录数量加1
+            COALESCE(
+                    (SELECT COUNT(*) + 1
+                     FROM directories
+                     WHERE kb_id = #{kbId}
+                       AND (parent_id = #{parentId} OR (parent_id IS NULL AND #{parentId} IS NULL))
+                    ),
+                    1
+            )
+        WHERE EXISTS (
+            -- 验证知识库所有权
+            SELECT 1
+            FROM knowledge_bases kb
+            WHERE kb.id = #{kbId}
+              AND kb.user_id = #{userId}
+        )
+          AND (
+            -- 验证parent_id的kb_id一致性（如果parent_id不为空）
+            #{parentId} IS NULL
+                OR EXISTS (
+                SELECT 1
+                FROM directories d
+                WHERE d.id = #{parentId}
+                  AND d.kb_id = #{kbId}
+            )
+            )
+    </insert>
 </mapper>

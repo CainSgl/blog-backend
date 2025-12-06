@@ -35,5 +35,23 @@ interface DirectoryMapper : BaseMapper<DirectoryEntity> {
         @Param("parentId") parentId: Long?,
         @Param("sortNum") sortNum: Short?
     ): Int
-
+    /**
+     * 插入目录（带权限和数据验证）
+     * 验证知识库所有权、父目录kb_id一致性，并自动计算sort_num
+     * @param id 目录ID
+     * @param kbId 知识库ID
+     * @param userId 用户ID
+     * @param parentId 父目录ID（可为null表示根目录）
+     * @param name 目录名称
+     * @param postId 关联文章ID（可为null）
+     * @return 插入的行数（1表示成功，0表示验证失败）
+     */
+    fun insertDirectoryWithValidation(
+        @Param("id") id: Long,
+        @Param("kbId") kbId: Long,
+        @Param("userId") userId: Long,
+        @Param("parentId") parentId: Long?,
+        @Param("name") name: String,
+        @Param("postId") postId: Long?
+    ): Int
 }

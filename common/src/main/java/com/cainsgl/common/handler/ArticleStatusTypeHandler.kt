@@ -5,14 +5,20 @@ import org.apache.ibatis.type.BaseTypeHandler
 import org.apache.ibatis.type.JdbcType
 import org.apache.ibatis.type.MappedJdbcTypes
 import org.apache.ibatis.type.MappedTypes
+import org.postgresql.util.PGobject
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 
 @MappedJdbcTypes(JdbcType.VARCHAR)
 @MappedTypes(ArticleStatus::class)
-class ArticleStatusTypeHandler : BaseTypeHandler<ArticleStatus>() {
-    override fun setNonNullParameter(ps: PreparedStatement, i: Int, parameter: ArticleStatus, jdbcType: JdbcType) {
-        ps.setString(i, parameter.dbValue)
+class ArticleStatusTypeHandler : BaseTypeHandler<ArticleStatus>()
+{
+    override fun setNonNullParameter(ps: PreparedStatement, i: Int, parameter: ArticleStatus, jdbcType: JdbcType?)
+    {
+        val pgObject = PGobject()
+        pgObject.type = "article_status"
+        pgObject.value = parameter.dbValue
+        ps.setObject(i, pgObject)
     }
 
     override fun getNullableResult(rs: ResultSet, columnName: String): ArticleStatus? =

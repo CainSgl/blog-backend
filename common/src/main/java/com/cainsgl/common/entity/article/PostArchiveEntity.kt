@@ -29,7 +29,9 @@ data class PostArchiveEntity(
     var operatorId: Long? = null,
 
     @TableField("remark")
-    var remark: String? = null
+    var remark: String? = null,
+    @TableField("kb_id")
+    var kbId: Long? = null
 )
 {
     constructor(postEntity:PostEntity) : this()

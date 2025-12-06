@@ -1,4 +1,4 @@
-package com.cainsgl.article.dto.request
+package com.cainsgl.article.dto.request.kb
 
 import com.cainsgl.common.entity.article.ArticleStatus
 
