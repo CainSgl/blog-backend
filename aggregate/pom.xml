@@ -31,7 +31,7 @@
         </dependency>
         <dependency>
             <groupId>com.cainsgl</groupId>
-            <artifactId>test</artifactId>
+            <artifactId>consumer</artifactId>
             <version>1.0</version>
         </dependency>
     </dependencies>

@@ -3,7 +3,7 @@ package com.cainsgl.article.controller
 import cn.dev33.satoken.annotation.SaCheckPermission
 import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.stp.StpUtil
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.cainsgl.article.dto.DirectoryTreeDTO
 import com.cainsgl.article.dto.request.kb.CreateKnowledgeBaseRequest
 import com.cainsgl.article.dto.request.kb.UpdateKnowledgeBaseRequest
@@ -56,9 +56,9 @@ class KnowledgeBaseController
     fun updateKnowledgeBase(@RequestBody request: UpdateKnowledgeBaseRequest): Any
     {
         val userId = StpUtil.getLoginIdAsLong()
-        val updateWrapper = LambdaUpdateWrapper<KnowledgeBaseEntity>()
-        updateWrapper.eq(KnowledgeBaseEntity::id, request.id)
-        updateWrapper.eq(KnowledgeBaseEntity::userId, userId)
+        val updateWrapper = UpdateWrapper<KnowledgeBaseEntity>()
+        updateWrapper.eq("id", request.id)
+        updateWrapper.eq("user_id", userId)
         val kbEntity = KnowledgeBaseEntity(status = request.status, name = request.name)
         if (knowledgeBaseService.update(kbEntity, updateWrapper))
         {

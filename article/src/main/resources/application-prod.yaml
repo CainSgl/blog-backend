@@ -1,6 +1,3 @@
 spring:
   application:
     name: article-prod
-rocketmq:
-  producer:
-    endpoints: rocketmq-nameserver:9876

@@ -11,7 +11,7 @@ data class CategoryEntity(
     @TableId(type = IdType.ASSIGN_ID)
     var id: Long? = null,
     @TableField("name")
-    var name: String = "",
+    var name: String? = null,
     @TableField("parent_id")
     var parentId: Long? = null,
     @TableField("created_at")

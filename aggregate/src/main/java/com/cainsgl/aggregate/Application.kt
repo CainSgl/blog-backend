@@ -20,8 +20,8 @@ import org.springframework.context.annotation.FilterType
                 com.cainsgl.user.Application.AppNamePrinter::class,
                 com.cainsgl.article.Application::class,
                 com.cainsgl.article.Application.AppNamePrinter::class,
-                com.cainsgl.test.Application::class,
-                com.cainsgl.test.Application.AppNamePrinter::class,
+                com.cainsgl.consumer.Application::class,
+                com.cainsgl.consumer.Application.AppNamePrinter::class
             ]
         )
     ]

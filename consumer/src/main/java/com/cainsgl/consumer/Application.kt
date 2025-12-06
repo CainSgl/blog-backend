@@ -8,7 +8,6 @@ import org.springframework.context.annotation.ComponentScan
 import org.springframework.stereotype.Component
 
 @SpringBootApplication
-@ComponentScan(basePackages = ["com.cainsgl.*"])
 class Application {
     companion object {
         @JvmStatic

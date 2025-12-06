@@ -14,13 +14,13 @@ data class PostArchiveEntity(
     var id: Long? = null,
 
     @TableField("post_title")
-    var postTitle: String = "",
+    var postTitle: String? =null,
 
     @TableField(value = "post_data")
-    var postData: String = "{}",
+    var postData: String?=null,
 
     @TableField("archive_type")
-    var archiveType: String = "",
+    var archiveType: String?=null,
 
     @TableField("archive_time")
     var archiveTime: OffsetDateTime? =null,

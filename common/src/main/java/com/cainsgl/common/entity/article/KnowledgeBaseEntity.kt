@@ -16,7 +16,7 @@ data class KnowledgeBaseEntity(
     var userId: Long? = null,
 
     @TableField("name")
-    var name: String = "",
+    var name: String? = null,
 
     @TableField("created_at")
     var createdAt: OffsetDateTime? = null,

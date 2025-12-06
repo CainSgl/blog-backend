@@ -14,11 +14,23 @@
     <description>消费者</description>
 
     <dependencies>
+        <!-- Spring Boot核心 -->
         <dependency>
-            <groupId>com.cainsgl</groupId>
-            <artifactId>common</artifactId>
-            <version>1.0</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
+        <!-- log4j2 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-log4j2</artifactId>
+        </dependency>
+        <!-- Redis -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
@@ -29,6 +41,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- RocketMQ -->
         <dependency>
             <groupId>org.apache.rocketmq</groupId>
             <artifactId>rocketmq-v5-client-spring-boot-starter</artifactId>
@@ -40,9 +53,10 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- K8s探针 -->
         <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
     </dependencies>
 
@@ -53,7 +67,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <skip>false</skip>
-                    <mainClass>com.cainsgl.user.Application</mainClass>
+                    <mainClass>com.cainsgl.consumer.Application</mainClass>
                     <classifier>exec</classifier>
                 </configuration>
                 <executions>

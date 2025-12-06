@@ -17,11 +17,11 @@ data class DirectoryEntity(
     var parentId: Long? = null,
 
     @TableField("name")
-    var name: String = "",
+    var name: String? = null,
 
     @TableField("post_id")
     var postId: Long? = null,
 
     @TableField("sort_num")
-    var sortNum: Short = 0
+    var sortNum: Short? = null,
 )

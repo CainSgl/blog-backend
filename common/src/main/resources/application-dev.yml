@@ -20,3 +20,7 @@ grpc:
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+rocketmq:
+  producer:
+    endpoints: rocketmq-proxy:8081
+    ssl-enabled: false

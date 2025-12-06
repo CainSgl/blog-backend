@@ -72,16 +72,11 @@ data class UserEntity(
 
 
     //计算对应的成员变量
-    fun calculateLevelInfo()
+    fun calculateLevelInfo():UserEntity
     {
         this.nextLevelTotalExp = (2.0.pow(this.level + 1) + this.level).toInt()
         this.expToNextLevel = max(0, this.nextLevelTotalExp!! - this.experience)
-    }
-
-    //去除敏感字段
-    fun removePrivacyFields()
-    {
-        //TODO 根据用户的设置来
+        return this
     }
 
     fun isActive(): Boolean

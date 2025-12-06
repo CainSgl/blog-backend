@@ -53,9 +53,6 @@
                 name = #{name},
             </if>
                 parent_id = #{parentId},
-            <if test="sortNum != null">
-                sort_num = #{sortNum},
-            </if>
         </set>
         WHERE d.id = #{directoryId}
           AND d.kb_id = #{kbId}
@@ -74,9 +71,9 @@
             #{parentId},
             #{name},
             #{postId},
-            -- 计算排序序号，默认为当前目录的子目录数量加1
+            -- 计算排序序号，使用当前子目录的最大sortNum加1
             COALESCE(
-                    (SELECT COUNT(*) + 1
+                    (SELECT MAX(sort_num) + 1
                      FROM directories
                      WHERE kb_id = #{kbId}
                        AND (parent_id = #{parentId} OR (parent_id IS NULL AND #{parentId} IS NULL))
@@ -101,4 +98,34 @@
             )
             )
     </insert>
+
+    <!-- 获取目录（带权限验证） -->
+    <select id="selectDirectoryWithPermissionCheck" resultMap="DirectoryResultMap">
+        SELECT d.*
+        FROM directories d
+        WHERE d.id = #{id}
+          AND d.kb_id = #{kbId}
+          AND EXISTS (
+              SELECT 1
+              FROM knowledge_bases kb
+              WHERE kb.id = #{kbId}
+                AND kb.user_id = #{userId}
+          )
+    </select>
+
+    <!-- 获取同级目录列表 -->
+    <select id="selectSiblingDirectories" resultMap="DirectoryResultMap">
+        SELECT *
+        FROM directories
+        WHERE kb_id = #{kbId}
+          AND (
+              <if test="parentId != null">
+                  parent_id = #{parentId}
+              </if>
+              <if test="parentId == null">
+                  parent_id IS NULL
+              </if>
+          )
+        ORDER BY sort_num
+    </select>
 </mapper>

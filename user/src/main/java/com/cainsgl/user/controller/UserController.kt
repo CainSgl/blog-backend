@@ -62,7 +62,7 @@ class UserController
         UserUtils.setUserInfo(user)
         log.info { "${"用户登录成功: userId={}, device={}"} ${user.id} $device" }
         val token = StpUtil.getTokenValue()
-        return LoginResponse(token, user)
+        return LoginResponse(token, user.calculateLevelInfo())
     }
 
     /**
@@ -91,7 +91,12 @@ class UserController
         {
             throw BusinessException("未登录")
         }
-        return UserUtils.getUserInfo()?:ResultCode.USER_NOT_LOGIN
+        val userInfo = UserUtils.getUserInfo()
+        if (userInfo != null)
+        {
+            return userInfo.calculateLevelInfo()
+        }
+        return ResultCode.USER_NOT_LOGIN
     }
 
     @GetMapping
@@ -99,8 +104,6 @@ class UserController
     {
         requireNotNull(id) { return ResultCode.MISSING_PARAM }
         val user = userService.getUser(id) ?: return ResultCode.RESOURCE_NOT_FOUND
-        return user
+        return user.calculateLevelInfo()
     }
-
-
 }

@@ -4,6 +4,7 @@ package com.cainsgl.article.controller
 import cn.dev33.satoken.annotation.SaCheckPermission
 import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.stp.StpUtil
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.cainsgl.article.dto.request.post.CreatePostRequest
 import com.cainsgl.article.dto.request.post.UpdatePostRequest
 import com.cainsgl.article.service.DirectoryServiceImpl
@@ -90,6 +91,8 @@ class PostController
                 //多半是参数问题
                 return@execute ResultCode.PARAM_INVALID
             }
+            //发送消息
+            rocketMQClientTemplate.asyncSendNormalMessage("article:post", postEntity.id, null)
             return@execute ResultCode.SUCCESS
         } ?: ResultCode.UNKNOWN_ERROR
 
@@ -100,7 +103,36 @@ class PostController
     @PutMapping
     fun updatePost(@RequestBody request: UpdatePostRequest): Any
     {
-        //TODO 更新文档，注意状态变更，发送不同的消息
+        requireNotNull(request.id) { return ResultCode.MISSING_PARAM }
+        val articleStatus: ArticleStatus? = if (request.status.isNullOrEmpty())
+        {
+            null
+        } else
+        {
+            ArticleStatus.fromDbValue(request.status)
+        }
+        val userId = StpUtil.getLoginIdAsLong()
+        val updateWrapper = UpdateWrapper<PostEntity>()
+        updateWrapper.eq("id", request.id)
+        updateWrapper.eq("user_id", userId)
+        if (articleStatus != null)
+        {
+            updateWrapper.apply("status <> {0}::article_status", articleStatus.dbValue)
+        }
+        val postEntity = PostEntity(
+            id = request.id,
+            title = request.title,
+            content = request.content,
+            summary = request.summary,
+            status = articleStatus,
+            top = request.isTop
+        )
+        if (!postService.update(postEntity, updateWrapper))
+        {
+            return ResultCode.PARAM_INVALID
+        }
+        //发送消息，这里不需要回调，也不需要保证可靠，不是强一致的需求
+        rocketMQClientTemplate.asyncSendNormalMessage("article:update", request.id, null)
         return ResultCode.SUCCESS
     }
 

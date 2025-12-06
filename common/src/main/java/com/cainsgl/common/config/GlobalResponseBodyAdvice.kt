@@ -57,7 +57,7 @@ class GlobalResponseBodyAdvice : ResponseBodyAdvice<Any>
         // null值直接返回Result.success()
         if (body == null)
         {
-            return Result.success()
+            return Result(ResultCode.NO_DATA.code,ResultCode.NO_DATA.message)
         }
         // 已经是Result类型的不重复包装
         if (body is Result)

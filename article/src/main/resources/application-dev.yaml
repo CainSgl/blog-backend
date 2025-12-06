@@ -1,6 +1,3 @@
 spring:
   application:
     name: article-dev
-rocketmq:
-  producer:
-    endpoints: 43.163.122.45:32167

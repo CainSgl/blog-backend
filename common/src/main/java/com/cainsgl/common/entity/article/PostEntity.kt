@@ -1,9 +1,6 @@
 package com.cainsgl.common.entity.article
 
-import com.baomidou.mybatisplus.annotation.IdType
-import com.baomidou.mybatisplus.annotation.TableField
-import com.baomidou.mybatisplus.annotation.TableId
-import com.baomidou.mybatisplus.annotation.TableName
+import com.baomidou.mybatisplus.annotation.*
 import com.cainsgl.common.handler.ArticleStatusTypeHandler
 import com.cainsgl.common.handler.StringListTypeHandler
 import java.time.OffsetDateTime
@@ -14,37 +11,37 @@ data class PostEntity(
     var id: Long? = null,
 
     @TableField("title")
-    var title: String = "",
+    var title: String? = null,
 
     @TableField("content")
-    var content: String = "",
+    var content: String ?= null,
 
     @TableField("summary")
     var summary: String? = null,
 
     @TableField(value = "status", typeHandler = ArticleStatusTypeHandler::class)
-    var status: ArticleStatus = ArticleStatus.DRAFT,
+    var status: ArticleStatus? = null,
 
     @TableField("is_top")
-    var isTop: Boolean = false,
+    var top: Boolean ?= null,
 
     @TableField("is_recommend")
-    var isRecommend: Boolean = false,
+    var recommend: Boolean ?= null,
 
     @TableField("view_count")
-    var viewCount: Long = 0,
+    var viewCount: Long? = null,
 
     @TableField("like_count")
-    var likeCount: Long = 0,
+    var likeCount: Long? = null,
 
     @TableField("comment_count")
-    var commentCount: Long = 0,
+    var commentCount: Long? = null,
 
     @TableField(value = "tags", typeHandler = StringListTypeHandler::class)
-    var tags: List<String> = ArrayList(),
+    var tags: List<String>? = null,
 
     @TableField("user_id")
-    var userId: Long ,
+    var userId: Long? = null,
 
     @TableField("category_id")
     var categoryId: Long? = null,
@@ -55,12 +52,10 @@ data class PostEntity(
     @TableField("seo_description")
     var seoDescription: String? = null,
 
-    @TableField("created_at")
-    var createdAt: OffsetDateTime? =null,
-
-    @TableField("updated_at")
-    var updatedAt: OffsetDateTime? = null,
-
+    @TableField(value = "created_at", fill = FieldFill.INSERT)
+    var createdAt: OffsetDateTime?=null,
+    @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
+    var updatedAt: OffsetDateTime?=null,
     @TableField("published_at")
     var publishedAt: OffsetDateTime? = null,
     @TableField("kb_id")

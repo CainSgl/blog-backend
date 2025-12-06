@@ -4,7 +4,7 @@ enum class ResultCode(val code: Int, val message: String, val codeScopeDesc: Str
 {
     // ====================== 成功码段（200xx）======================
     SUCCESS(20000, "Success", "通用成功"),
-
+    NO_DATA(20000, "未返回任何数据", "通用成功"),
     // ====================== 业务异常码段（400xx）======================
     BUSINESS_ERROR(40000, "业务逻辑异常", "通用业务异常"),
     MISSING_PARAM(40001, "请求参数缺失", "参数异常"),
@@ -23,5 +23,5 @@ enum class ResultCode(val code: Int, val message: String, val codeScopeDesc: Str
     THIRD_PARTY_ERROR(50003, "第三方接口调用异常", "系统异常-第三方依赖"),
     NETWORK_ERROR(50004, "网络通信异常", "系统异常-网络"),
     // ====================== 不知道的错误（600xx）======================
-    UNKNOWN_ERROR(60000, "你中奖了，这个错误按理说是不会出现的", "未知的错误");
+    UNKNOWN_ERROR(60000, "你中奖了，这个错误按理说是不会出现的，这种错误一般发生在调试api的时候传入了一些预料之外的参数", "这种错误一般发生在调试api的时候传入了一些预料之外的参数");
 }

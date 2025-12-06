@@ -32,8 +32,7 @@ interface DirectoryMapper : BaseMapper<DirectoryEntity> {
         @Param("kbId") kbId: Long,
         @Param("userId") userId: Long,
         @Param("name") name: String?,
-        @Param("parentId") parentId: Long?,
-        @Param("sortNum") sortNum: Short?
+        @Param("parentId") parentId: Long?
     ): Int
     /**
      * 插入目录（带权限和数据验证）
@@ -54,4 +53,30 @@ interface DirectoryMapper : BaseMapper<DirectoryEntity> {
         @Param("name") name: String,
         @Param("postId") postId: Long?
     ): Int
+
+    /**
+     * 获取目录（带权限验证）
+     * 验证知识库所有权，并获取指定目录
+     * @param id 目录ID
+     * @param kbId 知识库ID
+     * @param userId 用户ID
+     * @return 目录实体（验证失败返回null）
+     */
+    fun selectDirectoryWithPermissionCheck(
+        @Param("id") id: Long,
+        @Param("kbId") kbId: Long,
+        @Param("userId") userId: Long
+    ): DirectoryEntity?
+
+    /**
+     * 获取同级目录列表
+     * 查询指定知识库下，指定父目录的所有子目录
+     * @param kbId 知识库ID
+     * @param parentId 父目录ID（null表示根目录）
+     * @return 同级目录列表（按sortNum排序）
+     */
+    fun selectSiblingDirectories(
+        @Param("kbId") kbId: Long,
+        @Param("parentId") parentId: Long?
+    ): List<DirectoryEntity>
 }

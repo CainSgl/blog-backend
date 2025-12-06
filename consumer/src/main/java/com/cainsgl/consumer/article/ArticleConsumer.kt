@@ -9,36 +9,30 @@ import org.springframework.stereotype.Component
 
 @Component
 @RocketMQMessageListener(
-    endpoints = "rocketmq-nameserver:9876",
+    endpoints = "rocketmq-proxy:8081",
     consumerGroup = "article-add-consumer",
     topic = "article",
-    tag = "add"
-
+    tag = "post"
 )
 class ArticleAddConsumer : RocketMQListener
 {
     private val log = LoggerFactory.getLogger(ArticleAddConsumer::class.java)
 
+
     override fun consume(messageView: MessageView): ConsumeResult
     {
-        return try
-        {
-            val articleId = String(messageView.body.array())
-            log.info("收到文章新增消息，文章ID: {}", articleId)
-            // TODO: 处理文章新增逻辑，例如同步到ES
-            ConsumeResult.SUCCESS
-        } catch (e: Exception)
-        {
-            log.error("处理文章新增消息失败", e)
-            ConsumeResult.FAILURE
-        }
+
+
+
+        return   ConsumeResult.FAILURE
+         //   val articleId = String(messageView.body.array())
     }
 }
 
 
 @Component
 @RocketMQMessageListener(
-    endpoints = "rocketmq-nameserver:9876",
+    endpoints = "rocketmq-proxy:8081",
     consumerGroup = "article-update-consumer",
     topic = "article",
     tag = "update"
@@ -49,25 +43,14 @@ class ArticleUpdateConsumer : RocketMQListener
 
     override fun consume(messageView: MessageView): ConsumeResult
     {
-        return try
-        {
-            val articleId = String(messageView.body.array())
-            log.info("收到文章更新消息，文章ID: {}", articleId)
-
-            // TODO: 处理文章更新逻辑，例如更新ES索引
-
-            ConsumeResult.SUCCESS
-        } catch (e: Exception)
-        {
-            log.error("处理文章更新消息失败", e)
-            ConsumeResult.FAILURE
-        }
+        println("hi,mq")
+        return ConsumeResult.SUCCESS
     }
 }
 
 @Component
 @RocketMQMessageListener(
-    endpoints = "rocketmq-nameserver:9876",
+    endpoints = "rocketmq-proxy:8081",
     consumerGroup = "article-delete-consumer",
     topic = "article",
     tag = "delete"
@@ -77,18 +60,6 @@ class ArticleDeleteConsumer : RocketMQListener
     private val log = LoggerFactory.getLogger(ArticleDeleteConsumer::class.java)
     override fun consume(messageView: MessageView): ConsumeResult
     {
-        return try
-        {
-            val articleId = String(messageView.body.array())
-            log.info("收到文章删除消息，文章ID: {}", articleId)
-
-            // TODO: 处理文章删除逻辑，例如删除ES索引
-
-            ConsumeResult.SUCCESS
-        } catch (e: Exception)
-        {
-            log.error("处理文章删除消息失败", e)
-            ConsumeResult.FAILURE
-        }
+        return ConsumeResult.SUCCESS
     }
 }

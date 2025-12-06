@@ -17,3 +17,7 @@ grpc:
       negotiationType: PLAINTEXT
       enableKeepAlive: true
       keepAliveWithoutCalls: true
+rocketmq:
+  producer:
+    endpoints: rocketmq-proxy:8081
+    ssl-enabled: false
