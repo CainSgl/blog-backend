@@ -10,14 +10,21 @@ spring:
 logstash:
   host: logstash-logstash
   port: 5044
-grpc:
-  client:
-    TestService:
-      address: 'static://test:9092'
-      negotiationType: PLAINTEXT
-      enableKeepAlive: true
-      keepAliveWithoutCalls: true
 rocketmq:
   producer:
     endpoints: rocketmq-proxy:8081
     ssl-enabled: false
+
+
+grpc:
+  client:
+    TestService:
+      address: 'static://test-svc:9092'
+      negotiationType: PLAINTEXT
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+    AiService:
+      address: 'static://ai-svc:9092'
+      negotiationType: PLAINTEXT
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true

@@ -29,6 +29,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>com.cainsgl</groupId>
+            <artifactId>api-article</artifactId>
+            <version>1.0</version>
+        </dependency>
         <!-- Elasticsearch集成 -->
         <dependency>
             <groupId>org.springframework.data</groupId>

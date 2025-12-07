@@ -1,0 +1,16 @@
+syntax = "proto3";
+package com.cainsgl.grpc;
+option java_package = "com.cainsgl.grpc.user";
+option java_outer_classname = "UserServiceProto";
+option java_multiple_files = true;
+
+// TODO: 根据业务需求定义 message 和 service
+// message UserRequest {
+//   string userId = 1;
+// }
+// message UserResponse {
+//   string message = 1;
+// }
+// service UserService {
+//   rpc getUser (UserRequest) returns (UserResponse);
+// }

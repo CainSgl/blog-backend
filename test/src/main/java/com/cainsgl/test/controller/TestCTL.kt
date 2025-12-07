@@ -1,7 +1,8 @@
 package com.cainsgl.test.controller
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient
-import com.cainsgl.common.service.test.TestService
+import com.cainsgl.test.service.TestServiceImpl
+
 import jakarta.annotation.Resource
 import org.slf4j.LoggerFactory
 import org.springframework.data.redis.core.RedisTemplate
@@ -24,7 +25,7 @@ class TestCTL
     private lateinit var redisTemplate: RedisTemplate<String, String>
 
     @Resource
-    private lateinit var testService: TestService
+    private lateinit var testService: TestServiceImpl
 
     @GetMapping("/es")
     fun testEsIndexExists(): Map<String, Any>

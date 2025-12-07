@@ -2,9 +2,9 @@ package com.cainsgl.article.service
 
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
-import com.cainsgl.common.entity.article.PostArchiveEntity
-import com.cainsgl.common.service.article.post.archive.PostArchiveService
+import com.cainsgl.api.article.post.archive.PostArchiveService
 import com.cainsgl.article.repository.PostArchiveMapper
+import com.cainsgl.common.entity.article.PostArchiveEntity
 import org.springframework.stereotype.Service
 
 @Service

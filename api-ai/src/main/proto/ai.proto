@@ -1,0 +1,26 @@
+syntax = "proto3";
+package com.cainsgl.grpc;
+option java_package = "com.cainsgl.grpc.ai";
+option java_outer_classname = "AiServiceProto";
+option java_multiple_files = true;
+
+message EmbeddingRequest {
+  string text = 1;
+}
+
+message EmbeddingResponse {
+  repeated float embedding = 1;
+}
+
+message BatchEmbeddingRequest {
+  repeated string texts = 1;
+}
+
+message BatchEmbeddingResponse {
+  repeated EmbeddingResponse embeddings = 1;
+}
+
+service AiService {
+  rpc getEmbedding (EmbeddingRequest) returns (EmbeddingResponse);
+  rpc getBatchEmbedding (BatchEmbeddingRequest) returns (BatchEmbeddingResponse);
+}

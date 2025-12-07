@@ -3,11 +3,12 @@ package com.cainsgl.article.service
 import com.baomidou.mybatisplus.core.toolkit.IdWorker
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
+import com.cainsgl.api.article.directory.DirectoryService
 import com.cainsgl.article.dto.DirectoryTreeDTO
 import com.cainsgl.article.repository.DirectoryMapper
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.DirectoryEntity
-import com.cainsgl.common.service.article.directory.DirectoryService
+
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional

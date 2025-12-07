@@ -5,8 +5,8 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
+import com.cainsgl.api.user.UserService
 import com.cainsgl.common.entity.user.UserEntity
-import com.cainsgl.common.service.user.UserService
 import com.cainsgl.common.util.UserUtils
 import com.cainsgl.user.repository.UserMapper
 import org.springframework.stereotype.Service
