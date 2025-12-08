@@ -4,13 +4,3 @@ option java_package = "com.cainsgl.grpc.article";
 option java_outer_classname = "ArticleServiceProto";
 option java_multiple_files = true;
 
-// TODO: 根据业务需求定义 message 和 service
-// message ArticleRequest {
-//   string articleId = 1;
-// }
-// message ArticleResponse {
-//   string message = 1;
-// }
-// service ArticleService {
-//   rpc getArticle (ArticleRequest) returns (ArticleResponse);
-// }

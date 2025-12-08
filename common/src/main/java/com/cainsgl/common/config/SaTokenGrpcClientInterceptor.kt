@@ -3,12 +3,12 @@ package com.cainsgl.common.config
 import cn.dev33.satoken.stp.StpUtil
 import io.grpc.*
 import org.slf4j.LoggerFactory
-import org.springframework.stereotype.Component
 
 /**
  * gRPC 客户端拦截器：全局添加 SaToken 到请求头
  */
-@Component
+@Deprecated("该类已经被废弃，微服务调用目前不需要token和用服检查，目前是最高信任")
+//@Component
 class SaTokenGrpcClientInterceptor : ClientInterceptor
 {
     private val log = LoggerFactory.getLogger(SaTokenGrpcClientInterceptor::class.java)

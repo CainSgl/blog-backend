@@ -6,12 +6,14 @@ import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.cainsgl.article.dto.request.post.CreatePostRequest
+import com.cainsgl.article.dto.request.post.PubPostRequest
 import com.cainsgl.article.dto.request.post.UpdatePostRequest
 import com.cainsgl.article.service.DirectoryServiceImpl
 import com.cainsgl.article.service.PostServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.PostEntity
+import com.cainsgl.common.exception.BusinessException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
 import org.apache.rocketmq.client.core.RocketMQClientTemplate
@@ -104,27 +106,15 @@ class PostController
     fun updatePost(@RequestBody request: UpdatePostRequest): Any
     {
         requireNotNull(request.id) { return ResultCode.MISSING_PARAM }
-        val articleStatus: ArticleStatus? = if (request.status.isNullOrEmpty())
-        {
-            null
-        } else
-        {
-            ArticleStatus.fromDbValue(request.status)
-        }
         val userId = StpUtil.getLoginIdAsLong()
         val updateWrapper = UpdateWrapper<PostEntity>()
         updateWrapper.eq("id", request.id)
         updateWrapper.eq("user_id", userId)
-        if (articleStatus != null)
-        {
-            updateWrapper.apply("status <> {0}::article_status", articleStatus.dbValue)
-        }
         val postEntity = PostEntity(
             id = request.id,
             title = request.title,
             content = request.content,
             summary = request.summary,
-            status = articleStatus,
             top = request.isTop
         )
         if (!postService.update(postEntity, updateWrapper))
@@ -132,7 +122,30 @@ class PostController
             return ResultCode.PARAM_INVALID
         }
         //发送消息，这里不需要回调，也不需要保证可靠，不是强一致的需求
-        rocketMQClientTemplate.asyncSendNormalMessage("article:update", request.id, null)
+        rocketMQClientTemplate.asyncSendNormalMessage("article:content", request.id, null)
+        return ResultCode.SUCCESS
+    }
+    @SaCheckRole("user")
+    @PutMapping("/publish")
+    fun updatePost(@RequestBody request: PubPostRequest): Any
+    {
+        requireNotNull(request.id) { return ResultCode.MISSING_PARAM }
+        val userId = StpUtil.getLoginIdAsLong()
+        val updateWrapper = UpdateWrapper<PostEntity>()
+        updateWrapper.eq("id", request.id)
+        updateWrapper.eq("user_id", userId)
+        updateWrapper.ne("status",ArticleStatus.DRAFT)
+        val postEntity = PostEntity(
+            id = request.id,
+            status = ArticleStatus.PUBLISHED
+        )
+        if (!postService.update(postEntity, updateWrapper))
+        {
+            throw BusinessException("数据库无法更新该数据，可能是资源不存在或者传参问题")
+        }
+        //强一致需求，必须入库本地消息表，如果失败的话
+        //使用grpc传入
+        rocketMQClientTemplate.asyncSendNormalMessage("article:publish", request.id, null)
         return ResultCode.SUCCESS
     }
 

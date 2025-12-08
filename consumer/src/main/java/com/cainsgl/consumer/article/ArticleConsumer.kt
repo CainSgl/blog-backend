@@ -1,5 +1,7 @@
 package com.cainsgl.consumer.article
 
+import com.cainsgl.api.article.post.PostService
+import jakarta.annotation.Resource
 import org.apache.rocketmq.client.annotation.RocketMQMessageListener
 import org.apache.rocketmq.client.apis.consumer.ConsumeResult
 import org.apache.rocketmq.client.apis.message.MessageView
@@ -12,12 +14,13 @@ import org.springframework.stereotype.Component
     endpoints = "rocketmq-proxy:8081",
     consumerGroup = "article-add-consumer",
     topic = "article",
-    tag = "post"
+    tag = "publish"
 )
-class ArticleAddConsumer : RocketMQListener
+class ArticlePublishConsumer : RocketMQListener
 {
-    private val log = LoggerFactory.getLogger(ArticleAddConsumer::class.java)
-
+    private val log = LoggerFactory.getLogger(this::class.java)
+    @Resource
+    lateinit var postService: PostService
 
     override fun consume(messageView: MessageView): ConsumeResult
     {
@@ -35,11 +38,11 @@ class ArticleAddConsumer : RocketMQListener
     endpoints = "rocketmq-proxy:8081",
     consumerGroup = "article-update-consumer",
     topic = "article",
-    tag = "update"
+    tag = "content"
 )
-class ArticleUpdateConsumer : RocketMQListener
+class ArticleContentConsumer : RocketMQListener
 {
-    private val log = LoggerFactory.getLogger(ArticleUpdateConsumer::class.java)
+    private val log = LoggerFactory.getLogger(this::class.java)
 
     override fun consume(messageView: MessageView): ConsumeResult
     {
@@ -57,7 +60,7 @@ class ArticleUpdateConsumer : RocketMQListener
 )
 class ArticleDeleteConsumer : RocketMQListener
 {
-    private val log = LoggerFactory.getLogger(ArticleDeleteConsumer::class.java)
+    private val log = LoggerFactory.getLogger(this::class.java)
     override fun consume(messageView: MessageView): ConsumeResult
     {
         return ConsumeResult.SUCCESS
