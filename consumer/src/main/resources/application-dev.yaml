@@ -1,14 +1,5 @@
 spring:
   application:
     name: consumer-dev
-  data:
-    redis:
-      host: 129.226.208.121
-      port: 30229
-logstash:
-  host: 43.163.122.45
-  port: 30646
-rocketmq:
-  producer:
-    endpoints: rocketmq-proxy:8081
-    ssl-enabled: false
+  main:
+    web-application-type: none

@@ -1,3 +1,21 @@
 spring:
   application:
     name: aggregate-prod
+  ai:
+    chat:
+      client:
+        enabled: false
+    openai:
+      base-url: https://ark.cn-beijing.volces.com/api/v3
+      api-key: dad54c4a-782d-4631-96d0-97fc10cc62e6
+      chat:
+        options:
+          model:
+          max-tokens: 60000
+        completions-path: /
+      embedding:
+        api-key: dad54c4a-782d-4631-96d0-97fc10cc62e6
+        base-url: https://ark.cn-beijing.volces.com/api/v3
+        options:
+          model: doubao-embedding-large-text-240915
+        embeddings-path: /embeddings

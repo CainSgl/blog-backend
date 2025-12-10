@@ -1,19 +1,21 @@
 spring:
   datasource:
-    url: jdbc:postgresql://129.226.208.121:32701/blog?useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:postgresql://my-postgres-postgresql:5432/blog?useSSL=false&serverTimezone=Asia/Shanghai
   data:
     redis:
-      host: 129.226.208.121
-      port: 30229
+      host: redis-service
+      port: 6379
   elasticsearch:
-    uris: https://43.163.122.45:30589
+    uris: https://elasticsearch-master:9200
 logstash:
-  host: 43.163.122.45
-  port: 30646
+  host: logstash-logstash
+  port: 5044
+rocketmq:
+  push-consumer:
+    endpoints: rocketmq-proxy:8080
+  producer:
+    endpoints: rocketmq-proxy:8080
+    ssl-enabled: false
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-rocketmq:
-  producer:
-    endpoints: rocketmq-proxy:8081
-    ssl-enabled: false

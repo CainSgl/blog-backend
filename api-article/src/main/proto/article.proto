@@ -4,3 +4,68 @@ option java_package = "com.cainsgl.grpc.article";
 option java_outer_classname = "ArticleServiceProto";
 option java_multiple_files = true;
 
+enum ArticleStatus {
+    ARTICLE_STATUS_UNSPECIFIED = 0;
+    ARTICLE_STATUS_DRAFT = 1;
+    ARTICLE_STATUS_PENDING_REVIEW = 2;
+    ARTICLE_STATUS_PUBLISHED = 3;
+    ARTICLE_STATUS_OFF_SHELF = 4;
+}
+
+message PostEntity {
+    int64 id = 1;
+    string title = 2;
+    string content = 3;
+    string summary = 4;
+    ArticleStatus status = 5;
+    bool top = 6;
+    bool recommend = 7;
+    int64 view_count = 8;
+    int64 like_count = 9;
+    int64 comment_count = 10;
+    repeated string tags = 11;
+    int64 user_id = 12;
+    int64 category_id = 13;
+    string seo_keywords = 14;
+    string seo_description = 15;
+    string created_at = 16;
+    string updated_at = 17;
+    string published_at = 18;
+    int64 kb_id = 19;
+}
+
+message GetPostByIdRequest {
+    int64 id = 1;
+}
+
+message GetPostByIdResponse {
+    bool exists = 1;
+    PostEntity post = 2;
+}
+
+service PostService {
+    rpc getById (GetPostByIdRequest) returns (GetPostByIdResponse);
+}
+
+message ReloadVectorRequest {
+    int64 post_id = 1;
+    optional string origin_content = 2;
+}
+
+message ReloadVectorResponse {
+    bool success = 1;
+}
+
+message RemoveVectorRequest {
+    int64 post_id = 1;
+}
+
+message RemoveVectorResponse {
+    bool success = 1;
+}
+
+service PostChunkVectorService {
+    rpc reloadVector (ReloadVectorRequest) returns (ReloadVectorResponse);
+    rpc removeVector (RemoveVectorRequest) returns (RemoveVectorResponse);
+}
+

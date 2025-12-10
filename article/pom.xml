@@ -54,6 +54,12 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- flexmark-java: GFM Markdown解析 -->
+        <dependency>
+            <groupId>com.vladsch.flexmark</groupId>
+            <artifactId>flexmark-all</artifactId>
+            <version>0.64.8</version>
+        </dependency>
 
     </dependencies>
     <properties>

@@ -6,9 +6,8 @@ import cn.dev33.satoken.exception.NotRoleException
 import cn.dev33.satoken.exception.SaTokenException
 import com.cainsgl.common.dto.response.Result
 import com.cainsgl.common.dto.response.ResultCode
-import com.cainsgl.common.exception.BusinessException
 import com.cainsgl.common.exception.BSystemException
-import com.cainsgl.common.util.TraceIdUtils
+import com.cainsgl.common.exception.BusinessException
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -28,6 +27,7 @@ class GlobalExceptionHandler
     @ExceptionHandler(BusinessException::class)
     fun handleBusinessException(e: BusinessException): Result
     {
+        log.warn("业务异常 {}", e.message)
         return Result.error(e)
     }
 

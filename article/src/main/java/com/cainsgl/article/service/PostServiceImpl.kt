@@ -19,4 +19,9 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
         return baseMapper.selectById(id)
     }
 
+    override fun getById(id: Long): PostEntity?
+    {
+        return baseMapper.selectById(id)
+    }
+
 }

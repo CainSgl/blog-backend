@@ -32,6 +32,7 @@ mybatis-plus:
   type-handlers-package: com.cainsgl.common.handler
   configuration:
     map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
   global-config:
     db-config:
       id-type: ASSIGN_ID
@@ -55,6 +56,8 @@ management:
       enabled: true        # 启用就绪状态
 logging:
   config: classpath:log4j-spring.xml
+  level:
+    com.cainsgl: DEBUG
 
 
 server:

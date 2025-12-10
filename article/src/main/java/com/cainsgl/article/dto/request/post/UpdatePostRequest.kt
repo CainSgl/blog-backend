@@ -5,6 +5,5 @@ data class UpdatePostRequest(
     val title: String? =null,
     val content: String? = null,
     val summary: String? = null,
-   // val status: String?=null,
     val isTop: Boolean ?=null,
 )

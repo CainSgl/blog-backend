@@ -11,20 +11,40 @@ logstash:
   host: logstash-logstash
   port: 5044
 rocketmq:
+  push-consumer:
+    endpoints: rocketmq-proxy:8080
   producer:
-    endpoints: rocketmq-proxy:8081
+    endpoints: rocketmq-proxy:8080
     ssl-enabled: false
-
-
 grpc:
   client:
-    TestService:
-      address: 'static://test-svc:9092'
+    AiService:
+      address: 'static://ai-svc:9092'
       negotiationType: PLAINTEXT
       enableKeepAlive: true
       keepAliveWithoutCalls: true
-    AiService:
-      address: 'static://ai-svc:9092'
+    PostChunkVectorService:
+      address: 'static://post-chunk-vector-svc:9092'
+      negotiationType: PLAINTEXT
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+    UserService:
+      address: 'static://user-svc:9092'
+      negotiationType: PLAINTEXT
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+    DirectoryService:
+      address: 'static://directory-svc:9092'
+      negotiationType: PLAINTEXT
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+    KnowledgeBaseService:
+      address: 'static://knowledge-base-svc:9092'
+      negotiationType: PLAINTEXT
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+    PostCloneService:
+      address: 'static://localhost:50051'
       negotiationType: PLAINTEXT
       enableKeepAlive: true
       keepAliveWithoutCalls: true

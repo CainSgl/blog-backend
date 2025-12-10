@@ -1,9 +1,9 @@
 package com.cainsgl.common.dto.response
 
+import com.cainsgl.common.dto.response.ResultCode.*
 import com.cainsgl.common.exception.BSystemException
 import com.cainsgl.common.exception.BusinessException
 import com.cainsgl.common.util.TraceIdUtils
-import com.cainsgl.common.dto.response.ResultCode.*
 
 data class Result(
     var code: Int = 0,
@@ -37,6 +37,10 @@ data class Result(
         @JvmStatic
         fun error(exception: BusinessException): Result
         {
+            if(exception.resultCode!=null)
+            {
+                return Result(exception.resultCode!!.code, exception.message, null, null)
+            }
             return Result(BUSINESS_ERROR.code, exception.message, null, null)
         }
 

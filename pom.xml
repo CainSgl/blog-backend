@@ -25,15 +25,16 @@
         <module>api-user</module>
         <module>api-article</module>
         <module>api-ai</module>
+        <module>api-go</module>
         <!-- 业务模块 -->
         <module>user</module>
         <module>test</module>
         <module>article</module>
         <module>ai</module>
         <module>consumer</module>
+        <module>scheduler</module>
         <!-- 聚合模块 -->
         <module>aggregate</module>
-        <module>scheduler</module>
     </modules>
 
     <properties>

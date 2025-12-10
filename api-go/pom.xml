@@ -7,63 +7,52 @@
         <groupId>com.cainsgl</groupId>
         <artifactId>blog-backend</artifactId>
         <version>1.0</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>aggregate</artifactId>
-    <name>单体模块</name>
-    <description>聚合服务模块</description>
-    <properties>
-        <maven.compiler.source>23</maven.compiler.source>
-        <maven.compiler.target>23</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
+    <artifactId>api-go</artifactId>
+    <name>GO-SVC-API</name>
+    <description>与go的微服务通信的接口</description>
     <dependencies>
         <dependency>
             <groupId>com.cainsgl</groupId>
-            <artifactId>user</artifactId>
+            <artifactId>common</artifactId>
             <version>1.0</version>
         </dependency>
+        <!-- gRPC -->
         <dependency>
-            <groupId>com.cainsgl</groupId>
-            <artifactId>article</artifactId>
-            <version>1.0</version>
+            <groupId>net.devh</groupId>
+            <artifactId>grpc-spring-boot-starter</artifactId>
+            <version>${grpc-starter.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.cainsgl</groupId>
-            <artifactId>ai</artifactId>
-            <version>1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.cainsgl</groupId>
-            <artifactId>consumer</artifactId>
-            <version>1.0</version>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>1.2</version>
         </dependency>
 
     </dependencies>
+
     <build>
         <plugins>
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <skip>false</skip>
-                    <mainClass>com.cainsgl.aggregate.Application</mainClass>
-                </configuration>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.4.0</version>
                 <executions>
                     <execution>
+                        <id>add-source</id>
+                        <phase>generate-sources</phase>
                         <goals>
-                            <goal>repackage</goal>
+                            <goal>add-source</goal>
                         </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.build.directory}/generated-sources/protobuf/java</source>
+                                <source>${project.build.directory}/generated-sources/protobuf/grpc-java</source>
+                            </sources>
+                        </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <configuration>
-                    <skip>false</skip>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
@@ -80,6 +69,8 @@
                             <sourceDirs>
                                 <source>src/main/java</source>
                                 <source>target/generated-sources/annotations</source>
+                                <source>target/generated-sources/protobuf/grpc-java</source>
+                                <source>target/generated-sources/protobuf/java</source>
                             </sourceDirs>
                         </configuration>
                     </execution>
@@ -94,6 +85,20 @@
                 <configuration>
                     <jvmTarget>1.8</jvmTarget>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-compile</id>
+                        <phase>none</phase>
+                    </execution>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

@@ -26,6 +26,8 @@ class MyBatisPlusConfig
         {
             override fun insertFill(metaObject: MetaObject)
             {
+                this.strictInsertFill(metaObject, "createdAt", OffsetDateTime::class.java, OffsetDateTime.now())
+                this.strictInsertFill(metaObject, "updatedAt", OffsetDateTime::class.java, OffsetDateTime.now())
             }
             override fun updateFill(metaObject: MetaObject)
             {

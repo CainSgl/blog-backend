@@ -13,8 +13,6 @@
     <name>消费者(consumer)</name>
     <description>消费者</description>
 
-
-
     <dependencies>
         <!-- Spring Boot核心 -->
         <dependency>
@@ -27,11 +25,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- log4j2 -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-log4j2</artifactId>
-        </dependency>
+
         <!-- Redis -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -62,11 +56,15 @@
         </dependency>
         <dependency>
             <groupId>com.cainsgl</groupId>
+            <artifactId>api-go</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.cainsgl</groupId>
             <artifactId>api-article</artifactId>
             <version>1.0</version>
         </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>

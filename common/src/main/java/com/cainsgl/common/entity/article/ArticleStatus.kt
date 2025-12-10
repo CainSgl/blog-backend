@@ -7,17 +7,29 @@ enum class ArticleStatus(
     @EnumValue // MyBatis-Plus 映射数据库枚举值
     val dbValue: String,
     @JsonValue // 前端展示描述
-    val desc: String
+    val desc: String,
+    val code: Int,
 )
 {
-    DRAFT("draft", "草稿"),
-    PENDING_REVIEW("pending_review", "待审核"),
-    PUBLISHED("published", "已发布"),
-    OFF_SHELF("off_shelf", "已下架");
+    UNSPECIFIED("UNSPECIFIED", "未指定",0),
+    DRAFT("draft", "草稿",1),
+    PENDING_REVIEW("pending_review", "待审核",2),
+    PUBLISHED("published", "已发布",3),
+    OFF_SHELF("off_shelf", "已下架",4);
+//    enum ArticleStatus {
+//        ARTICLE_STATUS_UNSPECIFIED = 0;
+//        ARTICLE_STATUS_DRAFT = 1;
+//        ARTICLE_STATUS_PENDING_REVIEW = 2;
+//        ARTICLE_STATUS_PUBLISHED = 3;
+//        ARTICLE_STATUS_OFF_SHELF = 4;
+//    }
 
     companion object
     {
+        private val codeToEnumMap: Map<Int, ArticleStatus> = entries.associateBy { it.code }
         fun fromDbValue(dbValue: String): ArticleStatus=
             entries.firstOrNull { it.dbValue == dbValue } ?: DRAFT
+        fun fromNumber(number: Int): ArticleStatus=
+            codeToEnumMap[number] ?: UNSPECIFIED
     }
 }

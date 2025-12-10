@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package post_clone;
+
+option go_package = "blog-go-svc/proto/post-clone;post_clone";
+option java_package = "com.cainsgl.grpc.go.postClone";
+option java_outer_classname = "PostCloneProto";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+// 文章状态枚举
+enum ArticleStatus {
+  ARTICLE_STATUS_UNSPECIFIED = 0;
+  ARTICLE_STATUS_DRAFT = 1;
+  ARTICLE_STATUS_PENDING_REVIEW = 2;
+  ARTICLE_STATUS_PUBLISHED = 3;
+  ARTICLE_STATUS_OFF_SHELF = 4;
+}
+
+// 文章基础信息（查询用）
+message PostBasic {
+  int64 id = 1;
+  string title = 2;
+  string content = 3;
+  ArticleStatus status = 4;
+}
+
+// 通过ID查询请求
+message GetPostByIdRequest {
+  int64 id = 1;
+}
+
+// 通过ID查询响应
+message GetPostByIdResponse {
+  PostBasic post = 1;
+}
+
+// Upsert请求（存在则更新，不存在则新增）
+message UpsertPostRequest {
+  PostBasic post = 1;
+}
+
+// Upsert响应
+message UpsertPostResponse {
+  PostBasic post = 1;
+}
+
+// 通过ID删除请求
+message DeletePostByIdRequest {
+  int64 id = 1;
+}
+
+// 通过ID删除响应
+message DeletePostByIdResponse {
+  bool success = 1;
+}
+
+// PostClone服务
+service PostCloneService {
+  // 通过ID查询文章
+  rpc GetPostById(GetPostByIdRequest) returns (GetPostByIdResponse);
+
+  // 新增或更新文章（存在则更新，不存在则新增）
+  rpc UpsertPost(UpsertPostRequest) returns (UpsertPostResponse);
+
+  // 通过ID删除文章
+  rpc DeletePostById(DeletePostByIdRequest) returns (DeletePostByIdResponse);
+}

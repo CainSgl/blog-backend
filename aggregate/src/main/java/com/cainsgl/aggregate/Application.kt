@@ -21,7 +21,9 @@ import org.springframework.context.annotation.FilterType
                 com.cainsgl.article.Application::class,
                 com.cainsgl.article.Application.AppNamePrinter::class,
                 com.cainsgl.consumer.Application::class,
-                com.cainsgl.consumer.Application.AppNamePrinter::class
+                com.cainsgl.consumer.Application.AppNamePrinter::class,
+                com.cainsgl.ai.Application::class,
+                com.cainsgl.ai.Application.AppNamePrinter::class
             ]
         )
     ]

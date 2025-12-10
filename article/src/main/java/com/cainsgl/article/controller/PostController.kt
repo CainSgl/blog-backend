@@ -4,6 +4,7 @@ package com.cainsgl.article.controller
 import cn.dev33.satoken.annotation.SaCheckPermission
 import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.stp.StpUtil
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.cainsgl.article.dto.request.post.CreatePostRequest
 import com.cainsgl.article.dto.request.post.PubPostRequest
@@ -12,6 +13,7 @@ import com.cainsgl.article.service.DirectoryServiceImpl
 import com.cainsgl.article.service.PostServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.ArticleStatus
+import com.cainsgl.common.entity.article.DirectoryEntity
 import com.cainsgl.common.entity.article.PostEntity
 import com.cainsgl.common.exception.BusinessException
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -122,9 +124,11 @@ class PostController
             return ResultCode.PARAM_INVALID
         }
         //发送消息，这里不需要回调，也不需要保证可靠，不是强一致的需求
-        rocketMQClientTemplate.asyncSendNormalMessage("article:content", request.id, null)
+        if (request.content != null)
+            rocketMQClientTemplate.asyncSendNormalMessage("article:content", request.id, null)
         return ResultCode.SUCCESS
     }
+
     @SaCheckRole("user")
     @PutMapping("/publish")
     fun updatePost(@RequestBody request: PubPostRequest): Any
@@ -134,7 +138,7 @@ class PostController
         val updateWrapper = UpdateWrapper<PostEntity>()
         updateWrapper.eq("id", request.id)
         updateWrapper.eq("user_id", userId)
-        updateWrapper.ne("status",ArticleStatus.DRAFT)
+        updateWrapper.eq("status", ArticleStatus.DRAFT)
         val postEntity = PostEntity(
             id = request.id,
             status = ArticleStatus.PUBLISHED
@@ -149,4 +153,26 @@ class PostController
         return ResultCode.SUCCESS
     }
 
+
+    @SaCheckRole("user")
+    @SaCheckPermission("article.delete")
+    @DeleteMapping
+    fun deletePost(@RequestParam id: Long):Any
+    {
+        //还需要删除目录
+        val userId = StpUtil.getLoginIdAsLong()
+
+        val wrapper= QueryWrapper<PostEntity>()
+        wrapper.eq("id",id)
+        wrapper.eq("user_id", userId)
+        if (!postService.remove(wrapper))
+        {
+            return ResultCode.RESOURCE_NOT_FOUND
+        }
+        val wrapper2= QueryWrapper<DirectoryEntity>()
+        wrapper2.eq("post_id",id)
+        directoryService.remove(wrapper2)
+        rocketMQClientTemplate.asyncSendNormalMessage("article:delete", id, null)
+        return ResultCode.SUCCESS
+    }
 }
