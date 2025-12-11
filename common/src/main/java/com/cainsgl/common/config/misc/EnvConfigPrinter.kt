@@ -1,16 +1,19 @@
 package com.cainsgl.common.config.misc
 
-import org.springframework.boot.context.event.ApplicationStartedEvent
-import org.springframework.context.annotation.Configuration
-import org.springframework.context.event.EventListener
+import org.springframework.boot.context.event.ApplicationPreparedEvent
+import org.springframework.context.ApplicationListener
 import org.springframework.core.env.ConfigurableEnvironment
 
-@Configuration
-class EnvConfigPrinter(
-    private val environment: ConfigurableEnvironment
-) {
-    @EventListener(ApplicationStartedEvent::class)
-    fun printEnvConfig() {
+class EnvConfigPrinter : ApplicationListener<ApplicationPreparedEvent>
+{
+    override fun onApplicationEvent(event: ApplicationPreparedEvent)
+    {
+        val environment = event.applicationContext.environment as ConfigurableEnvironment
+        printEnvConfig(environment)
+    }
+
+    private fun printEnvConfig(environment: ConfigurableEnvironment)
+    {
         val configKeys = listOf(
             // 数据库配置
             "db.url", "db.username", "db.password", "db.pool.min-idle", "db.pool.max-size",
@@ -39,9 +42,11 @@ class EnvConfigPrinter(
         sb.append("╠══════════════════════════════════════════════════════════════════════════════╣\n")
 
         var currentSection = ""
-        for (key in configKeys) {
+        for (key in configKeys)
+        {
             val section = key.substringBefore(".")
-            if (section != currentSection) {
+            if (section != currentSection)
+            {
                 currentSection = section
                 sb.append("╟──────────────────────────────────────────────────────────────────────────────╢\n")
                 sb.append("║ [$currentSection]\n")
@@ -55,12 +60,17 @@ class EnvConfigPrinter(
         println(sb)
     }
 
-    private fun maskSensitiveValue(key: String, value: String): String {
+    private fun maskSensitiveValue(key: String, value: String): String
+    {
         val sensitiveKeys = listOf("password", "api-key", "api_key", "secret")
-        if (sensitiveKeys.any { key.contains(it, ignoreCase = true) }) {
-            return if (value.length > 4) {
+
+        if (sensitiveKeys.any { key.contains(it, ignoreCase = true) })
+        {
+            return if (value.length > 4)
+            {
                 "${value.take(2)}****${value.takeLast(2)}"
-            } else {
+            } else
+            {
                 "****"
             }
         }
