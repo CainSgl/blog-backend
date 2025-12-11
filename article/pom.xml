@@ -18,6 +18,11 @@
             <artifactId>common</artifactId>
             <version>1.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.cainsgl</groupId>
+            <artifactId>api-user</artifactId>
+            <version>1.0</version>
+        </dependency>
         <!-- Redis集成 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -6,10 +6,14 @@ import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
+import com.cainsgl.api.ai.AiService
+import com.cainsgl.api.user.extra.UserExtraInfoService
 import com.cainsgl.article.dto.request.post.CreatePostRequest
 import com.cainsgl.article.dto.request.post.PubPostRequest
+import com.cainsgl.article.dto.request.post.SearchPostRequest
 import com.cainsgl.article.dto.request.post.UpdatePostRequest
 import com.cainsgl.article.service.DirectoryServiceImpl
+import com.cainsgl.article.service.PostChunkVectorServiceImpl
 import com.cainsgl.article.service.PostServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.ArticleStatus
@@ -42,6 +46,14 @@ class PostController
     @Resource
     lateinit var transactionTemplate: TransactionTemplate
 
+    @Resource
+    lateinit var postChunkVectorService: PostChunkVectorServiceImpl
+
+    //来自其他模块的，只能通过Service来访问
+    @Resource
+    lateinit var userExtraInfoService:UserExtraInfoService
+    @Resource
+    lateinit var aiService:AiService
     /**
      * 根据ID获取文章
      */
@@ -97,7 +109,7 @@ class PostController
             }
             //发送消息
             rocketMQClientTemplate.asyncSendNormalMessage("article:post", postEntity.id, null)
-            return@execute ResultCode.SUCCESS
+            return@execute postEntity
         } ?: ResultCode.UNKNOWN_ERROR
 
     }
@@ -153,8 +165,6 @@ class PostController
         return ResultCode.SUCCESS
     }
 
-
-    @SaCheckRole("user")
     @SaCheckPermission("article.delete")
     @DeleteMapping
     fun deletePost(@RequestParam id: Long):Any
@@ -175,4 +185,31 @@ class PostController
         rocketMQClientTemplate.asyncSendNormalMessage("article:delete", id, null)
         return ResultCode.SUCCESS
     }
+
+    @SaCheckRole("user")
+    @PostMapping("/search")
+    fun searchPost(@RequestBody request: SearchPostRequest):Any
+    {
+        require(!request.query.isNullOrEmpty())
+        if (request.vectorOffset==null)
+        {
+            request.vectorOffset=1.1
+        }
+        //向量化，并且尝试加上用户的兴趣度偏向
+        var userOffsetVector:FloatArray?= null
+        try{
+             val userId= StpUtil.getLoginIdAsLong()
+            userOffsetVector= userExtraInfoService.getInterestVector(userId)
+            //从用户额外信息表里获取
+        }catch (e:Exception){
+            //没有，不管
+        }
+        var embedding = aiService.getEmbedding(request.query!!)
+        if(userOffsetVector!=null)
+        {
+            embedding += userOffsetVector
+        }
+        return postChunkVectorService.getPostsByVector(targetVector = embedding, request.vectorOffset!!)
+    }
+
 }

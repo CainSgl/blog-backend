@@ -10,5 +10,22 @@
         view_count, like_count, comment_count, tags, user_id, category_id, 
         seo_keywords, seo_description, created_at, updated_at, published_at
     </sql>
+    
+    <!-- 基础信息列片段（排除content等大字段） -->
+    <sql id="Basic_Column_List">
+        id, title, summary, status, is_top, is_recommend, 
+        view_count, like_count, comment_count, tags, user_id, 
+        created_at, updated_at, published_at, kb_id
+    </sql>
+    
+    <!-- 批量查询文章基础信息 -->
+    <select id="selectBasicInfoByIds" resultMap="PostResultMap">
+        SELECT <include refid="Basic_Column_List"/>
+        FROM posts
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
 
 </mapper>

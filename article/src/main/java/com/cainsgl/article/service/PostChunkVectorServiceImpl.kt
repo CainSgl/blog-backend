@@ -5,14 +5,19 @@ import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.api.ai.AiService
 import com.cainsgl.api.article.post.chunk.PostChunkVectorService
+import com.cainsgl.article.dto.ChunkScore
+import com.cainsgl.article.dto.PostChunkScoreResult
 import com.cainsgl.article.repository.PostChunkVectorMapper
 import com.cainsgl.article.util.GfmChunkUtils
 import com.cainsgl.common.entity.article.PostChunkVectorEntity
+import com.cainsgl.common.entity.article.PostEntity
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
 import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.stereotype.Service
 import org.springframework.transaction.support.TransactionTemplate
+import kotlin.math.ln
+
 private val logger = KotlinLogging.logger {}
 
 @Service
@@ -28,6 +33,7 @@ class PostChunkVectorServiceImpl : ServiceImpl<PostChunkVectorMapper, PostChunkV
 
     @Resource
     lateinit var transactionTemplate: TransactionTemplate
+
     /**
      * 获取向量信息
      * @param id
@@ -37,6 +43,7 @@ class PostChunkVectorServiceImpl : ServiceImpl<PostChunkVectorMapper, PostChunkV
     {
         return baseMapper.selectById(id)
     }
+
     override fun reloadVector(postId: Long, originContent: String?): Boolean
     {
         if (originContent == null)
@@ -63,7 +70,7 @@ class PostChunkVectorServiceImpl : ServiceImpl<PostChunkVectorMapper, PostChunkV
         for (chunk in chunks)
         {
             val hash = DigestUtils.sha256Hex(chunk)
-            if (existingMap.remove(hash)==null)
+            if (existingMap.remove(hash) == null)
             {
                 //说明现在的文档了多了这一块
                 addedChunks.add(chunk)
@@ -71,7 +78,7 @@ class PostChunkVectorServiceImpl : ServiceImpl<PostChunkVectorMapper, PostChunkV
         }
         //existingMap里面现在的值就是需要移除的了，因为现在切分后的块是没有里面的内容的
         val willRemove = existingMap.values.toList()
-        val willInsert=mutableListOf<PostChunkVectorEntity>()
+        val willInsert = mutableListOf<PostChunkVectorEntity>()
         //去向量化所有
         val embeddings = aiService.getEmbedding(addedChunks)
         embeddings.forEachIndexed { i, it ->
@@ -85,23 +92,25 @@ class PostChunkVectorServiceImpl : ServiceImpl<PostChunkVectorMapper, PostChunkV
         }
         logger.debug { "重新加载向量的文档${post.id}, 新增${addedChunks.size}个块，删除${willRemove.size}个块" }
         //开启事务
-        return transactionTemplate.execute { status->
-            if (willInsert.isNotEmpty()) {
-              saveBatch(willInsert)
+        return transactionTemplate.execute { status ->
+            if (willInsert.isNotEmpty())
+            {
+                saveBatch(willInsert)
             }
             if (willRemove.isNotEmpty())
             {
-               removeByIds(willRemove)
+                removeByIds(willRemove)
             }
             return@execute true
-        }?:false
+        } ?: false
     }
+
     fun loadVector(postId: Long): Boolean
     {
         val post = postService.getPost(postId) ?: return false
         val chunks: List<String> = GfmChunkUtils.chunk(post.content!!)
         val embeddings = aiService.getEmbedding(chunks)
-        val willInsert=mutableListOf<PostChunkVectorEntity>()
+        val willInsert = mutableListOf<PostChunkVectorEntity>()
         embeddings.forEachIndexed { i, it ->
             willInsert.add(
                 PostChunkVectorEntity(
@@ -122,5 +131,49 @@ class PostChunkVectorServiceImpl : ServiceImpl<PostChunkVectorMapper, PostChunkV
         val wrapper = QueryWrapper<PostChunkVectorEntity>().eq("post_id", postId)
         return remove(wrapper)
     }
+
+    /**
+     * 通过向量搜索获取相关文章（加权聚合算法）
+     * 聚合得分 = minDistance / (1 + ln(1 + hitCount))
+     * 命中chunk越多、距离越小，得分越低（越相似）
+     */
+    fun getPostsByVector(targetVector: FloatArray, startValue: Double, limit: Int = 10): List<PostChunkScoreResult>
+    {
+        // 多取一些记录，因为同一篇文章可能有多个块
+        val chunkResults = baseMapper.selectPostsByCosine(targetVector, startValue, limit * 5)
+        // 按 postId 分组
+        val grouped = chunkResults.groupBy { it.postId }
+
+        // 批量获取文章信息（排除大字段）
+        val postIds = grouped.keys.toList()
+        val postMapper = postService.baseMapper
+        val postInfoMap = if (postIds.isNotEmpty())
+        {
+            postMapper.selectBasicInfoByIds(postIds).associateBy { it.id }
+        } else
+        {
+            emptyMap()
+        }
+
+        return grouped.map { (postId, results) ->
+            val minDistance = results.minOf { it.distance }
+            val hitCount = results.size
+            // 加权聚合：距离越小越好，命中数越多越好
+            val aggregatedScore = minDistance / (1 + ln(1.0 + hitCount))
+
+            val chunks = results
+                .sortedBy { it.distance }
+                .map { ChunkScore(chunk = it.chunk ?: "", score = it.distance) }
+            val article = postInfoMap[postId] ?: PostEntity(title = "Fail：获取文章标题失败")
+            PostChunkScoreResult(
+                article = article,
+                aggregatedScore = aggregatedScore,
+                chunks = chunks
+            )
+        }
+            .sortedBy { it.aggregatedScore }
+            .take(limit)
+    }
+
 
 }

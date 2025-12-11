@@ -21,7 +21,8 @@ spring:
     driver-class-name: org.postgresql.Driver
     hikari:
       minimum-idle: 1
-      maximum-pool-size: 10
+      maximum-pool-size: 5
+      initialization-fail-timeout: 0
       connection-timeout: 3000
   data:
     redis:
@@ -67,11 +68,15 @@ server:
       acceptors: ${CPU_CORES:4}  # 默认4核,未注入时兜底
       selectors: ${CPU_CORES:4}
   port: 8080
+  shutdown: graceful  # 启用优雅关闭
+spring.lifecycle:
+  timeout-per-shutdown-phase: 10s  # 关闭超时时间
 grpc:
   server:
     port: 9092
     security:
       enabled: false
+    await-termination: 5s  # gRPC服务器等待终止时间
 sa-token:
   # token 名称（同时也是 cookie 名称）
   token-name: token

@@ -4,13 +4,27 @@ option java_package = "com.cainsgl.grpc.user";
 option java_outer_classname = "UserServiceProto";
 option java_multiple_files = true;
 
-// TODO: 根据业务需求定义 message 和 service
-// message UserRequest {
-//   string userId = 1;
-// }
-// message UserResponse {
-//   string message = 1;
-// }
-// service UserService {
-//   rpc getUser (UserRequest) returns (UserResponse);
-// }
+message ProcessLogRequest {
+    int32 value = 1;
+}
+
+message ProcessLogResponse {
+    int32 result = 1;
+}
+
+// UserLog Service
+service UserLogService {
+    rpc processLog (ProcessLogRequest) returns (ProcessLogResponse);
+}
+// UserExtraInfo Service
+message GetInterestVectorRequest {
+    int64 user_id = 1;
+}
+
+message GetInterestVectorResponse {
+    repeated float interest_vector = 1;
+}
+
+service UserExtraInfoService {
+    rpc getInterestVector (GetInterestVectorRequest) returns (GetInterestVectorResponse);
+}

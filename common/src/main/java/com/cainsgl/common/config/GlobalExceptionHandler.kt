@@ -8,6 +8,7 @@ import com.cainsgl.common.dto.response.Result
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.exception.BSystemException
 import com.cainsgl.common.exception.BusinessException
+import jakarta.servlet.ServletException
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -23,7 +24,11 @@ class GlobalExceptionHandler
         log.error("系统异常", e)
         return Result.error(e)
     }
-
+    @ExceptionHandler(ServletException::class)
+    fun handleException(e: ServletException): Result
+    {
+        return Result.error(e)
+    }
     @ExceptionHandler(BusinessException::class)
     fun handleBusinessException(e: BusinessException): Result
     {

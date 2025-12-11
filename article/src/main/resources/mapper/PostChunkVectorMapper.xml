@@ -9,4 +9,18 @@
         id, post_id, vector
     </sql>
 
+    <resultMap id="PostCosineResultMap" type="com.cainsgl.article.dto.PostCosineResult">
+        <result column="post_id" property="postId"/>
+        <result column="distance" property="distance"/>
+        <result column="chunk" property="chunk"/>
+    </resultMap>
+
+    <select id="selectPostsByCosine" resultMap="PostCosineResultMap">
+        SELECT post_id, (vector &lt;-&gt; #{targetVector, typeHandler=com.cainsgl.common.handler.VectorTypeHandler}) AS distance, chunk
+        FROM post_chunk_vectors
+        WHERE (vector &lt;-&gt; #{targetVector, typeHandler=com.cainsgl.common.handler.VectorTypeHandler}) &gt; #{startValue}
+        ORDER BY distance
+        LIMIT #{limit}
+    </select>
+
 </mapper>
