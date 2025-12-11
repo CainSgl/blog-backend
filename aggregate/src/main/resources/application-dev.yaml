@@ -1,6 +1,6 @@
 spring:
   application:
-    name: aggregate-dev
+    name: aggregate-dev]
   ai:
     chat:
       client:
@@ -17,5 +17,5 @@ spring:
         api-key: dad54c4a-782d-4631-96d0-97fc10cc62e6
         base-url: https://ark.cn-beijing.volces.com/api/v3
         options:
-          model: doubao-embedding-large-text-240915
+          model: doubao-embedding-large-text-250515
         embeddings-path: /embeddings

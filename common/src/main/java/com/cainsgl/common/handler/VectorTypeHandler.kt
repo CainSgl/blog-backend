@@ -7,7 +7,6 @@ import org.apache.ibatis.type.MappedTypes
 import java.sql.CallableStatement
 import java.sql.PreparedStatement
 import java.sql.ResultSet
-import java.sql.SQLException
 
 @MappedTypes(FloatArray::class)
 @MappedJdbcTypes(JdbcType.OTHER)
@@ -22,7 +21,7 @@ class VectorTypeHandler : BaseTypeHandler<FloatArray>() {
         // 将 FloatArray 转换为 PostgreSQL vector 类型
         val vectorString = "[${parameter.joinToString(",")}]"
         val pgObject = org.postgresql.util.PGobject()
-        pgObject.type = "vector"
+        pgObject.type = "halfvec"
         pgObject.value = vectorString
         ps.setObject(i, pgObject)
     }

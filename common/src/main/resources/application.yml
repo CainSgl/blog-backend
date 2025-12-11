@@ -86,3 +86,4 @@ sa-token:
   is-share: false
   # 令牌风格
   token-style: uuid
+dimensions: 1024

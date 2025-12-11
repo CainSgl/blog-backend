@@ -6,6 +6,8 @@ import com.cainsgl.common.entity.user.UserEntity
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
 import org.springframework.beans.factory.InitializingBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
+import org.springframework.boot.autoconfigure.flyway.FlywayProperties.Postgresql
 import org.springframework.stereotype.Component
 import javax.sql.DataSource
 
@@ -16,6 +18,7 @@ import javax.sql.DataSource
  */
 private val logger = KotlinLogging.logger {}
 @Component
+@ConditionalOnClass(org.postgresql.Driver::class)
 class StpInterfaceImpl : StpInterface, InitializingBean
 {
 

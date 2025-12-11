@@ -9,14 +9,14 @@ import com.vladsch.flexmark.util.data.MutableDataSet
 
 /**
  * GFM切分工具
- * 规则：GFM → 纯文本 → 基础块(500-2000字符) → 子块(3-4句话)
+ * 规则：GFM → 纯文本 → 基础块(500-2000字符) → 子块(4-5句话)
  */
 object GfmChunkUtils
 {
 
     private const val BASE_CHUNK_MIN = 500
     private const val BASE_CHUNK_MAX = 2000
-    private const val SENTENCES_PER_CHUNK = 3
+    private const val SENTENCES_PER_CHUNK = 4
 
     private val parser: Parser = Parser.builder(MutableDataSet().apply {
         set(
