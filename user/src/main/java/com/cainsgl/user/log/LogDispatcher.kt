@@ -37,9 +37,9 @@ class LogDispatcher(handlers: List<LogHandler>)
         }
     }
 
-    fun dispatch(log: UserLogEntity)
+    fun dispatch(log: UserLogEntity):Boolean
     {
-        handlerMap[log.action]?.handle(log)
+       return  handlerMap[log.action]?.handle(log)
             ?: throw IllegalArgumentException("未知日志行为类型")
     }
 }

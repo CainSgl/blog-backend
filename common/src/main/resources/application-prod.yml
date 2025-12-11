@@ -1,64 +1,45 @@
-spring:
-  datasource:
-    url: jdbc:postgresql://my-postgres-postgresql:5432/blog?useSSL=false&serverTimezone=Asia/Shanghai
-  data:
-    redis:
-      host: redis-service
-      port: 6379
-  elasticsearch:
-    uris: https://elasticsearch-master:9200
-logstash:
-  host: logstash-logstash
-  port: 5044
-rocketmq:
-  push-consumer:
-    endpoints: rocketmq-proxy:8080
-  producer:
-    endpoints: rocketmq-proxy:8080
-    ssl-enabled: false
+# 生产环境配置
+
+# gRPC 客户端配置
 grpc:
   client:
     AiService:
-      address: 'static://ai-svc:9092'
+      address: ${grpc-client.ai-service}
       negotiationType: PLAINTEXT
       enableKeepAlive: true
       keepAliveWithoutCalls: true
-#    post
     PostChunkVectorService:
-      address: 'static://post-svc:9092'
+      address: ${grpc-client.post-service}
       negotiationType: PLAINTEXT
       enableKeepAlive: true
       keepAliveWithoutCalls: true
     DirectoryService:
-      address: 'static://post-svc:9092'
+      address: ${grpc-client.post-service}
       negotiationType: PLAINTEXT
       enableKeepAlive: true
       keepAliveWithoutCalls: true
     KnowledgeBaseService:
-      address: 'static://post-svc:9092'
+      address: ${grpc-client.post-service}
       negotiationType: PLAINTEXT
       enableKeepAlive: true
       keepAliveWithoutCalls: true
-#user
     UserService:
-      address: 'static://user-svc:9092'
+      address: ${grpc-client.user-service}
       negotiationType: PLAINTEXT
       enableKeepAlive: true
       keepAliveWithoutCalls: true
     UserLogService:
-      address: 'static://user-svc:9092'
+      address: ${grpc-client.user-service}
       negotiationType: PLAINTEXT
       enableKeepAlive: true
       keepAliveWithoutCalls: true
     UserExtraInfoService:
-      address: 'static://user-svc:9092'
+      address: ${grpc-client.user-service}
       negotiationType: PLAINTEXT
       enableKeepAlive: true
       keepAliveWithoutCalls: true
-#go
     PostCloneService:
-      address: 'static://localhost:50051'
+      address: ${grpc-client.go-service}
       negotiationType: PLAINTEXT
       enableKeepAlive: true
       keepAliveWithoutCalls: true
-

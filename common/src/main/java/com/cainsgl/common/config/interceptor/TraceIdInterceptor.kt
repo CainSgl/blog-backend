@@ -1,12 +1,12 @@
-package com.cainsgl.common.config
+package com.cainsgl.common.config.interceptor
 
 import io.grpc.*
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanContext
+import net.devh.boot.grpc.server.interceptor.GrpcGlobalServerInterceptor
 import org.slf4j.MDC
 import org.springframework.stereotype.Component
-import net.devh.boot.grpc.server.interceptor.GrpcGlobalServerInterceptor
-import java.util.UUID
+import java.util.*
 
 @GrpcGlobalServerInterceptor
 @Component

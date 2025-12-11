@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: classpath:env.yaml
   jackson:
     default-property-inclusion: non_null
     time-zone: GMT+8
@@ -6,27 +8,31 @@ spring:
       write-dates-as-timestamps: false
   threads:
     virtual:
-      enabled: true  # 启用虚拟线程
+      enabled: true
   elasticsearch:
-    username: elastic
-    password: 3yKNDtviqwZjQoYT
+    uris: ${es.uris}
+    username: ${es.username}
+    password: ${es.password}
     restclient:
       ssl:
         bundle:
   profiles:
-    active: dev
+    active: ${system.profiles-active}
   datasource:
-    username: postgres
-    password: 123456
+    url: ${db.url}
+    username: ${db.username}
+    password: ${db.password}
     driver-class-name: org.postgresql.Driver
     hikari:
-      minimum-idle: 1
-      maximum-pool-size: 5
+      minimum-idle: ${db.pool.min-idle}
+      maximum-pool-size: ${db.pool.max-size}
       initialization-fail-timeout: 0
       connection-timeout: 3000
   data:
     redis:
-      password: 123456
+      host: ${redis.host}
+      port: ${redis.port}
+      password: ${redis.password}
       timeout: 3000ms
 
 mybatis-plus:
@@ -59,24 +65,29 @@ logging:
   config: classpath:log4j-spring.xml
   level:
     com.cainsgl: DEBUG
-
-
 server:
   jetty:
     threads:
-      # 读取K8s注入的CPU_CORES环境变量,配置IO线程
-      acceptors: ${CPU_CORES:4}  # 默认4核,未注入时兜底
-      selectors: ${CPU_CORES:4}
-  port: 8080
-  shutdown: graceful  # 启用优雅关闭
+      acceptors: ${system.cpu-cores}
+      selectors: ${system.cpu-cores}
+  port: ${server.http-port}
+  shutdown: graceful
 spring.lifecycle:
-  timeout-per-shutdown-phase: 10s  # 关闭超时时间
+  timeout-per-shutdown-phase: ${system.shutdown-timeout}
 grpc:
   server:
-    port: 9092
+    port: ${server.grpc-port}
     security:
       enabled: false
-    await-termination: 5s  # gRPC服务器等待终止时间
+    await-termination: ${system.grpc-await-termination}
+
+# RocketMQ 配置
+rocketmq:
+  producer:
+    endpoints: ${rocketmq.endpoints}
+    ssl-enabled: ${rocketmq.ssl-enabled}
+  push-consumer:
+    endpoints: ${rocketmq.endpoints}
 sa-token:
   # token 名称（同时也是 cookie 名称）
   token-name: token

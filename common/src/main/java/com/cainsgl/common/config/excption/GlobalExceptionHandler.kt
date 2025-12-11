@@ -1,4 +1,4 @@
-package com.cainsgl.common.config
+package com.cainsgl.common.config.excption
 
 import cn.dev33.satoken.exception.NotLoginException
 import cn.dev33.satoken.exception.NotPermissionException

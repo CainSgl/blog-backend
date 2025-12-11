@@ -17,6 +17,27 @@
         <maven.compiler.target>23</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.cainsgl</groupId>
+            <artifactId>common</artifactId>
+            <version>${server.version}</version>
+        </dependency>
+        <!-- ShedLock核心 -->
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-spring</artifactId>
+            <version>5.10.0</version>
+        </dependency>
+        <!-- ShedLock Redis Provider -->
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-provider-redis-spring</artifactId>
+            <version>5.10.0</version>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <plugin>
@@ -24,7 +45,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <skip>false</skip>
-                    <mainClass>com.cainsgl.article.Application</mainClass>
+                    <mainClass>com.cainsgl.scheduler.Application</mainClass>
                     <classifier>exec</classifier>
                 </configuration>
                 <executions>

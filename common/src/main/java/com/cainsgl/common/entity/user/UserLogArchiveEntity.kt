@@ -27,3 +27,6 @@ data class UserLogArchiveEntity(
     @TableField("created_at")
     var createdAt: LocalDateTime? = null
 )
+{
+    constructor(userLogEntity: UserLogEntity) : this(userLogEntity.id, userLogEntity.userId, userLogEntity.action, userLogEntity.device, userLogEntity.info,userLogEntity.createdAt)
+}

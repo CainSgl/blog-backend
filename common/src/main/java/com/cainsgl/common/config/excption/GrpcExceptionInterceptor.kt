@@ -1,4 +1,4 @@
-package com.cainsgl.common.config
+package com.cainsgl.common.config.excption
 
 import com.cainsgl.common.exception.BSystemException
 import com.cainsgl.common.exception.BusinessException

@@ -1,0 +1,19 @@
+spring:
+  ai:
+    chat:
+      client:
+        enabled: false
+    openai:
+      base-url: ${ai.base-url}
+      api-key: ${ai.api-key}
+      chat:
+        options:
+          model: ${ai.chat.model}
+          max-tokens: ${ai.chat.max-tokens}
+        completions-path: /
+      embedding:
+        api-key: ${ai.embedding.api-key}
+        base-url: ${ai.embedding.base-url}
+        options:
+          model: ${ai.embedding.model}
+        embeddings-path: /embeddings

@@ -1,4 +1,4 @@
-package com.cainsgl.common.config
+package com.cainsgl.common.config.interceptor
 
 import cn.dev33.satoken.stp.StpInterface
 import cn.dev33.satoken.stp.StpUtil
@@ -7,15 +7,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
-import org.springframework.boot.autoconfigure.flyway.FlywayProperties.Postgresql
 import org.springframework.stereotype.Component
 import javax.sql.DataSource
-
-
-/**
- * SaToken 权限接口实现
- * 从 Session 中获取用户的角色和权限
- */
 private val logger = KotlinLogging.logger {}
 @Component
 @ConditionalOnClass(org.postgresql.Driver::class)

@@ -1,4 +1,4 @@
-package com.cainsgl.common.config
+package com.cainsgl.common.config.interceptor
 
 import com.alibaba.fastjson2.JSON
 import com.cainsgl.common.dto.response.Result

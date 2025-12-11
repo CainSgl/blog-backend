@@ -17,7 +17,6 @@ import org.springframework.stereotype.Component
  */
 @Component
 @RocketMQMessageListener(
-    endpoints = "rocketmq-proxy:8080",
     consumerGroup = "article-add-consumer",
     topic = "article",
     tag = "publish",
@@ -53,7 +52,6 @@ class ArticlePublishConsumer : BaseConsumer<Long>(Long::class.java) {
  */
 @Component
 @RocketMQMessageListener(
-    endpoints = "rocketmq-proxy:8080",
     consumerGroup = "article-update-consumer",
     topic = "article",
     tag = "content",
@@ -87,7 +85,6 @@ class ArticleContentConsumer : BaseConsumer<Long>(Long::class.java) {
  */
 @Component
 @RocketMQMessageListener(
-    endpoints = "rocketmq-proxy:8080",
     consumerGroup = "article-delete-consumer",
     topic = "article",
     tag = "delete",
