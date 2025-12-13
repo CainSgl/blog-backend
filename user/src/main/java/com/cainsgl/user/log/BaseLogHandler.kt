@@ -1,14 +1,18 @@
 package com.cainsgl.user.log
 
-abstract class BaseLogHandler : LogHandler
+import com.cainsgl.user.log.context.LogProcessContext
+import com.cainsgl.user.log.context.ProcessContext
+
+abstract class BaseLogHandler(private val supportType: String) : LogHandler
 {
-    private val supportType: String
-    constructor(supportType: String)
-    {
-        this.supportType = supportType
-    }
     override fun supportType(): String
     {
         return supportType
     }
+    override fun process(context: ProcessContext)
+    {
+
+        handle(context as LogProcessContext)
+    }
+    abstract fun handle(context: LogProcessContext)
 }

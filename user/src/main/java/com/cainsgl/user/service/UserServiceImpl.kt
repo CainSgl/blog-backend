@@ -7,33 +7,12 @@ import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.api.user.UserService
 import com.cainsgl.common.entity.user.UserEntity
-import com.cainsgl.common.util.UserUtils
 import com.cainsgl.user.repository.UserMapper
 import org.springframework.stereotype.Service
 
 @Service
 class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, IService<UserEntity>
 {
-    /**
-     * 获取用户信息
-     * @param id
-     * @return
-     */
-    fun getUser(id: Long): UserEntity?
-    {
-        return baseMapper.selectById(id)
-    }
-    /**
-     * 更新用户信息
-     * @param userEntity
-     * @return
-     */
-    override fun updateById(userEntity: UserEntity): Boolean
-    {
-        val b = super<ServiceImpl>.updateById(userEntity)
-        UserUtils.setUserInfo(userEntity)
-        return b
-    }
     /**
      * 根据账号和密码和邮件获取用户信息
      * @param account

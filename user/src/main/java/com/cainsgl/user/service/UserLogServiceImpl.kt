@@ -11,38 +11,50 @@ import com.cainsgl.user.repository.UserLogMapper
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
-
+import org.springframework.transaction.support.TransactionTemplate
 
 
 private val logger = KotlinLogging.logger {}
+
 @Service
 class UserLogServiceImpl : ServiceImpl<UserLogMapper, UserLogEntity>(), UserLogService, IService<UserLogEntity>
 {
     @Resource
     lateinit var logDispatcher: LogDispatcher
-    @Resource
-    lateinit var userLogArchiveService:UserLogArchiveServiceImpl
 
-    @Transactional
+    @Resource
+    lateinit var userLogArchiveService: UserLogArchiveServiceImpl
+
+    @Resource
+    lateinit var transactionTemplate: TransactionTemplate
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     override fun processLog(value: Int): Int
     {
         //直接从userLog里获取，统计完成后再往旧数据里放
         val queryWrapper = QueryWrapper<UserLogEntity>()
         queryWrapper.last("limit $value")
-        val list: List<UserLogEntity> = list(queryWrapper)
-        //去批量处理
-        list.forEach {
-            if (!logDispatcher.dispatch(it))
-            {
-                //处理失败
-                logger.error{"处理日志行为失败：${it.id}"}
-            }
+        var list: List<UserLogEntity>?=null
+        val size= transactionTemplate.execute { status->
+            list= list(queryWrapper)
+            remove(queryWrapper)
+            //归档到旧数据
+            val list2: List<UserLogArchiveEntity> = list!!.map { UserLogArchiveEntity(it) }
+            userLogArchiveService.saveBatch(list2)
+            return@execute list!!.size
         }
-        //归档到旧数据
-        remove(queryWrapper)
-        val list2: List<UserLogArchiveEntity> =list.map {UserLogArchiveEntity(it)}
-        userLogArchiveService.saveBatch(list2)
-        return list.size
+        if(size==null||size<-1)
+        {
+            logger.error { "1.无法获取用户日志，似乎是数据库出错" }
+        }
+        val processedLogs = logDispatcher.batchDispatch(list!!)
+        if (processedLogs.isNotEmpty())
+        {
+            //存在日志处理失败
+            logger.error { "2.处理用户日志失败：${processedLogs}" }
+        }
+        return size!!
     }
 }

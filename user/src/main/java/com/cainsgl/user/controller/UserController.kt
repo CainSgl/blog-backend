@@ -5,9 +5,9 @@ import cn.dev33.satoken.stp.StpUtil
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.user.UserEntity
 import com.cainsgl.common.exception.BusinessException
-import com.cainsgl.common.util.UserUtils
 import com.cainsgl.user.dto.request.LoginRequest
 import com.cainsgl.user.dto.response.LoginResponse
+import com.cainsgl.user.dto.response.UserResponse
 import com.cainsgl.user.service.UserServiceImpl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
@@ -16,13 +16,19 @@ import org.springframework.web.bind.annotation.*
 
 
 private val log = KotlinLogging.logger {}
+
 @RestController
 @RequestMapping("/user")
 class UserController
 {
     val passwordEncoder = BCryptPasswordEncoder()
+
     @Resource
     lateinit var userService: UserServiceImpl
+
+
+
+
     /**
      * 用户登录
      */
@@ -59,7 +65,6 @@ class UserController
             StpUtil.logoutByTokenValue(oldToken)
         }
         StpUtil.login(user.id, device)
-        UserUtils.setUserInfo(user)
         log.info { "${"用户登录成功: userId={}, device={}"} ${user.id} $device" }
         val token = StpUtil.getTokenValue()
         return LoginResponse(token, user.calculateLevelInfo())
@@ -87,23 +92,17 @@ class UserController
     @GetMapping("/current")
     fun getCurrentUser(): Any
     {
-        if (!StpUtil.isLogin())
-        {
-            throw BusinessException("未登录")
-        }
-        val userInfo = UserUtils.getUserInfo()
-        if (userInfo != null)
-        {
-            return userInfo.calculateLevelInfo()
-        }
-        return ResultCode.USER_NOT_LOGIN
+        return userService.getById(StpUtil.getLoginIdAsLong())
     }
+
 
     @GetMapping
     fun get(@RequestParam(required = false) id: Long?): Any
     {
         requireNotNull(id) { return ResultCode.MISSING_PARAM }
-        val user = userService.getUser(id) ?: return ResultCode.RESOURCE_NOT_FOUND
-        return user.calculateLevelInfo()
+        val user = userService.getById(id) ?: return ResultCode.RESOURCE_NOT_FOUND
+        //去除敏感字段
+        user.calculateLevelInfo()
+        return UserResponse(user)
     }
 }

@@ -8,7 +8,6 @@ import com.cainsgl.article.dto.DirectoryTreeDTO
 import com.cainsgl.article.repository.DirectoryMapper
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.DirectoryEntity
-
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
@@ -66,7 +65,6 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
             //这里是有问题的，因为name不为null，说明要更新，但是这里的name却是""
             return false
         }
-
         try
         {
             return baseMapper.updateDirectoryWithPermissionCheck(
@@ -104,7 +102,7 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
      * @param lastId 目标位置的前一个目录ID（null表示移到最前面）
      * @return 是否成功
      */
-    @Transactional(propagation = Propagation.SUPPORTS)
+    @Transactional(propagation = Propagation.REQUIRED)
     fun resortDirectory(id: Long, kbId: Long, userId: Long, lastId: Long?): ResultCode
     {
         // 获取要移动的目录

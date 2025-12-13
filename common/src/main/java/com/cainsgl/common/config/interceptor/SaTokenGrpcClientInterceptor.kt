@@ -1,4 +1,4 @@
-package com.cainsgl.common.config
+package com.cainsgl.common.config.interceptor
 
 import cn.dev33.satoken.stp.StpUtil
 import io.grpc.*
