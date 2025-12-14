@@ -23,10 +23,7 @@ class PostArchiveController {
      * 根据ID获取归档记录
      */
     @GetMapping
-    fun get(@RequestParam(required = false) id: Long?): Any {
-        if (id == null) {
-            return ResultCode.MISSING_PARAM
-        }
+    fun get(@RequestParam id: Long): Any {
         val archive = postArchiveService.getPostArchive(id) ?: return ResultCode.RESOURCE_NOT_FOUND
         val userId = StpUtil.getLoginIdAsLong()
         if (archive.operatorId==userId)

@@ -1,10 +1,13 @@
 package com.cainsgl.article.controller
 
-import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.article.service.CategoryServiceImpl
+import com.cainsgl.common.dto.response.ResultCode
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 
 private val log = KotlinLogging.logger {}
 
@@ -19,10 +22,7 @@ class CategoryController {
      * 根据ID获取分类
      */
     @GetMapping
-    fun get(@RequestParam(required = false) id: Long?): Any {
-        if (id == null) {
-            return ResultCode.MISSING_PARAM
-        }
+    fun get(@RequestParam id:Long): Any {
         val category = categoryService.getCategory(id) ?: return ResultCode.RESOURCE_NOT_FOUND
         return category
     }

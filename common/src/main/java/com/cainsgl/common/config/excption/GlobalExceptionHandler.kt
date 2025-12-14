@@ -17,6 +17,8 @@ import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.validation.FieldError
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.method.annotation.HandlerMethodValidationException
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 
 
 @RestControllerAdvice
@@ -30,12 +32,22 @@ class GlobalExceptionHandler
         log.error("系统异常", e)
         return Result.error(e)
     }
+
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleIllegalArg(e: IllegalArgumentException): Any
     {
         log.debug("参数检验出现异常", e)
         return Result.error(e)
     }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException::class)
+    fun handleMethodArgumentTypeMismatchException(e: MethodArgumentTypeMismatchException): Any
+    {
+        //一般是前端参数传字段有问题
+        log.debug("调用方法的参数有问题", e)
+        return Result(ResultCode.DATA_FORMAT_ERROR.code, ResultCode.DATA_FORMAT_ERROR.message, null, TraceIdUtils.getTraceId(), debug = e.message)
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException::class)
     fun handleHttpMessageNotReadableException(e: HttpMessageNotReadableException): Any
     {
@@ -98,7 +110,21 @@ class GlobalExceptionHandler
             { error -> "${error.field}:${error.defaultMessage ?: "参数校验失败\n"}" }
         val errMsg =
             ex.bindingResult.fieldErrors.joinToString(prefix = "[", postfix = "]", transform = transform)
-        return Result(ResultCode.PARAM_INVALID.code, errMsg, null, traceId = TraceIdUtils.getTraceId())
+        return Result(ResultCode.PARAM_INVALID.code, "fail", null, traceId = TraceIdUtils.getTraceId(), debug = errMsg)
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException::class)
+    fun handleValidationError(ex: HandlerMethodValidationException): Any
+    {
+        val errorMessages = ex.allValidationResults.flatMap { validationResult ->
+            validationResult.resolvableErrors.map { error ->
+                val paramName = validationResult.methodParameter.parameterName ?: "unknown"
+                val message = error.defaultMessage ?: "参数校验失败"
+                "$paramName: $message"
+            }
+        }
+        val errMsg = errorMessages.joinToString(prefix = "[", postfix = "]")
+        return Result(ResultCode.PARAM_INVALID.code, "fail", null, traceId = TraceIdUtils.getTraceId(), debug = errMsg)
     }
 
 }

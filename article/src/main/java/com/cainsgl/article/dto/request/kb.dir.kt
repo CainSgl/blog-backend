@@ -8,7 +8,7 @@ data class CreateKnowledgeBaseRequest(
     val status: ArticleStatus
 )
 data class UpdateKnowledgeBaseRequest(
-    @field:Min(value = 0, message = "知识库id小于0")
+    @field:Min(value = 0, message = "知识库id不能小于0")
     val id: Long,
     val name: String,
     val status: ArticleStatus

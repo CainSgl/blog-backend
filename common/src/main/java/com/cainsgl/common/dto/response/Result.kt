@@ -32,7 +32,7 @@ data class Result(
         @JvmStatic
         fun error(exception: Exception): Result
         {
-            return Result(SYSTEM_ERROR.code, exception.message, null, TraceIdUtils.getTraceId())
+            return Result(SYSTEM_ERROR.code, "fail", null, TraceIdUtils.getTraceId(),exception.message)
         }
         //业务异常
         @JvmStatic
@@ -40,9 +40,9 @@ data class Result(
         {
             if(exception.resultCode!=null)
             {
-                return Result(exception.resultCode!!.code, exception.message, null, null)
+                return Result(exception.resultCode!!.code,exception.message )
             }
-            return Result(BUSINESS_ERROR.code, exception.message, null, null)
+            return Result(BUSINESS_ERROR.code, exception.message)
         }
 
         //系统异常

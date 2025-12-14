@@ -13,6 +13,7 @@ import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.KnowledgeBaseEntity
 import jakarta.annotation.Resource
 import jakarta.validation.Valid
+import jakarta.validation.constraints.Min
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.web.bind.annotation.*
 
@@ -30,7 +31,7 @@ class KnowledgeBaseController
     lateinit var directoryService: DirectoryServiceImpl
     @SaCheckRole("user")
     @GetMapping
-    fun get(@RequestParam id: Long): Any
+    fun get(@RequestParam @Min(value = 0, message = "知识库id不能小于0") id: Long): Any
     {
         val knowledgeBase: KnowledgeBaseEntity = knowledgeBaseService.getById(id)
             ?: return ResultCode.RESOURCE_NOT_FOUND
