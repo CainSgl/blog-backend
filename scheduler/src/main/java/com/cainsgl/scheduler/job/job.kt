@@ -1,31 +1,40 @@
 package com.cainsgl.scheduler.job
 
+import com.cainsgl.api.user.log.UserLogService
 import io.github.oshai.kotlinlogging.KotlinLogging
+import jakarta.annotation.Resource
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
+import org.apache.rocketmq.client.core.RocketMQClientTemplate
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import java.time.LocalDateTime
 
 private val logger = KotlinLogging.logger {}
-
-/**
- * 示例定时任务
- * 
- * @SchedulerLock 参数说明:
- * - name: 锁名称，全局唯一
- * - lockAtMostFor: 最大锁定时间，防止任务挂死时锁不释放
- * - lockAtLeastFor: 最小锁定时间，防止任务执行太快导致其他节点重复执行
- */
 @Component
-class SampleJob {
+class UserLogJob {
 
-    /**
-     * 示例任务: 每分钟执行一次
-     */
-    @Scheduled(cron = "0 * * * * *")
-    @SchedulerLock(name = "sampleTask", lockAtMostFor = "PT5M", lockAtLeastFor = "PT30S")
+    @Value("\${userLog.batchNumber}")
+    var batchNumber:Int=20
+
+    @Resource
+    lateinit var userLogService: UserLogService
+    @Resource
+    lateinit var rocketMQClientTemplate: RocketMQClientTemplate
+    @Scheduled(cron = "0/20 * * * * ?")
+    @SchedulerLock(name = "UserLogJob_execute", lockAtMostFor = "PT1M", lockAtLeastFor = "PT20S")
     fun execute() {
-        logger.info { "SampleJob executed at ${LocalDateTime.now()}" }
-        // TODO: 业务逻辑
+        //发送消息，调用user的api
+        while(true)
+        {
+            logger.info { "定时任务触发，将同步$batchNumber 条日志" }
+            val key = userLogService.loadLogsToRedis(batchNumber)
+            if(key.isEmpty()){
+                //说明无消息，直接执行成功,所有日志都被读取了
+                return
+            }
+            rocketMQClientTemplate.asyncSendNormalMessage("userLog:dispatch", key, null)
+            logger.info { "UserLogJob executed" }
+            Thread.sleep(100)
+        }
     }
 }

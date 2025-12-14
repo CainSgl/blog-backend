@@ -9,8 +9,10 @@ enum class ResultCode(val code: Int, val message: String, val codeScopeDesc: Str
     BUSINESS_ERROR(40000, "业务逻辑异常", "通用业务异常"),
     MISSING_PARAM(40001, "请求参数缺失", "参数异常"),
     PARAM_INVALID(40002, "请求参数不正确", "参数异常"),
-    RESOURCE_NOT_FOUND(40003, "请求资源不存在", "资源异常"),
-    DATA_DUPLICATE(40005, "数据重复", "数据异常"),
+    PARAM_FORMAT_ERROR(40003,"可能是请求参数格式错误，请检查JSON格式或必填参数是否完整","参数异常"),
+    RESOURCE_NOT_FOUND(40004, "请求资源不存在", "资源异常"),
+    DATA_DUPLICATE(40006, "数据重复", "数据异常"),
+    DATA_FORMAT_ERROR(40007, "数据格式错误", "格式异常"),
     // ====================== 用户权限相关（401xx）======================
     USER_NOT_LOGIN(40100, "用户未登录", "登录异常"),
     PERMISSION_DENIED(40101, "权限不足", "权限异常"),
@@ -22,6 +24,7 @@ enum class ResultCode(val code: Int, val message: String, val codeScopeDesc: Str
     CACHE_ERROR(50002, "缓存操作异常", "系统异常-缓存"),
     THIRD_PARTY_ERROR(50003, "第三方接口调用异常", "系统异常-第三方依赖"),
     NETWORK_ERROR(50004, "网络通信异常", "系统异常-网络"),
+    DESERIALIZATION_FAILED(50005, "反序列化失败", "JSON格式异常"),
     // ====================== 不知道的错误（600xx）======================
     UNKNOWN_ERROR(60000, "你中奖了，这个错误按理说是不会出现的，这种错误一般发生在调试api的时候传入了一些预料之外的参数", "这种错误一般发生在调试api的时候传入了一些预料之外的参数");
 }

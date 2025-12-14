@@ -1,6 +1,7 @@
 package com.cainsgl.api.user.extra
 
 import com.cainsgl.grpc.user.GetInterestVectorRequest
+import com.cainsgl.grpc.user.SetInterestVectorRequest
 import com.cainsgl.grpc.user.UserExtraInfoServiceGrpc
 import net.devh.boot.grpc.client.inject.GrpcClient
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
@@ -20,5 +21,15 @@ class UserExtraInfoGrpcService : UserExtraInfoService
             .build()
         val response = userExtraInfoServiceGrpc.getInterestVector(request)
         return if (response.interestVectorList.isEmpty()) null else response.interestVectorList.toFloatArray()
+    }
+
+    override fun setInterestVector(userId: Long, values: FloatArray):Boolean
+    {
+        val request = SetInterestVectorRequest.newBuilder()
+            .setUserId(userId)
+            .addAllInterestVector(values.toList())
+            .build()
+        val response = userExtraInfoServiceGrpc.setInterestVector(request)
+        return response.success
     }
 }

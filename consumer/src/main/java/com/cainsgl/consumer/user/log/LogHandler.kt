@@ -1,6 +1,6 @@
-package com.cainsgl.user.log
+package com.cainsgl.consumer.user.log
 
-import com.cainsgl.user.log.context.ProcessContext
+import com.cainsgl.consumer.user.log.context.ProcessContext
 
 interface LogHandler
 {

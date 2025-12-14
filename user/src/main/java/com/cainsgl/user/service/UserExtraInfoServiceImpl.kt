@@ -1,10 +1,10 @@
 package com.cainsgl.user.service
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.api.user.extra.UserExtraInfoService
 import com.cainsgl.common.entity.user.UserExtraInfoEntity
-import com.cainsgl.common.exception.BSystemException
 import com.cainsgl.user.repository.UserExtraInfoMapper
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
@@ -25,12 +25,21 @@ class UserExtraInfoServiceImpl(private val redisTemplate: RedisTemplate<String, 
 
     companion object
     {
-        const val LOCK_PREFIX_KEY = "lock.user.extra."
+        const val LOCK_PREFIX_KEY = "lock:user:extra:"
     }
 
     override fun getInterestVector(userId: Long): FloatArray?
     {
-        return baseMapper.selectInterestVector(userId)
+        val queryWrapper=QueryWrapper<UserExtraInfoEntity>()
+        queryWrapper.select("interest_vector")
+        queryWrapper.eq("user_id", userId)
+        val selectOne = baseMapper.selectOne(queryWrapper)
+        return selectOne.interestVector
+    }
+
+    override fun setInterestVector(userId: Long, values: FloatArray): Boolean
+    {
+        return baseMapper.updateInterestVector(userId, values) > 0
     }
 
     //该方法可以使用双重检查锁
@@ -53,7 +62,9 @@ class UserExtraInfoServiceImpl(private val redisTemplate: RedisTemplate<String, 
             val isLockAcquired = lock.tryLock(15, java.util.concurrent.TimeUnit.SECONDS)
             if (!isLockAcquired)
             {
-                throw BSystemException("获取热点数据失败，缓存问题")
+                //时间太长了，采用备用方案
+             //   throw BSystemException("获取热点数据失败，缓存问题")
+                return super<ServiceImpl>.getById(id)
             }
             try
             {
@@ -66,9 +77,9 @@ class UserExtraInfoServiceImpl(private val redisTemplate: RedisTemplate<String, 
                 return ueInfo2
             } catch (ex: Exception)
             {
-                logger.error{"获取用户信息失败$ex"}
+                logger.error { "获取用户信息失败$ex" }
                 return null
-            }finally
+            } finally
             {
                 lock.unlock()
             }

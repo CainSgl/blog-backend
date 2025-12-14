@@ -1,5 +1,6 @@
 package com.cainsgl.common.handler
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.ibatis.type.BaseTypeHandler
 import org.apache.ibatis.type.JdbcType
 import org.apache.ibatis.type.MappedJdbcTypes
@@ -8,20 +9,16 @@ import java.sql.CallableStatement
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 
+private val logger=KotlinLogging.logger{}
 @MappedTypes(FloatArray::class)
 @MappedJdbcTypes(JdbcType.OTHER)
 class VectorTypeHandler : BaseTypeHandler<FloatArray>() {
 
-    override fun setNonNullParameter(
-        ps: PreparedStatement,
-        i: Int,
-        parameter: FloatArray,
-        jdbcType: JdbcType?
-    ) {
+    override fun setNonNullParameter(ps: PreparedStatement, i: Int, parameter: FloatArray, jdbcType: JdbcType?) {
         // 将 FloatArray 转换为 PostgreSQL vector 类型
         val vectorString = "[${parameter.joinToString(",")}]"
         val pgObject = org.postgresql.util.PGobject()
-        pgObject.type = "halfvec"
+        pgObject.type = "vector"
         pgObject.value = vectorString
         ps.setObject(i, pgObject)
     }
@@ -40,6 +37,7 @@ class VectorTypeHandler : BaseTypeHandler<FloatArray>() {
 
     private fun convertToFloatArray(pgObject: Any?): FloatArray? {
         if (pgObject == null) {
+            logger.debug { "vector is null object" }
             return null
         }
 

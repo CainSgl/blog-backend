@@ -33,7 +33,7 @@ message PostEntity {
     string published_at = 18;
     int64 kb_id = 19;
 }
-
+//getById的
 message GetPostByIdRequest {
     int64 id = 1;
 }
@@ -42,9 +42,23 @@ message GetPostByIdResponse {
     bool exists = 1;
     PostEntity post = 2;
 }
+//获取文章向量的
+message GetVectorByIdRequest{
+    int64 id = 1;
+}
+message GetVectorByIdResponse {
+    repeated float float_array = 1;
+}
+
+message AddViewCountRequest{
+    int64 id=1;
+    int32 count=2;
+}
 
 service PostService {
     rpc getById (GetPostByIdRequest) returns (GetPostByIdResponse);
+    rpc getVectorById (GetVectorByIdRequest) returns(GetVectorByIdResponse);
+    rpc addViewCount (AddViewCountRequest) returns (RemoveVectorResponse);
 }
 
 message ReloadVectorRequest {
@@ -59,13 +73,16 @@ message ReloadVectorResponse {
 message RemoveVectorRequest {
     int64 post_id = 1;
 }
-
 message RemoveVectorResponse {
     bool success = 1;
 }
 
+
+
+
 service PostChunkVectorService {
     rpc reloadVector (ReloadVectorRequest) returns (ReloadVectorResponse);
     rpc removeVector (RemoveVectorRequest) returns (RemoveVectorResponse);
+
 }
 

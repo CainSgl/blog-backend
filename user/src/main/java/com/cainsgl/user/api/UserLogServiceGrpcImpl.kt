@@ -14,9 +14,9 @@ class UserLogServiceGrpcImpl : UserLogServiceGrpc.UserLogServiceImplBase()
     @Resource
     lateinit var userLogService: UserLogServiceImpl
 
-    override fun processLog(request: ProcessLogRequest, responseObserver: StreamObserver<ProcessLogResponse>)
+    override fun loadLogsToRedis(request: ProcessLogRequest, responseObserver: StreamObserver<ProcessLogResponse>)
     {
-        val result = userLogService.processLog(request.value)
+        val result = userLogService.loadLogsToRedis(request.value)
         val response = ProcessLogResponse.newBuilder()
             .setResult(result)
             .build()

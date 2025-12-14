@@ -9,7 +9,8 @@ data class Result(
     var code: Int = 0,
     var msg: String? = null,
     var data: Any? = null,
-    var traceId: String? = null
+    var traceId: String? = null,
+    var debug:String?=null,
 )
 {
 
@@ -50,6 +51,5 @@ data class Result(
         {
             return Result(SYSTEM_ERROR.code, exception.message, null, TraceIdUtils.getTraceId())
         }
-
     }
 }

@@ -5,13 +5,14 @@ import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.cainsgl.article.dto.DirectoryTreeDTO
-import com.cainsgl.article.dto.request.kb.CreateKnowledgeBaseRequest
-import com.cainsgl.article.dto.request.kb.UpdateKnowledgeBaseRequest
+import com.cainsgl.article.dto.request.CreateKnowledgeBaseRequest
+import com.cainsgl.article.dto.request.UpdateKnowledgeBaseRequest
 import com.cainsgl.article.service.DirectoryServiceImpl
 import com.cainsgl.article.service.KnowledgeBaseServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.KnowledgeBaseEntity
 import jakarta.annotation.Resource
+import jakarta.validation.Valid
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.web.bind.annotation.*
 
@@ -29,9 +30,8 @@ class KnowledgeBaseController
     lateinit var directoryService: DirectoryServiceImpl
     @SaCheckRole("user")
     @GetMapping
-    fun get(@RequestParam(required = false) id: Long?): Any
+    fun get(@RequestParam id: Long): Any
     {
-        requireNotNull(id) { return ResultCode.MISSING_PARAM }
         val knowledgeBase: KnowledgeBaseEntity = knowledgeBaseService.getById(id)
             ?: return ResultCode.RESOURCE_NOT_FOUND
         val directoryTree: List<DirectoryTreeDTO> = directoryService.getDirectoryTreeByKbId(id)
@@ -40,10 +40,10 @@ class KnowledgeBaseController
 
     @SaCheckPermission("kb.post")
     @PostMapping
-    fun createKnowledgeBase(@RequestBody request: CreateKnowledgeBaseRequest): Any
+    fun createKnowledgeBase(@RequestBody @Valid request: CreateKnowledgeBaseRequest): Any
     {
         val userId = StpUtil.getLoginIdAsLong()
-        val kbEntity = KnowledgeBaseEntity(userId, name = request.name)
+        val kbEntity = KnowledgeBaseEntity(userId=userId, name = request.name)
         if (knowledgeBaseService.save(kbEntity))
         {
             return ResultCode.SUCCESS
@@ -53,7 +53,7 @@ class KnowledgeBaseController
 
     @SaCheckRole("user")
     @PutMapping
-    fun updateKnowledgeBase(@RequestBody request: UpdateKnowledgeBaseRequest): Any
+    fun updateKnowledgeBase(@RequestBody @Valid request: UpdateKnowledgeBaseRequest): Any
     {
         val userId = StpUtil.getLoginIdAsLong()
         val updateWrapper = UpdateWrapper<KnowledgeBaseEntity>()

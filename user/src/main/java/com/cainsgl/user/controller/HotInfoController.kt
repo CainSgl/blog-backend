@@ -16,12 +16,13 @@ class HotInfoController
     lateinit var userExtraInfoServiceImpl: UserExtraInfoServiceImpl
 
     @GetMapping
-    fun getHotInfo(@RequestParam(required = false) id:Long?): Any?
+    fun getHotInfo(@RequestParam id:Long): Any?
     {
-        if(id==null||id<0)
+        if(id<0)
         {
             return ResultCode.RESOURCE_NOT_FOUND
         }
         return userExtraInfoServiceImpl.getBySaveOnNull(id)
     }
+
 }

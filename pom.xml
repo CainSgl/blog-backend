@@ -28,7 +28,6 @@
         <module>api-go</module>
         <!-- 业务模块 -->
         <module>user</module>
-        <module>test</module>
         <module>article</module>
         <module>ai</module>
         <module>consumer</module>

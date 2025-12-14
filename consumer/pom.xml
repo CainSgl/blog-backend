@@ -54,6 +54,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+<!--        调用其他服务-->
         <dependency>
             <groupId>com.cainsgl</groupId>
             <artifactId>api-go</artifactId>
@@ -62,6 +63,11 @@
         <dependency>
             <groupId>com.cainsgl</groupId>
             <artifactId>api-article</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.cainsgl</groupId>
+            <artifactId>api-user</artifactId>
             <version>1.0</version>
         </dependency>
     </dependencies>

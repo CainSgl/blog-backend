@@ -3,6 +3,7 @@ package com.cainsgl.common.entity.article
 import com.baomidou.mybatisplus.annotation.*
 import com.cainsgl.common.handler.ArticleStatusTypeHandler
 import com.cainsgl.common.handler.StringListTypeHandler
+import com.cainsgl.common.handler.VectorTypeHandler
 import java.time.OffsetDateTime
 
 @TableName(value = "posts", autoResultMap = true)
@@ -60,4 +61,6 @@ data class PostEntity(
     var publishedAt: OffsetDateTime? = null,
     @TableField("kb_id")
     var kbId: Long? = null,
+    @TableField("vector", select = false,typeHandler = VectorTypeHandler::class)
+    var vecotr: FloatArray? = null,
 )

@@ -6,6 +6,7 @@ import com.cainsgl.api.go.PostCloneGrpcService
 import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.consumer.core.BaseConsumer
 import com.cainsgl.consumer.core.NonRetryableException
+import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
 import org.apache.rocketmq.client.annotation.RocketMQMessageListener
 import org.apache.rocketmq.client.apis.consumer.ConsumeResult
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component
 /**
  * 文章发布消费者
  */
+private val log = KotlinLogging.logger {}
 @Component
 @RocketMQMessageListener(
     consumerGroup = "article-add-consumer",
@@ -42,7 +44,7 @@ class ArticlePublishConsumer : BaseConsumer<Long>(Long::class.java) {
         postCloneGrpcService.upsertPost(postId,postEntity.title?:"",postEntity.content?:"",postEntity.status?: ArticleStatus.PUBLISHED)
         //从向量数据库删除原来可能存在的，并重新发布向量，这里就是差量更新了，具体实现跟这里就无关了
         postChunkVectorService.reloadVector(postId,oldData?.content)
-        log.info("消费者成功让文档：$postId,向量化")
+        log.info { "消费者成功让文档：$postId,向量化" }
         return ConsumeResult.SUCCESS
     }
 }
@@ -65,17 +67,18 @@ class ArticleContentConsumer : BaseConsumer<Long>(Long::class.java) {
     @Resource
     lateinit var postChunkVectorService: PostChunkVectorService
     override fun doConsume(message: Long, messageView: MessageView): ConsumeResult {
-        val postId=message
-        val postEntity = postService.getById(postId) ?: throw NonRetryableException("文章不存在", postId)
-        //发布中的文章，更新向量
-        if (postEntity.status == ArticleStatus.PUBLISHED) {
-            val oldData = postCloneGrpcService.getPostById(postId)
-            if(postEntity.content!=oldData?.content){
-                postCloneGrpcService.upsertPost(postId,postEntity.title?:"",postEntity.content?:"",postEntity.status?: ArticleStatus.PUBLISHED)
-                postChunkVectorService.reloadVector(postId,oldData?.content)
-                log.info("消费者成功让文档：$postId,向量化")
-            }
-        }
+        log.info { "消费者监听到id为$message 的文章变动，但不是发布的文章" }
+//        val postId=message
+//        val postEntity = postService.getById(postId) ?: throw NonRetryableException("文章不存在", postId)
+//        //发布中的文章，更新向量
+//        if (postEntity.status == ArticleStatus.PUBLISHED) {
+//            val oldData = postCloneGrpcService.getPostById(postId)
+//            if(postEntity.content!=oldData?.content){
+//                postCloneGrpcService.upsertPost(postId,postEntity.title?:"",postEntity.content?:"",postEntity.status?: ArticleStatus.PUBLISHED)
+//                postChunkVectorService.reloadVector(postId,oldData?.content)
+//                log.info("消费者成功让文档：$postId,向量化")
+//            }
+//        }
         return ConsumeResult.SUCCESS
     }
 }
@@ -99,7 +102,7 @@ class ArticleDeleteConsumer : BaseConsumer<Long>(Long::class.java) {
         log.info("消费文章删除消息，id=$message")
         //删除clone里的，以及chunk
         postCloneGrpcService.delete( message)
-        //TODO
+        postChunkVectorService.removeVector(message)
         return ConsumeResult.SUCCESS
     }
 }

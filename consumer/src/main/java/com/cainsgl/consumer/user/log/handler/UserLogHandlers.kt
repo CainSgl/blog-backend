@@ -1,7 +1,7 @@
-package com.cainsgl.user.log.handler
+package com.cainsgl.consumer.user.log.handler
 
-import com.cainsgl.user.log.BaseLogHandler
-import com.cainsgl.user.log.context.LogProcessContext
+import com.cainsgl.consumer.user.log.BaseLogHandler
+import com.cainsgl.consumer.user.log.context.LogProcessContext
 import org.springframework.stereotype.Component
 
 @Component

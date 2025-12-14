@@ -5,13 +5,12 @@ import cn.dev33.satoken.annotation.SaCheckPermission
 import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.cainsgl.api.ai.AiService
 import com.cainsgl.api.user.extra.UserExtraInfoService
-import com.cainsgl.article.dto.request.post.CreatePostRequest
-import com.cainsgl.article.dto.request.post.PubPostRequest
-import com.cainsgl.article.dto.request.post.SearchPostRequest
-import com.cainsgl.article.dto.request.post.UpdatePostRequest
+import com.cainsgl.article.dto.request.CreatePostRequest
+import com.cainsgl.article.dto.request.PubPostRequest
+import com.cainsgl.article.dto.request.SearchPostRequest
+import com.cainsgl.article.dto.request.UpdatePostRequest
 import com.cainsgl.article.service.DirectoryServiceImpl
 import com.cainsgl.article.service.PostChunkVectorServiceImpl
 import com.cainsgl.article.service.PostServiceImpl
@@ -22,6 +21,7 @@ import com.cainsgl.common.entity.article.PostEntity
 import com.cainsgl.common.exception.BusinessException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
+import jakarta.validation.Valid
 import org.apache.rocketmq.client.core.RocketMQClientTemplate
 import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.bind.annotation.*
@@ -85,11 +85,8 @@ class PostController
 
     @SaCheckPermission("article.post")
     @PostMapping
-    fun createPost(@RequestBody request: CreatePostRequest): Any
+    fun createPost(@RequestBody @Valid request: CreatePostRequest): Any
     {
-        requireNotNull(request.kbId) { return ResultCode.MISSING_PARAM }
-        requireNotNull(request.parentId) { return ResultCode.MISSING_PARAM }
-        require(request.kbId >= 0 && request.parentId >= 0) { return ResultCode.PARAM_INVALID }
         val userId = StpUtil.getLoginIdAsLong()
         //创建一个目录，然后让他的postId=新建的文档ID
         val postEntity = PostEntity(title = request.title, userId = userId, kbId = request.kbId)
@@ -117,13 +114,18 @@ class PostController
 
     @SaCheckRole("user")
     @PutMapping
-    fun updatePost(@RequestBody request: UpdatePostRequest): Any
+    fun updatePost(@RequestBody @Valid request: UpdatePostRequest): Any
     {
-        requireNotNull(request.id) { return ResultCode.MISSING_PARAM }
         val userId = StpUtil.getLoginIdAsLong()
-        val updateWrapper = UpdateWrapper<PostEntity>()
-        updateWrapper.eq("id", request.id)
-        updateWrapper.eq("user_id", userId)
+        val query = QueryWrapper<PostEntity>()
+        query.eq("id", request.id)
+        query.eq("user_id", userId)
+        val entity = postService.getOne(query)
+            ?: //没对应的数据
+            return ResultCode.RESOURCE_NOT_FOUND
+//        val updateWrapper = UpdateWrapper<PostEntity>()
+//        updateWrapper.eq("id", request.id)
+//        updateWrapper.eq("user_id", userId)
         val postEntity = PostEntity(
             id = request.id,
             title = request.title,
@@ -131,7 +133,14 @@ class PostController
             summary = request.summary,
             top = request.isTop
         )
-        if (!postService.update(postEntity, updateWrapper))
+        if(entity.status == ArticleStatus.PUBLISHED && !request.content.isNullOrEmpty())
+        {
+            //修改的是发布状态的内容。需要重新向量化
+            val embedding = aiService.getEmbedding(entity.content!!)
+            postEntity.vecotr=embedding
+            rocketMQClientTemplate.asyncSendNormalMessage("article:publish", request.id, null)
+        }
+        if (!postService.updateById(postEntity))
         {
             return ResultCode.PARAM_INVALID
         }
@@ -143,23 +152,25 @@ class PostController
 
     @SaCheckRole("user")
     @PutMapping("/publish")
-    fun updatePost(@RequestBody request: PubPostRequest): Any
+    fun updatePost(@RequestBody @Valid request: PubPostRequest): Any
     {
-        requireNotNull(request.id) { return ResultCode.MISSING_PARAM }
         val userId = StpUtil.getLoginIdAsLong()
-        val updateWrapper = UpdateWrapper<PostEntity>()
-        updateWrapper.eq("id", request.id)
-        updateWrapper.eq("user_id", userId)
-        updateWrapper.eq("status", ArticleStatus.DRAFT)
-        val postEntity = PostEntity(
-            id = request.id,
-            status = ArticleStatus.PUBLISHED
-        )
-        if (!postService.update(postEntity, updateWrapper))
+        //这里是读时更新Read-Modify-Write，正常是要加事务的，但是这里是单个用户，不存在并发问题
+        val query = QueryWrapper<PostEntity>()
+        query.eq("id", request.id)
+        query.eq("user_id", userId)
+        query.eq("status", ArticleStatus.DRAFT)
+        val entity = postService.getOne(query)
+            ?: //没对应的数据
+            return ResultCode.RESOURCE_NOT_FOUND
+        val embedding = aiService.getEmbedding(entity.content!!)
+        entity.vecotr=embedding
+        entity.status=ArticleStatus.PUBLISHED
+        if (!postService.updateById(entity))
         {
             throw BusinessException("数据库无法更新该数据，可能是资源不存在或者传参问题")
         }
-        //强一致需求，必须入库本地消息表，如果失败的话
+        //发送消息，这里不需要回调，也不需要保证可靠，不是强一致的需求
         //使用grpc传入
         rocketMQClientTemplate.asyncSendNormalMessage("article:publish", request.id, null)
         return ResultCode.SUCCESS
@@ -171,7 +182,6 @@ class PostController
     {
         //还需要删除目录
         val userId = StpUtil.getLoginIdAsLong()
-
         val wrapper= QueryWrapper<PostEntity>()
         wrapper.eq("id",id)
         wrapper.eq("user_id", userId)
@@ -190,7 +200,7 @@ class PostController
     @PostMapping("/search")
     fun searchPost(@RequestBody request: SearchPostRequest):Any
     {
-        require(!request.query.isNullOrEmpty())
+        require(request.query.isNotEmpty())
         if (request.vectorOffset==null)
         {
             request.vectorOffset=1.1

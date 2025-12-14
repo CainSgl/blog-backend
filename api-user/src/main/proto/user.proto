@@ -9,14 +9,15 @@ message ProcessLogRequest {
 }
 
 message ProcessLogResponse {
-    int32 result = 1;
+    string result = 1;
 }
 
 // UserLog Service
 service UserLogService {
-    rpc processLog (ProcessLogRequest) returns (ProcessLogResponse);
+    rpc loadLogsToRedis (ProcessLogRequest) returns (ProcessLogResponse);
 }
 // UserExtraInfo Service
+//获取用户兴趣向量的
 message GetInterestVectorRequest {
     int64 user_id = 1;
 }
@@ -24,7 +25,18 @@ message GetInterestVectorRequest {
 message GetInterestVectorResponse {
     repeated float interest_vector = 1;
 }
+//设置用户兴趣向量
+message SetInterestVectorRequest {
+    int64 user_id = 1;
+    repeated float interest_vector = 2;
+}
+
+message SetInterestVectorResponse {
+    bool success=1;
+}
+
 
 service UserExtraInfoService {
     rpc getInterestVector (GetInterestVectorRequest) returns (GetInterestVectorResponse);
+    rpc setInterestVector (SetInterestVectorRequest) returns (SetInterestVectorResponse);
 }

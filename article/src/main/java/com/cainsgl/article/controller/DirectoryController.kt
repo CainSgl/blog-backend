@@ -3,13 +3,14 @@ package com.cainsgl.article.controller
 import cn.dev33.satoken.annotation.SaCheckPermission
 import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.stp.StpUtil
-import com.cainsgl.article.dto.request.dir.CreateDirectoryRequest
-import com.cainsgl.article.dto.request.dir.MoveRequest
-import com.cainsgl.article.dto.request.dir.ReSortRequest
-import com.cainsgl.article.dto.request.dir.UpdateDirectoryRequest
+import com.cainsgl.article.dto.request.CreateDirectoryRequest
+import com.cainsgl.article.dto.request.MoveRequest
+import com.cainsgl.article.dto.request.ReSortRequest
+import com.cainsgl.article.dto.request.UpdateDirectoryRequest
 import com.cainsgl.article.service.DirectoryServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
 import jakarta.annotation.Resource
+import jakarta.validation.Valid
 import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.bind.annotation.*
 
@@ -22,15 +23,10 @@ class DirectoryController
     lateinit var directoryService: DirectoryServiceImpl
     @Resource
     lateinit var transactionTemplate: TransactionTemplate
-
     @SaCheckRole("user")
     @PutMapping
-    fun updateDirectory(@RequestBody request: UpdateDirectoryRequest): Any
+    fun updateDirectory(@RequestBody @Valid request: UpdateDirectoryRequest): Any
     {
-        requireNotNull(request.id) { return ResultCode.MISSING_PARAM }
-        require(request.id >= 0) { return ResultCode.PARAM_INVALID }
-        requireNotNull(request.kbId) { return ResultCode.MISSING_PARAM }
-        require(request.kbId >= 0) { return ResultCode.PARAM_INVALID }
         val userId = StpUtil.getLoginIdAsLong()
         if (directoryService.updateDirectory(request.id, request.kbId, userId, request.name, request.parentId))
         {
@@ -41,17 +37,13 @@ class DirectoryController
         {
             return ResultCode.PARAM_INVALID
         }
-        return ResultCode.DB_ERROR
+        return ResultCode.RESOURCE_NOT_FOUND
     }
 
     @SaCheckRole("user")
     @PostMapping("/resort")
-    fun resort(@RequestBody request: ReSortRequest): Any
+    fun resort(@RequestBody @Valid request: ReSortRequest): Any
     {
-        requireNotNull(request.id) { return ResultCode.MISSING_PARAM }
-        require(request.id >= 0) { return ResultCode.PARAM_INVALID }
-        requireNotNull(request.kbId) { return ResultCode.MISSING_PARAM }
-        require(request.kbId >= 0) { return ResultCode.PARAM_INVALID }
         // lastId允许为null（表示移到最前面）
         if (request.lastId != null && request.lastId < 0)
         {
@@ -64,12 +56,8 @@ class DirectoryController
 
     @SaCheckRole("user")
     @PostMapping("/move")
-    fun resortAndUpdate(@RequestBody request: MoveRequest): Any
+    fun resortAndUpdate(@RequestBody @Valid request: MoveRequest): Any
     {
-        requireNotNull(request.id) { return ResultCode.MISSING_PARAM }
-        require(request.id >= 0) { return ResultCode.PARAM_INVALID }
-        requireNotNull(request.kbId) { return ResultCode.MISSING_PARAM }
-        require(request.kbId >= 0) { return ResultCode.PARAM_INVALID }
         // lastId允许为null（表示移到最前面）
         if (request.lastId != null && request.lastId < 0)
         {
@@ -103,10 +91,8 @@ class DirectoryController
 
     @SaCheckPermission("directory.post")
     @PostMapping
-    fun createDirectory(@RequestBody request: CreateDirectoryRequest): Any
+    fun createDirectory(@RequestBody @Valid request: CreateDirectoryRequest): Any
     {
-        requireNotNull(request.kbId) { return ResultCode.MISSING_PARAM }
-        require(request.kbId >= 0) { return ResultCode.PARAM_INVALID }
         //创建新目录，先检查用户是否拥有该kb
         val userId = StpUtil.getLoginIdAsLong()
         if (directoryService.saveDirectory(request.kbId, userId, request.name, request.parentId))

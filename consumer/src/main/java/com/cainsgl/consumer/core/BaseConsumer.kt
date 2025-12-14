@@ -1,31 +1,30 @@
 package com.cainsgl.consumer.core
 
 import com.alibaba.fastjson2.JSON
+import io.github.oshai.kotlinlogging.KotlinLogging
+import jakarta.annotation.Resource
 import org.apache.rocketmq.client.apis.consumer.ConsumeResult
 import org.apache.rocketmq.client.apis.message.MessageView
 import org.apache.rocketmq.client.core.RocketMQListener
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-import org.springframework.data.redis.core.StringRedisTemplate
+import org.springframework.data.redis.core.RedisTemplate
 import java.time.Duration
 
 
-abstract class BaseConsumer<T : Any>(
-    private val messageType: Class<T>
-) : RocketMQListener
+private val log =KotlinLogging.logger {  }
+abstract class BaseConsumer<T : Any>(private val messageType: Class<T>) : RocketMQListener
 {
-
-    protected val log: Logger = LoggerFactory.getLogger(this::class.java)
 
     companion object
     {
         private const val IDEMPOTENT_KEY_PREFIX = "mq:consumed:"
         private val IDEMPOTENT_EXPIRE: Duration = Duration.ofHours(24)
     }
-
-    protected open val redisTemplate: StringRedisTemplate? = null
+    @Resource
+    protected lateinit var redisTemplate: RedisTemplate<String, Any>
     protected open val enableIdempotent: Boolean = false
     protected open val idempotentExpire: Duration = IDEMPOTENT_EXPIRE
+
+    protected open val consumerName=this::class.simpleName!!
 
     override fun consume(messageView: MessageView): ConsumeResult
     {
@@ -35,7 +34,7 @@ abstract class BaseConsumer<T : Any>(
             // 幂等性检查
             if (enableIdempotent && isDuplicate(messageId))
             {
-                log.warn("[{}] 重复消息，跳过处理: {}", consumerName(), messageId)
+                log.warn { "[${consumerName()}] 重复消息，跳过处理: ,messageId=${messageId}" }
                 return ConsumeResult.SUCCESS
             }
             val message = parseMessage(messageView)
@@ -49,12 +48,12 @@ abstract class BaseConsumer<T : Any>(
         } catch (e: NonRetryableException)
         {
             // 不可重试异常
-            log.error("[{}] 不可重试异常，消息将被丢弃: messageId={}", consumerName(), messageId, e)
+            log.error { "[${consumerName()}] 不可重试异常，消息将被丢弃,messageId=${messageId}" }
             ConsumeResult.SUCCESS
         } catch (e: Exception)
         {
             // 可重试异常
-            log.error("[{}] 消费异常，将重试: messageId={}", consumerName(), messageId, e)
+            log.error { "[${consumerName()}] 消费异常 ， 将重试,messageId=${messageId}" }
             ConsumeResult.FAILURE
         }
     }
@@ -67,7 +66,7 @@ abstract class BaseConsumer<T : Any>(
     /**
      * 消费者名称，用于日志标识
      */
-    protected open fun consumerName(): String = "UnknownConsumer"
+    protected open fun consumerName(): String = consumerName
 
     /**
      * 解析消息体
@@ -92,7 +91,7 @@ abstract class BaseConsumer<T : Any>(
      */
     private fun isDuplicate(messageId: String): Boolean
     {
-        val redis = redisTemplate ?: return false
+        val redis = redisTemplate
         val key = "$IDEMPOTENT_KEY_PREFIX$messageId"
         return redis.hasKey(key) == true
     }
@@ -102,9 +101,11 @@ abstract class BaseConsumer<T : Any>(
      */
     private fun markConsumed(messageId: String)
     {
-        val redis = redisTemplate ?: return
+        val redis = redisTemplate
         val key = "$IDEMPOTENT_KEY_PREFIX$messageId"
         redis.opsForValue().set(key, "1", idempotentExpire)
+
+
     }
 }
 

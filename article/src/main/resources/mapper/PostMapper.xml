@@ -28,4 +28,10 @@
         </foreach>
     </select>
 
+    <select id="selectVectorById" resultType="com.cainsgl.common.handler.VectorTypeHandler">
+        SELECT vector
+        FROM posts
+        WHERE id = #{id}
+    </select>
+
 </mapper>

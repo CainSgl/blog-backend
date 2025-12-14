@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.api.article.kb.KnowledgeBaseService
-import com.cainsgl.article.dto.request.kb.UpdateKnowledgeBaseRequest
+import com.cainsgl.article.dto.request.UpdateKnowledgeBaseRequest
 import com.cainsgl.article.repository.KnowledgeBaseMapper
 import com.cainsgl.common.entity.article.KnowledgeBaseEntity
 import org.springframework.stereotype.Service

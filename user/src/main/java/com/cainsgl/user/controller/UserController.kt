@@ -5,12 +5,14 @@ import cn.dev33.satoken.stp.StpUtil
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.user.UserEntity
 import com.cainsgl.common.exception.BusinessException
-import com.cainsgl.user.dto.request.LoginRequest
+import com.cainsgl.common.util.DeviceUtils
+import com.cainsgl.user.dto.request.UserLoginRequest
 import com.cainsgl.user.dto.response.LoginResponse
 import com.cainsgl.user.dto.response.UserResponse
 import com.cainsgl.user.service.UserServiceImpl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
+import jakarta.validation.Valid
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.web.bind.annotation.*
 
@@ -26,17 +28,9 @@ class UserController
     @Resource
     lateinit var userService: UserServiceImpl
 
-
-
-
-    /**
-     * 用户登录
-     */
     @PostMapping("/login")
-    fun login(@RequestBody loginRequest: LoginRequest): Any
+    fun login(@RequestBody @Valid loginRequest: UserLoginRequest): Any
     {
-        require(!loginRequest.account.isNullOrEmpty()) { return ResultCode.MISSING_PARAM }
-        require(!loginRequest.password.isNullOrEmpty()) { return ResultCode.MISSING_PARAM }
         // 查询用户并验证
         val user = userService.getUserByAccount(loginRequest.account) ?: throw BusinessException("用户不存在或密码错误")
         if (!passwordEncoder.matches(loginRequest.password, user.passwordHash))
@@ -56,8 +50,7 @@ class UserController
             }
             throw BusinessException(message)
         }
-
-        val device = LoginRequest.getDeviceType()
+        val device = DeviceUtils.getDeviceType()
         //注销所有旧 Token
         val oldTokenList = StpUtil.getTokenValueListByLoginId(user.id, device)
         for (oldToken in oldTokenList)
@@ -70,9 +63,7 @@ class UserController
         return LoginResponse(token, user.calculateLevelInfo())
     }
 
-    /**
-     * 用户登出
-     */
+
     @PostMapping("/logout")
     fun logout(): Any
     {
@@ -97,9 +88,8 @@ class UserController
 
 
     @GetMapping
-    fun get(@RequestParam(required = false) id: Long?): Any
+    fun get(@RequestParam id: Long): Any
     {
-        requireNotNull(id) { return ResultCode.MISSING_PARAM }
         val user = userService.getById(id) ?: return ResultCode.RESOURCE_NOT_FOUND
         //去除敏感字段
         user.calculateLevelInfo()

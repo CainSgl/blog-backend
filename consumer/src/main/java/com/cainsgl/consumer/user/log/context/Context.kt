@@ -1,4 +1,4 @@
-package com.cainsgl.user.log.context
+package com.cainsgl.consumer.user.log.context
 
 import com.cainsgl.common.entity.user.UserLogEntity
 import com.cainsgl.common.exception.BSystemException
@@ -8,7 +8,7 @@ interface ProcessContext
     fun current(): Any
     fun getAttribute(key: String): Any?
     fun setAttribute(key: String, value: Any)
-    fun addPostProcessor(postProcessor:PostProcessor)
+    fun addPostProcessor(postProcessor: PostProcessor)
 }
 
 interface PostProcessor
@@ -18,17 +18,20 @@ interface PostProcessor
 }
 
 
-class LogPostProcessor(private val combine:(LogProcessContext)->LogPostProcessor,private val doProcess:(LogProcessContext)) : PostProcessor
+class LogPostProcessor(private val key:String,private val doProcessFunc:(LogProcessContext)->Unit) : PostProcessor
 {
     override fun tryCombine(other: PostProcessor, context: ProcessContext): PostProcessor?
     {
-        val logContext= context as? LogProcessContext ?: return null
         if(other !is LogPostProcessor)
         {
             return null
         }
-        //尝试合并
-        return combine(logContext)
+        //尝试合并，只要key相同，那么直接合并
+        if(other.key == this.key)
+        {
+            return this
+        }
+        return null
     }
 
     override fun doProcess(context: ProcessContext)
@@ -36,13 +39,13 @@ class LogPostProcessor(private val combine:(LogProcessContext)->LogPostProcessor
         val logProcessContext= context as? LogProcessContext
         if(logProcessContext != null)
         {
-            doProcess(logProcessContext)
+            doProcessFunc(logProcessContext)
         }else
         {
             throw BSystemException("日志上下文传递有问题，类型错误,期望的类型是LogProcessContext，实际上是"+context::class.simpleName)
         }
-
     }
+
 
 }
 
@@ -64,7 +67,10 @@ class LogProcessContext(private var logList: List<UserLogEntity>) : ProcessConte
     {
         return attributes[key]
     }
-
+    fun getAttributes(): Map<String, Any>
+    {
+        return attributes
+    }
     override fun setAttribute(key: String, value: Any)
     {
         attributes[key] = value
@@ -115,7 +121,7 @@ class LogProcessContext(private var logList: List<UserLogEntity>) : ProcessConte
     private var index = 0
     fun next()
     {
-        if (index >= failureInfos.size)
+        if (index >= logList.size)
         {
             throw NoSuchElementException()
         }
@@ -125,7 +131,7 @@ class LogProcessContext(private var logList: List<UserLogEntity>) : ProcessConte
 
     fun hasNext(): Boolean
     {
-        return index >= logList.size
+        return index < logList.size
     }
 
     private var isAbort: Boolean = false

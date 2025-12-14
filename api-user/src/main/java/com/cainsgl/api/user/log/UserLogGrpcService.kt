@@ -13,11 +13,11 @@ class UserLogGrpcService : UserLogService
     @GrpcClient("UserLogService")
     lateinit var userLogServiceGrpc: UserLogServiceGrpc.UserLogServiceBlockingStub
 
-    override fun processLog(value: Int): Int
+    override fun loadLogsToRedis(value: Int): String
     {
         val request = ProcessLogRequest.newBuilder()
             .setValue(value)
             .build()
-        return userLogServiceGrpc.processLog(request).result
+        return userLogServiceGrpc.loadLogsToRedis(request).result
     }
 }

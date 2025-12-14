@@ -6,4 +6,5 @@
     <sql id="Base_Column_List">
         user_id, follower_count, following_count, like_count, comment_count, post_count, interest_vector
     </sql>
+
 </mapper>

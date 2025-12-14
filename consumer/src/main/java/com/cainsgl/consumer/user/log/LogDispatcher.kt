@@ -1,12 +1,14 @@
-package com.cainsgl.user.log
+package com.cainsgl.consumer.user.log
 
 import com.cainsgl.common.entity.user.UserLogEntity
 import com.cainsgl.common.exception.BSystemException
-import com.cainsgl.user.log.context.LogProcessContext
-import com.cainsgl.user.log.context.PostProcessor
+import com.cainsgl.consumer.user.log.context.LogProcessContext
+import com.cainsgl.consumer.user.log.context.PostProcessor
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import java.util.Collections.emptyList
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -58,11 +60,13 @@ class LogPipelineManager(handlers: List<LogHandler>)
             handlerMutableMap[supportType] = handler
         }
     }
-
-    companion object
-    {
-        const val MAX_PIPELINE_SIZE = 50
-    }
+    @Value("\${userLog.batchNumber}")
+    var batchNumber:Int=20
+//    companion object
+//    {
+//        //TODO ，目前设置为20条
+//        const val MAX_PIPELINE_SIZE = 20
+//    }
 
     private val backlogLogs: MutableList<UserLogEntity> = mutableListOf()
     private val lock = ReentrantLock()
@@ -72,7 +76,7 @@ class LogPipelineManager(handlers: List<LogHandler>)
     {
         lock.withLock {
             backlogLogs.addAll(items)
-            if (backlogLogs.size > MAX_PIPELINE_SIZE)
+            if (backlogLogs.size > batchNumber)
             {
                 //开始处理
                 val logs: List<UserLogEntity> = ArrayList(backlogLogs)

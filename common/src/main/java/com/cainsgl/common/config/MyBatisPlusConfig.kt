@@ -6,13 +6,9 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import java.time.OffsetDateTime
 
-/**
- * MyBatis-Plus 配置类
- */
 @Configuration
 class MyBatisPlusConfig
 {
-
     /**
      * 自动填充处理器
      * 支持以下字段类型的自动填充：

@@ -1,15 +1,15 @@
 package com.cainsgl.common.entity.user
 
 import com.baomidou.mybatisplus.annotation.TableField
-import com.baomidou.mybatisplus.annotation.TableId
 import com.baomidou.mybatisplus.annotation.TableName
+import com.cainsgl.common.handler.VectorTypeHandler
 import org.springframework.data.redis.core.RedisTemplate
 import java.util.concurrent.TimeUnit
 
 //为什么会专门建额外的一张用户信息表，这是为了冷热数据分离，这里的数据都是会频繁更新的，我们会缓存在redis，然后定时同步到数据库
 @TableName(value = "user_extra_infos", autoResultMap = true)
 data class UserExtraInfoEntity(
-    @TableId
+    @TableField("user_id")
     var userId: Long? = null,
 
     @TableField("follower_count")
@@ -29,13 +29,13 @@ data class UserExtraInfoEntity(
     @TableField("article_view_count")
     var articleViewCount: Int = 0,
 
-//    @TableField(value = "interest_vector", typeHandler = VectorTypeHandler::class)
-//    var interestVector: FloatArray? = null
+    @TableField(value = "interest_vector", typeHandler = VectorTypeHandler::class, select = false)
+    var interestVector: FloatArray? = null
 )
 {
     companion object
     {
-        const val USER_EXTRA_INFO_REDIS_PREFIX = "user.extraInfo."
+        const val USER_EXTRA_INFO_REDIS_PREFIX = "user:extraInfo:"
     }
 
     fun fillFieldByRedis(redisTemplate: RedisTemplate<String, String>): Boolean

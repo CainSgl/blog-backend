@@ -34,6 +34,10 @@ spring:
       port: ${redis.port}
       password: ${redis.password}
       timeout: 3000ms
+      jedis:
+        pool:
+          max-active: 8
+          max-idle: 8
 
 mybatis-plus:
   type-handlers-package: com.cainsgl.common.handler
@@ -103,3 +107,8 @@ sa-token:
   # 令牌风格
   token-style: uuid
 dimensions: 1024
+
+
+#服务参数，这里是代表一次性处理多少日志
+userLog:
+  batchNumber: 10

@@ -1,7 +1,7 @@
-package com.cainsgl.user.log
+package com.cainsgl.consumer.user.log
 
-import com.cainsgl.user.log.context.LogProcessContext
-import com.cainsgl.user.log.context.ProcessContext
+import com.cainsgl.consumer.user.log.context.LogProcessContext
+import com.cainsgl.consumer.user.log.context.ProcessContext
 
 abstract class BaseLogHandler(private val supportType: String) : LogHandler
 {
@@ -11,7 +11,6 @@ abstract class BaseLogHandler(private val supportType: String) : LogHandler
     }
     override fun process(context: ProcessContext)
     {
-
         handle(context as LogProcessContext)
     }
     abstract fun handle(context: LogProcessContext)

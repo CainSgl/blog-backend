@@ -1,5 +1,6 @@
 package com.cainsgl.common.entity.user
 
+import com.alibaba.fastjson2.annotation.JSONField
 import com.baomidou.mybatisplus.annotation.IdType
 import com.baomidou.mybatisplus.annotation.TableField
 import com.baomidou.mybatisplus.annotation.TableId
@@ -24,6 +25,7 @@ data class UserLogEntity(
     @TableField(value = "info", typeHandler = JsonTypeHandler::class)
     var info: Map<String, Any>? = null,
 
+    @JSONField(serialize = false)
     @TableField("created_at")
     var createdAt: LocalDateTime? = null
 )
@@ -54,4 +56,5 @@ data class UserLogEntity(
             return allowedActions.contains(actionName)
         }
     }
+
 }

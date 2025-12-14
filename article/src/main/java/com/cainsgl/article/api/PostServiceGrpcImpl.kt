@@ -3,9 +3,7 @@ package com.cainsgl.article.api
 import com.cainsgl.article.service.PostServiceImpl
 import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.PostEntity
-import com.cainsgl.grpc.article.GetPostByIdRequest
-import com.cainsgl.grpc.article.GetPostByIdResponse
-import com.cainsgl.grpc.article.PostServiceGrpc
+import com.cainsgl.grpc.article.*
 import io.grpc.stub.StreamObserver
 import jakarta.annotation.Resource
 import net.devh.boot.grpc.server.service.GrpcService
@@ -19,16 +17,38 @@ class PostServiceGrpcImpl : PostServiceGrpc.PostServiceImplBase()
     override fun getById(request: GetPostByIdRequest, responseObserver: StreamObserver<GetPostByIdResponse>)
     {
         val post = postService.getById(request.id)
-        val response = if (post != null) {
+        val response = if (post != null)
+        {
             GetPostByIdResponse.newBuilder()
                 .setExists(true)
                 .setPost(post.toProto())
                 .build()
-        } else {
+        } else
+        {
             GetPostByIdResponse.newBuilder()
                 .setExists(false)
                 .build()
         }
+        responseObserver.onNext(response)
+        responseObserver.onCompleted()
+    }
+
+    override fun getVectorById(request: GetVectorByIdRequest, responseObserver: StreamObserver<GetVectorByIdResponse>)
+    {
+        val vector: FloatArray? = postService.getVectorById(request.id)
+        val floatList = vector?.toList() ?: emptyList()
+        val response = GetVectorByIdResponse.newBuilder()
+            .addAllFloatArray(floatList)
+            .build()
+        responseObserver.onNext(response)
+        responseObserver.onCompleted()
+    }
+
+    override fun addViewCount(request: AddViewCountRequest, responseObserver: StreamObserver<RemoveVectorResponse>)
+    {
+        //实现一下
+        val success = postService.addViewCount(request.id, request.count)
+        val response = RemoveVectorResponse.newBuilder().setSuccess(success).build()
         responseObserver.onNext(response)
         responseObserver.onCompleted()
     }
@@ -60,12 +80,13 @@ class PostServiceGrpcImpl : PostServiceGrpc.PostServiceImplBase()
 
     private fun ArticleStatus?.toProtoStatus(): com.cainsgl.grpc.article.ArticleStatus
     {
-        return when (this) {
-            ArticleStatus.DRAFT -> com.cainsgl.grpc.article.ArticleStatus.ARTICLE_STATUS_DRAFT
+        return when (this)
+        {
+            ArticleStatus.DRAFT          -> com.cainsgl.grpc.article.ArticleStatus.ARTICLE_STATUS_DRAFT
             ArticleStatus.PENDING_REVIEW -> com.cainsgl.grpc.article.ArticleStatus.ARTICLE_STATUS_PENDING_REVIEW
-            ArticleStatus.PUBLISHED -> com.cainsgl.grpc.article.ArticleStatus.ARTICLE_STATUS_PUBLISHED
-            ArticleStatus.OFF_SHELF -> com.cainsgl.grpc.article.ArticleStatus.ARTICLE_STATUS_OFF_SHELF
-            else -> com.cainsgl.grpc.article.ArticleStatus.ARTICLE_STATUS_UNSPECIFIED
+            ArticleStatus.PUBLISHED      -> com.cainsgl.grpc.article.ArticleStatus.ARTICLE_STATUS_PUBLISHED
+            ArticleStatus.OFF_SHELF      -> com.cainsgl.grpc.article.ArticleStatus.ARTICLE_STATUS_OFF_SHELF
+            else                         -> com.cainsgl.grpc.article.ArticleStatus.ARTICLE_STATUS_UNSPECIFIED
         }
     }
 }

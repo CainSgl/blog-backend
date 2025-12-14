@@ -2,7 +2,9 @@ package com.cainsgl.api.article.post
 
 import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.PostEntity
+import com.cainsgl.grpc.article.AddViewCountRequest
 import com.cainsgl.grpc.article.GetPostByIdRequest
+import com.cainsgl.grpc.article.GetVectorByIdRequest
 import com.cainsgl.grpc.article.PostServiceGrpc
 import net.devh.boot.grpc.client.inject.GrpcClient
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
@@ -24,6 +26,26 @@ class PostGrpcService : PostService
         val response = postServiceGrpc.getById(request)
         if (!response.exists) return null
         return response.post.toEntity()
+    }
+
+    override fun getVectorById(id: Long): FloatArray?
+    {
+        val request = GetVectorByIdRequest.newBuilder()
+            .setId(id)
+            .build()
+        val response = postServiceGrpc.getVectorById(request)
+        val floatArrayList = response.floatArrayList
+        if (floatArrayList.isEmpty()) return null
+        return floatArrayList.toFloatArray()
+    }
+
+    override fun addViewCount(id: Long, count: Int):Boolean
+    {
+        val request = AddViewCountRequest.newBuilder()
+            .setId(id)
+            .build()
+        val response = postServiceGrpc.addViewCount(request)
+        return response.success
     }
 
     private fun com.cainsgl.grpc.article.PostEntity.toEntity(): PostEntity

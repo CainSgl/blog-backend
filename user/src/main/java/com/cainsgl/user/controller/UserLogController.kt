@@ -1,14 +1,13 @@
 package com.cainsgl.user.controller
 
 import cn.dev33.satoken.annotation.SaCheckRole
+import com.cainsgl.common.entity.user.UserLogEntity
+import com.cainsgl.user.dto.request.UserLogPostRequest
 import com.cainsgl.user.service.UserLogServiceImpl
-import com.cainsgl.user.service.UserServiceImpl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.data.redis.core.RedisTemplate
+import org.springframework.web.bind.annotation.*
 
 private val log = KotlinLogging.logger {}
 
@@ -16,16 +15,27 @@ private val log = KotlinLogging.logger {}
 @RequestMapping("/log")
 class UserLogController
 {
+
     @Resource
-    lateinit var userService: UserServiceImpl
+    lateinit var redisTemplate: RedisTemplate<String, String>
 
     @Resource
     lateinit var userLogService: UserLogServiceImpl
 
     @SaCheckRole("admin")
-    @GetMapping("/process")
-    fun processLog(@RequestParam number:Int=10): Any
+    @GetMapping("/load")
+    fun load(@RequestParam number:Int=10): Any
     {
-       return userLogService.processLog(number)
+        return userLogService.loadLogsToRedis(number)
     }
+
+    @SaCheckRole("user")
+    @PostMapping
+    fun post(userLogPostRequest: UserLogPostRequest): Any
+    {
+        UserLogEntity.validAction(userLogPostRequest.action)
+        TODO()
+    }
+
+
 }
