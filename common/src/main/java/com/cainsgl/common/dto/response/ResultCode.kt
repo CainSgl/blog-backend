@@ -18,6 +18,12 @@ enum class ResultCode(val code: Int, val message: String, val codeScopeDesc: Str
     PERMISSION_DENIED(40101, "权限不足", "权限异常"),
     NOT_ROLE(40102, "用户角色不匹配", "权限异常"),
     UNKOWN_SATOKEN_ERROR(40103, "未知的SATOKEN异常", "权限异常"),
+    // ====================== 请求限流相关（429xx）======================
+    TOO_MANY_REQUESTS(42900, "请求过于频繁，请稍后再试", "限流异常"),
+    RATE_LIMIT_EXCEEDED(42901, "超出接口限流阈值", "限流异常"),
+    IP_RATE_LIMITED(42902, "IP请求频率超限", "限流异常"),
+    USER_RATE_LIMITED(42903, "用户请求频率超限", "限流异常"),
+    AI_TOO_MAY_REQUESTS(42904, "你的上下文太长了，请清空对话", "AI"),
     // ====================== 系统异常码段（500xx）======================
     SYSTEM_ERROR(50000, "系统内部异常", "通用系统异常"),
     DB_ERROR(50001, "数据库操作异常", "系统异常-数据库"),

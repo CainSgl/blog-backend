@@ -10,10 +10,12 @@ spring:
         options:
           model: ${ai.chat.model}
           max-tokens: ${ai.chat.max-tokens}
-        completions-path: /
+        completions-path: /chat/completions
       embedding:
         api-key: ${ai.embedding.api-key}
         base-url: ${ai.embedding.base-url}
         options:
           model: ${ai.embedding.model}
         embeddings-path: /embeddings
+    retry:
+      max-attempts: 1

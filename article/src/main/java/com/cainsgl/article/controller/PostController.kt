@@ -58,9 +58,8 @@ class PostController
      * 根据ID获取文章
      */
     @GetMapping
-    fun get(@RequestParam(required = false) id: Long?): Any
+    fun get(@RequestParam id: Long): Any
     {
-        requireNotNull(id) { return ResultCode.MISSING_PARAM }
         val post = postService.getPost(id) ?: return ResultCode.RESOURCE_NOT_FOUND
         //检查用户是否有权访问
         if (post.status == ArticleStatus.PUBLISHED)

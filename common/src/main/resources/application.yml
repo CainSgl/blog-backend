@@ -69,6 +69,7 @@ logging:
   config: classpath:log4j-spring.xml
   level:
     com.cainsgl: DEBUG
+    org.springframework.web.client: DEBUG
 server:
   jetty:
     threads:
@@ -111,4 +112,4 @@ dimensions: 1024
 
 #服务参数，这里是代表一次性处理多少日志
 userLog:
-  batchNumber: 10
+  batchNumber: 30

@@ -9,7 +9,9 @@ import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.stereotype.Component
 import javax.sql.DataSource
+
 private val logger = KotlinLogging.logger {}
+
 @Component
 @ConditionalOnClass(org.postgresql.Driver::class)
 class StpInterfaceImpl : StpInterface, InitializingBean
@@ -18,20 +20,24 @@ class StpInterfaceImpl : StpInterface, InitializingBean
     @Resource
     lateinit var dataSource: DataSource
     private lateinit var rolePermissionMap: Map<String, List<String>>
-    override fun afterPropertiesSet() {
-        logger.info{"StpInterfaceImpl init"}
+    override fun afterPropertiesSet()
+    {
+        logger.info { "StpInterfaceImpl init" }
         val getPermissionGroup = "SELECT role, permission_list FROM permission_group"
         dataSource.connection.use { conn ->
             conn.createStatement().use { stmt ->
                 stmt.executeQuery(getPermissionGroup).use { rs ->
                     val tempMap = mutableMapOf<String, List<String>>()
-                    while (rs.next()) {
+                    while (rs.next())
+                    {
                         val role = rs.getString("role")
                         val permissionArray = rs.getArray("permission_list")
-                        val permissions = if (permissionArray != null) {
+                        val permissions = if (permissionArray != null)
+                        {
                             val array = permissionArray.array as? Array<*>
                             array?.mapNotNull { it as? String } ?: emptyList()
-                        } else {
+                        } else
+                        {
                             emptyList()
                         }
                         tempMap[role] = permissions
@@ -40,29 +46,43 @@ class StpInterfaceImpl : StpInterface, InitializingBean
                 }
             }
         }
-        logger.info{"Permission groups loaded: $rolePermissionMap"}
+        logger.info { "Permission groups loaded: $rolePermissionMap" }
     }
+
     companion object
     {
-        private const val USER_INFO_KEY = "userInfo"
+        const val USER_ROLE_KEY = "user:role"
+        const val USER_PERMISSIONS_KEY = "user:permission"
     }
+
     override fun getPermissionList(loginId: Any, loginType: String): List<String>
     {
-        val user = StpUtil.getSession().get(USER_INFO_KEY) as UserEntity? ?: return ArrayList()
-        // 创建可变列表用于合并权限
-        val allPermissions = user.permissions.toMutableList()
+        val roles = StpUtil.getSession().get(USER_ROLE_KEY).toStringList()
+        val extraPermissionList= StpUtil.getSession().get(USER_ROLE_KEY).toStringList().toMutableList()
         // 根据role获取permissions并合并
-        for (role in user.roles)
+        for (role in roles)
         {
             val permissions = rolePermissionMap[role] ?: continue
-            allPermissions.addAll(permissions)
+            extraPermissionList.addAll(permissions)
         }
-        return allPermissions.distinct() // 去重后返回
+        return extraPermissionList.distinct() // 去重后返回
     }
 
     override fun getRoleList(loginId: Any, loginType: String): List<String>
     {
-        val user = StpUtil.getSession().get(USER_INFO_KEY) as UserEntity? ?: return ArrayList()
-        return user.roles
+        val roles = StpUtil.getSession().get(USER_ROLE_KEY).toStringList()
+        return roles
+    }
+}
+
+private fun Any?.toStringList(): List<String>
+{
+    return when (this)
+    {
+        is List<*> -> this.map { element ->
+            // 规避NPE
+            element?.toString() ?: ""
+        }
+        else       -> emptyList()
     }
 }

@@ -20,10 +20,10 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.io.ClassPathResource
 import org.springframework.util.StringUtils
-import javax.net.ssl.SSLContext
 import java.security.KeyStore
 import java.security.cert.Certificate
 import java.security.cert.CertificateFactory
+import javax.net.ssl.SSLContext
 
 @Configuration
 @ConfigurationProperties(prefix = "spring.elasticsearch")
@@ -38,7 +38,6 @@ class ESClientConfig
 
     private fun toHttpHost(): Array<HttpHost>
     {
-        log.info("===== 调试：注入的spring.elasticsearch.uris = {} =====", uris)
         if (!StringUtils.hasLength(uris))
         {
             throw IllegalArgumentException("spring.elasticsearch.uris 配置不能为空，示例：https://43.163.122.45:32031")

@@ -51,5 +51,10 @@ data class Result(
         {
             return Result(SYSTEM_ERROR.code, exception.message, null, TraceIdUtils.getTraceId())
         }
+        @JvmStatic
+        fun fromCode( code:ResultCode):Result
+        {
+            return Result(code.code, code.message,null, debug = "from code");
+        }
     }
 }

@@ -101,18 +101,18 @@ class GlobalExceptionHandler
         log.error("未知的Satoken异常", e)
         return ResultCode.UNKOWN_SATOKEN_ERROR
     }
-
+    //这是一样的，一般是post或者其他复杂请求体的检验出错
     @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException::class)
     fun handleValidationError(ex: org.springframework.web.bind.MethodArgumentNotValidException): Any
     {
 
         val transform: (FieldError) -> CharSequence =
-            { error -> "${error.field}:${error.defaultMessage ?: "参数校验失败\n"}" }
+            { error -> "`${error.field}`:${error.defaultMessage ?: "参数校验失败\n"}" }
         val errMsg =
             ex.bindingResult.fieldErrors.joinToString(prefix = "[", postfix = "]", transform = transform)
         return Result(ResultCode.PARAM_INVALID.code, "fail", null, traceId = TraceIdUtils.getTraceId(), debug = errMsg)
     }
-
+    //这个是方法传参错误，一般是前端传的get请求
     @ExceptionHandler(HandlerMethodValidationException::class)
     fun handleValidationError(ex: HandlerMethodValidationException): Any
     {
@@ -120,7 +120,7 @@ class GlobalExceptionHandler
             validationResult.resolvableErrors.map { error ->
                 val paramName = validationResult.methodParameter.parameterName ?: "unknown"
                 val message = error.defaultMessage ?: "参数校验失败"
-                "$paramName: $message"
+                "`$paramName` because $message"
             }
         }
         val errMsg = errorMessages.joinToString(prefix = "[", postfix = "]")

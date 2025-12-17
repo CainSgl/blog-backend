@@ -78,7 +78,12 @@ data class UserEntity(
         this.expToNextLevel = max(0, this.nextLevelTotalExp!! - this.experience)
         return this
     }
-
+    //去除系统级别的字段，比如密码
+    fun sanitizeSystemSensitiveData():UserEntity
+    {
+        this.passwordHash = null
+        return this
+    }
     fun isActive(): Boolean
     {
         return "active" == this.status

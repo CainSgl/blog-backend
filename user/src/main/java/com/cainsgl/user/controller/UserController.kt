@@ -2,6 +2,7 @@ package com.cainsgl.user.controller
 
 import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.stp.StpUtil
+import com.cainsgl.common.config.interceptor.StpInterfaceImpl
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.user.UserEntity
 import com.cainsgl.common.exception.BusinessException
@@ -58,9 +59,12 @@ class UserController
             StpUtil.logoutByTokenValue(oldToken)
         }
         StpUtil.login(user.id, device)
+        //保存角色和单独权限到redis
+        StpUtil.getSession().set(StpInterfaceImpl.USER_ROLE_KEY, user.roles)
+        StpUtil.getSession().set(StpInterfaceImpl.USER_PERMISSIONS_KEY, user.permissions)
         log.info { "${"用户登录成功: userId={}, device={}"} ${user.id} $device" }
         val token = StpUtil.getTokenValue()
-        return LoginResponse(token, user.calculateLevelInfo())
+        return LoginResponse(token, user.calculateLevelInfo().sanitizeSystemSensitiveData())
     }
 
 
@@ -83,7 +87,8 @@ class UserController
     @GetMapping("/current")
     fun getCurrentUser(): Any
     {
-        return userService.getById(StpUtil.getLoginIdAsLong())
+        val userInfo = userService.getById(StpUtil.getLoginIdAsLong())
+        return userInfo.sanitizeSystemSensitiveData()
     }
 
 
