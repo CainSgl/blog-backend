@@ -74,7 +74,8 @@ class UserController
         if (StpUtil.isLogin())
         {
             val userId = StpUtil.getLoginIdAsLong()
-            StpUtil.logout()
+            val device = DeviceUtils.getDeviceType()
+            StpUtil.logout(userId, device)
             log.info { "${"用户登出成功: userId={}"} $userId" }
         }
         return "登出成功"

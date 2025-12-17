@@ -54,9 +54,6 @@ class PostController
     lateinit var userExtraInfoService:UserExtraInfoService
     @Resource
     lateinit var aiService:AiService
-    /**
-     * 根据ID获取文章
-     */
     @GetMapping
     fun get(@RequestParam id: Long): Any
     {

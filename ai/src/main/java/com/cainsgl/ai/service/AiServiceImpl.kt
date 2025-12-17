@@ -132,8 +132,7 @@ class AiServiceImpl : AiService
                             {
 
                                 redisTemplate.opsForList()
-                                    .rightPush("$AI_CHAT_REDIS_PREFIX$userId", AiMessage("Ai", sb.toString()))
-                                redisTemplate.expire("$AI_CHAT_REDIS_PREFIX$userId", Duration.ofDays(7))
+                                    .rightPush("$AI_CHAT_REDIS_PREFIX$userId", AiMessage("Ai", sb.toString()), Duration.ofDays(3))
                             }
                         })
             } catch (e: Exception)

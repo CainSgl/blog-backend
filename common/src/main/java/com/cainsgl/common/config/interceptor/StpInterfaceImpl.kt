@@ -57,8 +57,9 @@ class StpInterfaceImpl : StpInterface, InitializingBean
 
     override fun getPermissionList(loginId: Any, loginType: String): List<String>
     {
-        val roles = StpUtil.getSession().get(USER_ROLE_KEY).toStringList()
-        val extraPermissionList= StpUtil.getSession().get(USER_ROLE_KEY).toStringList().toMutableList()
+        val session = StpUtil.getSession()
+        val roles = session.get(USER_ROLE_KEY).toStringList()
+        val extraPermissionList= session.get(USER_ROLE_KEY).toStringList().toMutableList()
         // 根据role获取permissions并合并
         for (role in roles)
         {

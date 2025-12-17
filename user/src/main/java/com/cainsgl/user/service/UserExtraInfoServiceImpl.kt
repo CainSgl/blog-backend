@@ -18,10 +18,13 @@ import java.io.Serializable
 private val logger = KotlinLogging.logger {}
 
 @Service
-class UserExtraInfoServiceImpl(private val redisTemplate: RedisTemplate<String, String>) : ServiceImpl<UserExtraInfoMapper, UserExtraInfoEntity>(), UserExtraInfoService, IService<UserExtraInfoEntity>
+class UserExtraInfoServiceImpl: ServiceImpl<UserExtraInfoMapper, UserExtraInfoEntity>(), UserExtraInfoService, IService<UserExtraInfoEntity>
 {
     @Resource
     lateinit var redissonClient: RedissonClient
+
+    @Resource
+    lateinit var redisTemplate: RedisTemplate<String, String>
 
     companion object
     {
@@ -42,7 +45,7 @@ class UserExtraInfoServiceImpl(private val redisTemplate: RedisTemplate<String, 
         return baseMapper.updateInterestVector(userId, values) > 0
     }
 
-    //该方法可以使用双重检查锁
+    //该方法使用双重检查锁，无需重新写save方法，后续会定时从redis里重新写会数据库
     override fun getById(id: Serializable?): UserExtraInfoEntity?
     {
         if (id == null)
