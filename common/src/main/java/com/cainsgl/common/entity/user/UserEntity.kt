@@ -3,6 +3,8 @@ package com.cainsgl.common.entity.user
 import com.alibaba.fastjson2.annotation.JSONField
 import com.baomidou.mybatisplus.annotation.*
 import com.cainsgl.common.handler.StringListTypeHandler
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import kotlin.math.max
@@ -11,6 +13,7 @@ import kotlin.math.pow
 @TableName("users")
 data class UserEntity(
     @TableId(type = IdType.ASSIGN_ID)
+    @JsonSerialize(using = ToStringSerializer::class)
     var id: Long? = null,
 
     @TableField("username")

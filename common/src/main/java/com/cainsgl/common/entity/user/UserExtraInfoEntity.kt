@@ -3,6 +3,8 @@ package com.cainsgl.common.entity.user
 import com.baomidou.mybatisplus.annotation.TableField
 import com.baomidou.mybatisplus.annotation.TableName
 import com.cainsgl.common.handler.VectorTypeHandler
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
 import org.springframework.data.redis.core.RedisTemplate
 import java.util.concurrent.TimeUnit
 
@@ -10,6 +12,7 @@ import java.util.concurrent.TimeUnit
 @TableName(value = "user_extra_infos", autoResultMap = true)
 data class UserExtraInfoEntity(
     @TableField("user_id")
+    @JsonSerialize(using = ToStringSerializer::class)
     var userId: Long? = null,
 
     @TableField("follower_count")

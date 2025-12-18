@@ -32,23 +32,21 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
 
         // 创建ID到节点的映射
         val nodeMap = list.associateBy { it.id }
-
-        // 递归排序子节点
+        // 递归排序节点
         fun sortChildren(nodes: List<DirectoryTreeDTO>)
         {
             nodes.forEach { node ->
-                node.children?.let {
+                node.children.let {
                     node.children = it.sortedBy { child -> child.sortNum }.also(::sortChildren)
                 }
             }
         }
-
         // 找出所有根节点
         val rootNodes = list.filter { it.parentId == null }
         // 将子节点添加到对应的父节点中
         list.filter { it.parentId != null }.forEach { node ->
             nodeMap[node.parentId]?.let { parent ->
-                parent.children = (parent.children ?: mutableListOf()).toMutableList().apply { add(node) }
+                parent.children = parent.children.toMutableList().apply { add(node) }
             }
         }
         // 对所有层级进行排序
@@ -78,19 +76,27 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
         }
     }
 
-    fun saveDirectory(kbId: Long, userId: Long, name: String, parentId: Long? = null, postId: Long? = null): Boolean
+    fun saveDirectory(kbId: Long, userId: Long, name: String, parentId: Long? = null, postId: Long? = null): Long
     {
         val baseMapper = getBaseMapper()
         try
         {
-            return baseMapper.insertDirectoryWithValidation(
-                id = IdWorker.getId(), kbId = kbId, userId = userId, parentId = parentId, name = name, postId = postId
-            ) > 0
+            val directoryId = IdWorker.getId()
+            val success = baseMapper.insertDirectoryWithValidation(
+                directoryId, kbId = kbId, userId = userId, parentId = parentId, name = name, postId = postId
+            )>0
+            return if(success)
+            {
+                directoryId
+            }else
+            {
+                -1
+            }
         } catch (e: Exception)
         {
             //可能是参数不对或者null
             log.warn(e.message)
-            return false
+            return -1
         }
     }
 
@@ -140,4 +146,13 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
         }
         return ResultCode.DB_ERROR
     }
+
+    @Transactional(propagation = Propagation.SUPPORTS)
+    fun deleteDirectory(id: Long, kbId: Long, userId: Long): Boolean
+    {
+        return baseMapper.deleteDirectoryWithPermissionCheck(id, kbId, userId)>0
+    }
+
+
+
 }

@@ -15,7 +15,8 @@ enum class ArticleStatus(
     DRAFT("draft", "草稿",1),
     PENDING_REVIEW("pending_review", "待审核",2),
     PUBLISHED("published", "已发布",3),
-    OFF_SHELF("off_shelf", "已下架",4);
+    OFF_SHELF("off_shelf", "已下架",4),
+    NO_KB("no_kb", "未指定知识库",5);
 //    enum ArticleStatus {
 //        ARTICLE_STATUS_UNSPECIFIED = 0;
 //        ARTICLE_STATUS_DRAFT = 1;

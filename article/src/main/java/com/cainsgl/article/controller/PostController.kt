@@ -11,6 +11,7 @@ import com.cainsgl.article.dto.request.CreatePostRequest
 import com.cainsgl.article.dto.request.PubPostRequest
 import com.cainsgl.article.dto.request.SearchPostRequest
 import com.cainsgl.article.dto.request.UpdatePostRequest
+import com.cainsgl.article.dto.response.CreatePostResponse
 import com.cainsgl.article.service.DirectoryServiceImpl
 import com.cainsgl.article.service.PostChunkVectorServiceImpl
 import com.cainsgl.article.service.PostServiceImpl
@@ -94,7 +95,8 @@ class PostController
                 status.setRollbackOnly()
                 return@execute ResultCode.DB_ERROR
             }
-            if (!directoryService.saveDirectory(request.kbId, userId = userId, request.title, request.parentId, postEntity.id))
+            val dirId= directoryService.saveDirectory(request.kbId, userId = userId, request.title, request.parentId, postEntity.id)
+            if (dirId<0)
             {
                 status.setRollbackOnly()
                 //多半是参数问题
@@ -102,9 +104,8 @@ class PostController
             }
             //发送消息
             rocketMQClientTemplate.asyncSendNormalMessage("article:post", postEntity.id, null)
-            return@execute postEntity
+            return@execute CreatePostResponse(postEntity,dirId)
         } ?: ResultCode.UNKNOWN_ERROR
-
     }
 
 
@@ -196,7 +197,6 @@ class PostController
     @PostMapping("/search")
     fun searchPost(@RequestBody request: SearchPostRequest):Any
     {
-        require(request.query.isNotEmpty())
         if (request.vectorOffset==null)
         {
             request.vectorOffset=1.1

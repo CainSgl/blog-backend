@@ -69,7 +69,7 @@ class UserController
 
 
     @PostMapping("/logout")
-    fun logout(): Any
+    fun logout(): String
     {
         if (StpUtil.isLogin())
         {
@@ -86,7 +86,7 @@ class UserController
      */
     @SaCheckRole("user")
     @GetMapping("/current")
-    fun getCurrentUser(): Any
+    fun getCurrentUser(): UserEntity
     {
         val userInfo = userService.getById(StpUtil.getLoginIdAsLong())
         return userInfo.sanitizeSystemSensitiveData()

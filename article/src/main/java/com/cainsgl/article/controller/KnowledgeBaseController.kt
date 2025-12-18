@@ -41,7 +41,7 @@ class KnowledgeBaseController
 
     @SaCheckPermission("kb.post")
     @PostMapping
-    fun createKnowledgeBase(@RequestBody @Valid request: CreateKnowledgeBaseRequest): Any
+    fun createKnowledgeBase(@RequestBody @Valid request: CreateKnowledgeBaseRequest): ResultCode
     {
         val userId = StpUtil.getLoginIdAsLong()
         val kbEntity = KnowledgeBaseEntity(userId=userId, name = request.name)
@@ -54,7 +54,7 @@ class KnowledgeBaseController
 
     @SaCheckRole("user")
     @PutMapping
-    fun updateKnowledgeBase(@RequestBody @Valid request: UpdateKnowledgeBaseRequest): Any
+    fun updateKnowledgeBase(@RequestBody @Valid request: UpdateKnowledgeBaseRequest): ResultCode
     {
         val userId = StpUtil.getLoginIdAsLong()
         val updateWrapper = UpdateWrapper<KnowledgeBaseEntity>()

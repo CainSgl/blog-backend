@@ -5,12 +5,15 @@ import com.baomidou.mybatisplus.annotation.IdType
 import com.baomidou.mybatisplus.annotation.TableField
 import com.baomidou.mybatisplus.annotation.TableId
 import com.baomidou.mybatisplus.annotation.TableName
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
 import java.time.OffsetDateTime
 
 @TableName("post_archives")
 data class PostArchiveEntity(
 
     @TableId(type = IdType.ASSIGN_ID)
+    @JsonSerialize(using = ToStringSerializer::class)
     var id: Long? = null,
 
     @TableField("post_title")
@@ -26,6 +29,7 @@ data class PostArchiveEntity(
     var archiveTime: OffsetDateTime? =null,
 
     @TableField("operator_id")
+    @JsonSerialize(using = ToStringSerializer::class)
     var operatorId: Long? = null,
 
     @TableField("remark")

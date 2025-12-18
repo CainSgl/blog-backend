@@ -20,9 +20,9 @@ message PostEntity {
     ArticleStatus status = 5;
     bool top = 6;
     bool recommend = 7;
-    int64 view_count = 8;
-    int64 like_count = 9;
-    int64 comment_count = 10;
+    int32 view_count = 8;
+    int32 like_count = 9;
+    int32 comment_count = 10;
     repeated string tags = 11;
     int64 user_id = 12;
     int64 category_id = 13;

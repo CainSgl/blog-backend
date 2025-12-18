@@ -128,4 +128,17 @@
           )
         ORDER BY sort_num
     </select>
+
+    <!-- 删除目录（带权限验证） -->
+    <delete id="deleteDirectoryWithPermissionCheck">
+        DELETE FROM directories d
+        WHERE d.id = #{id}
+          AND d.kb_id = #{kbId}
+          AND EXISTS (
+            SELECT 1
+            FROM knowledge_bases kb
+            WHERE kb.id = #{kbId}
+              AND kb.user_id = #{userId}
+        )
+    </delete>
 </mapper>

@@ -4,11 +4,14 @@ import com.baomidou.mybatisplus.annotation.*
 import com.cainsgl.common.handler.ArticleStatusTypeHandler
 import com.cainsgl.common.handler.StringListTypeHandler
 import com.cainsgl.common.handler.VectorTypeHandler
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
 import java.time.OffsetDateTime
 
 @TableName(value = "posts", autoResultMap = true)
 data class PostEntity(
     @TableId(type = IdType.ASSIGN_ID)
+    @JsonSerialize(using = ToStringSerializer::class)
     var id: Long? = null,
 
     @TableField("title")
@@ -30,21 +33,23 @@ data class PostEntity(
     var recommend: Boolean ?= null,
 
     @TableField("view_count")
-    var viewCount: Long? = null,
+    var viewCount: Int? = null,
 
     @TableField("like_count")
-    var likeCount: Long? = null,
+    var likeCount: Int? = null,
 
     @TableField("comment_count")
-    var commentCount: Long? = null,
+    var commentCount: Int? = null,
 
     @TableField(value = "tags", typeHandler = StringListTypeHandler::class)
     var tags: List<String>? = null,
 
     @TableField("user_id")
+    @JsonSerialize(using = ToStringSerializer::class)
     var userId: Long? = null,
 
     @TableField("category_id")
+    @JsonSerialize(using = ToStringSerializer::class)
     var categoryId: Long? = null,
 
     @TableField("seo_keywords")
@@ -60,6 +65,7 @@ data class PostEntity(
     @TableField("published_at")
     var publishedAt: OffsetDateTime? = null,
     @TableField("kb_id")
+    @JsonSerialize(using = ToStringSerializer::class)
     var kbId: Long? = null,
     @TableField("vector", select = false,typeHandler = VectorTypeHandler::class)
     var vecotr: FloatArray? = null,

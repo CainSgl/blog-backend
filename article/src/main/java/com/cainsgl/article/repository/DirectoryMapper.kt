@@ -79,4 +79,17 @@ interface DirectoryMapper : BaseMapper<DirectoryEntity> {
         @Param("kbId") kbId: Long,
         @Param("parentId") parentId: Long?
     ): List<DirectoryEntity>
+
+    /**
+     * 获取同级目录列表
+     * 查询指定知识库下，指定父目录的所有子目录
+     * @param kbId 知识库ID
+     * @param parentId 父目录ID（null表示根目录）
+     * @return 同级目录列表（按sortNum排序）
+     */
+    fun deleteDirectoryWithPermissionCheck(
+        @Param("id") id: Long,
+        @Param("kbId") kbId: Long,
+        @Param("userId") userId: Long
+    ): Int
 }

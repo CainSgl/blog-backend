@@ -32,3 +32,9 @@ data class UpdateDirectoryRequest(
     val name: String?,
     //  val sortNum: Short?
 )
+data class DeleteDirectoryRequest(
+    @field:Min(value = 0, message ="知识库id不能小于0")
+    val kbId: Long,
+    @field:Min(value = 0,message = "目录id不能小于0")
+    val dirId: Long
+)
