@@ -54,7 +54,10 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
         return rootNodes
     }
 
-
+    fun getDirectoryWithPermissionCheck(directoryId: Long, kbId: Long, userId: Long): DirectoryEntity?
+    {
+        return baseMapper.selectDirectoryWithPermissionCheck(directoryId, kbId, userId)
+    }
     fun updateDirectory(id: Long, kbId: Long, userId: Long, name: String?, parentId: Long?): Boolean
     {
         val baseMapper = getBaseMapper()
@@ -148,11 +151,17 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
     }
 
     @Transactional(propagation = Propagation.SUPPORTS)
+    @Deprecated("废弃，因为可以在获取的时候检验", ReplaceWith("baseMapper.deleteDirectoryWithPermissionCheck(id, kbId, userId) > 0"))
     fun deleteDirectory(id: Long, kbId: Long, userId: Long): Boolean
     {
         return baseMapper.deleteDirectoryWithPermissionCheck(id, kbId, userId)>0
     }
 
+    @Transactional(propagation = Propagation.SUPPORTS)
+    fun getDirectoryAndSubdirectories(directoryId: Long): List<DirectoryEntity>?
+    {
+        return baseMapper.getDirectoryAndSubdirectories(directoryId)
+    }
 
 
 }

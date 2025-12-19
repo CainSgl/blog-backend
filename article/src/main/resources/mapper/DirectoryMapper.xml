@@ -45,6 +45,29 @@
         ORDER BY sort_num
     </select>
 
+    <!-- 递归获取指定目录及其所有子目录 -->
+    <select id="getDirectoryAndSubdirectories" resultMap="DirectoryResultMap">
+        WITH RECURSIVE dir_tree AS (
+            -- 递归基：指定的目录
+            SELECT id, kb_id, parent_id, name, post_id, sort_num
+            FROM directories
+            WHERE id = #{directoryId}
+            UNION ALL
+            -- 递归体：所有子目录
+            SELECT d.id, d.kb_id, d.parent_id, d.name, d.post_id, d.sort_num
+            FROM directories d
+            JOIN dir_tree dt ON d.parent_id = dt.id
+        )
+        SELECT 
+            id,
+            kb_id,
+            parent_id,
+            name,
+            post_id,
+            sort_num
+        FROM dir_tree
+    </select>
+
     <!-- 更新目录信息（带知识库检验） -->
     <update id="updateDirectoryWithPermissionCheck">
         UPDATE directories d
@@ -66,17 +89,17 @@
     <insert id="insertDirectoryWithValidation">
         INSERT INTO directories (id, kb_id, parent_id, name, post_id, sort_num)
         SELECT
-            #{id},
-            #{kbId},
-            #{parentId},
-            #{name},
-            #{postId},
+            #{id, jdbcType=BIGINT},
+            #{kbId, jdbcType=BIGINT},
+            #{parentId, jdbcType=BIGINT},
+            #{name, jdbcType=VARCHAR},
+            #{postId, jdbcType=BIGINT},
             -- 计算排序序号，使用当前子目录的最大sortNum加1
             COALESCE(
                     (SELECT MAX(sort_num) + 1
                      FROM directories
-                     WHERE kb_id = #{kbId}
-                       AND (parent_id = #{parentId} OR (parent_id IS NULL AND #{parentId} IS NULL))
+                     WHERE kb_id = #{kbId, jdbcType=BIGINT}
+                       AND parent_id IS NOT DISTINCT FROM #{parentId, jdbcType=BIGINT}
                     ),
                     1
             )
@@ -84,17 +107,17 @@
             -- 验证知识库所有权
             SELECT 1
             FROM knowledge_bases kb
-            WHERE kb.id = #{kbId}
-              AND kb.user_id = #{userId}
+            WHERE kb.id = #{kbId, jdbcType=BIGINT}
+              AND kb.user_id = #{userId, jdbcType=BIGINT}
         )
           AND (
             -- 验证parent_id的kb_id一致性（如果parent_id不为空）
-            #{parentId} IS NULL
+            #{parentId, jdbcType=BIGINT} IS NULL
                 OR EXISTS (
                 SELECT 1
                 FROM directories d
-                WHERE d.id = #{parentId}
-                  AND d.kb_id = #{kbId}
+                WHERE d.id = #{parentId, jdbcType=BIGINT}
+                  AND d.kb_id = #{kbId, jdbcType=BIGINT}
             )
             )
     </insert>

@@ -17,6 +17,13 @@ interface DirectoryMapper : BaseMapper<DirectoryEntity> {
     fun getDirectoryTreeByKbId(@Param("kbId") kbId: Long): List<DirectoryTreeDTO>?
 
     /**
+     * 递归获取指定目录及其所有子目录
+     * @param directoryId 目录ID
+     * @return 目录列表（包含指定目录及其所有子目录）
+     */
+    fun getDirectoryAndSubdirectories(@Param("directoryId") directoryId: Long): List<DirectoryEntity>?
+
+    /**
      * 更新目录信息（带权限校验）
      * 通过JOIN知识库表验证用户权限，确保目录属于用户的知识库
      * @param directoryId 目录ID
@@ -81,12 +88,9 @@ interface DirectoryMapper : BaseMapper<DirectoryEntity> {
     ): List<DirectoryEntity>
 
     /**
-     * 获取同级目录列表
-     * 查询指定知识库下，指定父目录的所有子目录
-     * @param kbId 知识库ID
-     * @param parentId 父目录ID（null表示根目录）
-     * @return 同级目录列表（按sortNum排序）
+     * 带检验的去删除目录，一般不会用
      */
+    @Deprecated("废弃，因为可以在获取的时候检验")
     fun deleteDirectoryWithPermissionCheck(
         @Param("id") id: Long,
         @Param("kbId") kbId: Long,

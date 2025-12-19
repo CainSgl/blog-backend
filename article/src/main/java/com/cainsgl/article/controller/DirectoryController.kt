@@ -116,44 +116,50 @@ class DirectoryController
     }
     @SaCheckRole("user")
     @DeleteMapping
-    fun deleteDirectory(@RequestParam @Min(value = 0, message ="知识库id不能小于0") kbId: Long,
-                        @RequestParam @Min(value = 0,message = "目录id不能小于0") dirId: Long): ResultCode
+    fun deleteDirectory(@RequestParam @Min(value = 1, message ="知识库id非法") kbId: Long,
+                        @RequestParam @Min(value = 1,message = "目录id非法") dirId: Long): Int
     {
-        //创建新目录，先检查用户是否拥有该kb
         val userId = StpUtil.getLoginIdAsLong()
-        return transactionTemplate.execute { status->
-            //先去获取dir
-            val dir= directoryService.getById(dirId) ?: return@execute ResultCode.RESOURCE_NOT_FOUND
-            if(dir.kbId!=kbId)
+        //创建新目录，先检查用户是否拥有该kb
+        fun updatePost(ids:List<Long>):Boolean
+        {
+            if(ids.isEmpty())
             {
-                status.setRollbackOnly()
-                return@execute ResultCode.RESOURCE_NOT_FOUND
+                return true
             }
+            val updateWrapper= UpdateWrapper<PostEntity>()
+            updateWrapper.`in`("id",ids).eq("user_id",userId).set("kb_id",null)
+            //获取所有的postId
+           return postService.update(updateWrapper)
+        }
 
-            if(!directoryService.deleteDirectory(dirId, kbId,userId))
+        //这里返回的post的ids，后续发送mq的消息
+        val res:List<Long>? = transactionTemplate.execute {
+            //先去获取dir，如果这里的dir为null，要么不是该用户的，要么就是确实不存在
+            val dir=directoryService.getDirectoryWithPermissionCheck(dirId, kbId, userId)?: return@execute emptyList<Long>()
+            //需要删除对应的dir，在删除前先获取所有
+            if(dir.postId!=null)
             {
-                //删除失败
-                status.setRollbackOnly()
-                return@execute ResultCode.DB_ERROR
+                directoryService.removeById(dir.id)
+                val lists = listOf(dir.postId!!)
+                updatePost(lists)
+                //说明是文档节点，不存在子节点，直接删除后返回
+                return@execute lists
             }
-            if(dir.postId!=null&& dir.postId!! >0)
-            {
-                val updateWrapper= UpdateWrapper<PostEntity>()
-                //将post移动到废弃的回收站下
-                updateWrapper.eq("id",dir.postId).eq("user_id",userId).set("kb_id",null)
-                if (postService.update(updateWrapper))
-                {
-                    rocketMQClientTemplate.asyncSendNormalMessage("article:content", dir.postId, null)
-                    return@execute ResultCode.SUCCESS
-                }else
-                {
-                    status.setRollbackOnly()
-                    return@execute ResultCode.DB_ERROR
-                }
-
-            }
-            //普通目录
-            return@execute ResultCode.SUCCESS
-        }?:ResultCode.DB_ERROR
+            val dirLists= directoryService.getDirectoryAndSubdirectories(dirId) ?: return@execute emptyList<Long>()
+            val postIds = dirLists.mapNotNull { it.id }.distinct()
+            directoryService.removeBatchByIds(dirLists)
+            updatePost(postIds)
+            return@execute postIds
+        }
+        if(res.isNullOrEmpty())
+        {
+            return 0
+        }
+        for(postId in res)
+        {
+            rocketMQClientTemplate.asyncSendNormalMessage("article:content", postId, null)
+        }
+        return res.size
     }
 }

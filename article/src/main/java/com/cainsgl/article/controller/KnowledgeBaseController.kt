@@ -31,7 +31,7 @@ class KnowledgeBaseController
     lateinit var directoryService: DirectoryServiceImpl
     @SaCheckRole("user")
     @GetMapping
-    fun get(@RequestParam @Min(value = 0, message = "知识库id不能小于0") id: Long): Any
+    fun get(@RequestParam @Min(value = 1, message = "知识库id非法") id: Long): Any
     {
         val knowledgeBase: KnowledgeBaseEntity = knowledgeBaseService.getById(id)
             ?: return ResultCode.RESOURCE_NOT_FOUND

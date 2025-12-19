@@ -27,7 +27,9 @@ spring:
       minimum-idle: ${db.pool.min-idle}
       maximum-pool-size: ${db.pool.max-size}
       initialization-fail-timeout: 0
-      connection-timeout: 3000
+      max-lifetime: 540000
+      connection-timeout: 30000
+      leak-detection-threshold: 60000
   data:
     redis:
       host: ${redis.host}
