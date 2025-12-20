@@ -30,7 +30,9 @@ import org.springframework.scheduling.annotation.EnableScheduling
                 "com\\.cainsgl\\.consumer\\.Application",
                 "com\\.cainsgl\\.consumer\\.Application\\\$AppNamePrinter",
                 "com\\.cainsgl\\.scheduler\\.Application",
-                "com\\.cainsgl\\.scheduler\\.Application\\\$AppNamePrinter"
+                "com\\.cainsgl\\.scheduler\\.Application\\\$AppNamePrinter",
+                "com\\.cainsgl\\.file\\.Application",
+                "com\\.cainsgl\\.file\\.Application\\\$AppNamePrinter"
             ]
         )
     ]

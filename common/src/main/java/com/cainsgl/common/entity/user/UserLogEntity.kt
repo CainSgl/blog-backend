@@ -44,9 +44,9 @@ data class UserLogEntity(
         val ACTIONS_SET = mapOf(
             "article" to listOf("view", "like", "report", "dislike", "unlike"),
             "user" to listOf("follow", "unfollow"),
-            "system" to listOf()
+            "system" to listOf(),
+            "kb" to listOf("like","unlike")
         )
-
         fun validAction(action: String): Boolean
         {
             val parts = action.split(".", limit = 2)

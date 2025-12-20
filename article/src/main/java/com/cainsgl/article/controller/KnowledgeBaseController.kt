@@ -2,6 +2,7 @@ package com.cainsgl.article.controller
 
 import cn.dev33.satoken.annotation.SaCheckPermission
 import cn.dev33.satoken.annotation.SaCheckRole
+import cn.dev33.satoken.annotation.SaIgnore
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.cainsgl.article.dto.DirectoryTreeDTO
@@ -29,7 +30,7 @@ class KnowledgeBaseController
     lateinit var knowledgeBaseService: KnowledgeBaseServiceImpl
     @Resource
     lateinit var directoryService: DirectoryServiceImpl
-    @SaCheckRole("user")
+    @SaIgnore
     @GetMapping
     fun get(@RequestParam @Min(value = 1, message = "知识库id非法") id: Long): Any
     {
@@ -66,5 +67,13 @@ class KnowledgeBaseController
             return ResultCode.SUCCESS
         }
         return ResultCode.DB_ERROR
+    }
+
+
+    @SaCheckRole("admin")
+    @GetMapping("/changeLikeCount")
+    fun changeLikeCount(@RequestParam count:Int,@RequestParam kbId:Long)
+    {
+        return knowledgeBaseService.addKbLikeCount(kbId=kbId,count)
     }
 }

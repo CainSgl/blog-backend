@@ -75,31 +75,6 @@ open class BaseArticleLogHandler(supportType: String, private val value: Float) 
         val interestVector= interestVectorObj as? FloatArray ?: return
         mergeVector.mergeWithArticleVector(interestVector, value, user)
         context.addPostProcessor(LogPostProcessor("article", ::postProcess))
-//        下面的代码嵌套太多了，可维护性太差了
-//        @Suppress("UNCHECKED_CAST")
-//        var map = context.getAttribute("article") as? MutableMap<Long, FloatArray>
-//        if (map == null)
-//        {
-//            map = mutableMapOf()
-//            context.setAttribute("article", map)
-//        }
-//
-//        var interestVector = map[user.id!!]
-//        if (interestVector == null)
-//        {
-//            //说明没有，我们去填充他
-//            fillUserInterestVector(map, user.id!!)
-//        }
-//
-//        //这里是最终获取的，如果获取不到，说明是其他异常导致的，直接不管
-//        interestVector = map[user.id!!]
-//        if (interestVector == null)
-//        {
-//            return
-//        }
-//        mergeVector.mergeWithArticleVector(interestVector, value, user)
-//        //添加最终处理工厂
-//        context.addPostProcessor(LogPostProcessor("article", ::postProcess))
     }
     private fun fillUserInterestVector(context: LogProcessContext, articleKey: String, userId: Long) {
         val interestVector:FloatArray? = userExtraInfo.getInterestVector(userId)
@@ -109,16 +84,6 @@ open class BaseArticleLogHandler(supportType: String, private val value: Float) 
         }
         context.setAttribute(articleKey, interestVector)
     }
-//    private fun fillUserInterestVector(map: MutableMap<Long, FloatArray>, userId: Long)
-//    {
-//        val interestVector = userExtraInfo.getInterestVector(userId)
-//        if (interestVector == null)
-//        {
-//            log.warn { "获取到的用户热信息兴趣偏好为null" }
-//            return
-//        }
-//        map[userId] = interestVector
-//    }
 
 
     private fun postProcess(context: LogProcessContext)
@@ -149,22 +114,6 @@ open class BaseArticleLogHandler(supportType: String, private val value: Float) 
                 log.warn { "用户[$userId]兴趣向量更新失败（Key：$key）" }
             }
         }
-//        @Suppress("UNCHECKED_CAST")
-//        val map = context.getAttribute("article") as? MutableMap<Long, FloatArray>
-//        //遍历他去保存用户兴趣向量
-//        if (map != null)
-//        {
-//            for ((userId,interestVector) in map)
-//            {
-//                if (userExtraInfo.setInterestVector(userId, interestVector))
-//                {
-//                    log.info { "用户$userId,兴趣向量已更新成功" }
-//                }else
-//                {
-//                    log.warn { "用户$userId,兴趣向量更新失败" }
-//                }
-//            }
-//        }
     }
 }
 

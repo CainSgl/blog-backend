@@ -12,11 +12,7 @@
     <artifactId>scheduler</artifactId>
     <name>定时任务模块(scheduler)</name>
     <description>处理定时任务</description>
-    <properties>
-        <maven.compiler.source>23</maven.compiler.source>
-        <maven.compiler.target>23</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
+
 
     <dependencies>
         <dependency>

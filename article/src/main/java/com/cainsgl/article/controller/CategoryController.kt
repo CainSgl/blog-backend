@@ -1,5 +1,6 @@
 package com.cainsgl.article.controller
 
+import cn.dev33.satoken.annotation.SaIgnore
 import com.cainsgl.article.service.CategoryServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -21,6 +22,7 @@ class CategoryController {
     /**
      * 根据ID获取分类
      */
+    @SaIgnore
     @GetMapping
     fun get(@RequestParam id:Long): Any {
         val category = categoryService.getCategory(id) ?: return ResultCode.RESOURCE_NOT_FOUND

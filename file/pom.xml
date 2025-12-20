@@ -9,10 +9,15 @@
         <version>1.0</version>
     </parent>
 
-    <artifactId>article</artifactId>
-    <name>文章模块(article)</name>
-    <description>博客核心内容管理，专注文章 CRUD 与状态流转</description>
+    <artifactId>file</artifactId>
+
+
     <dependencies>
+        <dependency>
+            <groupId>com.volcengine</groupId>
+            <artifactId>ve-tos-java-sdk</artifactId>
+            <version>2.8.8</version>
+        </dependency>
         <dependency>
             <groupId>com.cainsgl</groupId>
             <artifactId>common</artifactId>
@@ -24,53 +29,14 @@
             <version>1.0</version>
         </dependency>
         <dependency>
-            <groupId>com.cainsgl</groupId>
-            <artifactId>api-ai</artifactId>
-            <version>1.0</version>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
         </dependency>
-        <!-- Redis集成 -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.cainsgl</groupId>
-            <artifactId>api-article</artifactId>
-            <version>1.0</version>
-        </dependency>
-        <!-- Elasticsearch集成 -->
-        <dependency>
-            <groupId>org.springframework.data</groupId>
-            <artifactId>spring-data-elasticsearch</artifactId>
-        </dependency>
+        <!-- PostgreSQL驱动 -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.apache.rocketmq</groupId>
-            <artifactId>rocketmq-v5-client-spring-boot-starter</artifactId>
-            <version>2.3.4</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!-- flexmark-java: GFM Markdown解析 -->
-        <dependency>
-            <groupId>com.vladsch.flexmark</groupId>
-            <artifactId>flexmark-all</artifactId>
-            <version>0.64.8</version>
-        </dependency>
-
     </dependencies>
     <build>
         <plugins>
@@ -79,7 +45,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <skip>false</skip>
-                    <mainClass>com.cainsgl.article.Application</mainClass>
+                    <mainClass>com.cainsgl.file.Application</mainClass>
                     <classifier>exec</classifier>
                 </configuration>
                 <executions>

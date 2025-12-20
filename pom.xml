@@ -20,6 +20,7 @@
     <description>个人博客项目</description>
     <modules>
         <!-- 基础模块 -->
+        <module>file</module>
         <module>common</module>
         <!-- API 接口模块（必须在业务模块之前） -->
         <module>api-user</module>

@@ -36,6 +36,20 @@ message SetInterestVectorResponse {
 }
 
 
+// User Service
+message MallocMemoryRequest {
+    int64 user_id = 1;
+    int32 memory = 2;
+}
+
+message MallocMemoryResponse {
+    bool success = 1;
+}
+
+service UserService {
+    rpc mallocMemory (MallocMemoryRequest) returns (MallocMemoryResponse);
+}
+
 service UserExtraInfoService {
     rpc getInterestVector (GetInterestVectorRequest) returns (GetInterestVectorResponse);
     rpc setInterestVector (SetInterestVectorRequest) returns (SetInterestVectorResponse);

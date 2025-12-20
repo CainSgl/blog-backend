@@ -86,3 +86,24 @@ service PostChunkVectorService {
 
 }
 
+
+message KnowledgeBaseEntity {
+    int64 id = 1;
+    int64 user_id = 2;
+    string name = 3;
+    string created_at = 4;
+    ArticleStatus status = 5;
+    string index = 6;
+    int32 like_count = 7;
+}
+
+message AddKbLikeCountRequest {
+    int64 kb_id = 1;
+    int32 add_count = 2;
+}
+
+
+service KnowledgeBaseService {
+    rpc addKbLikeCount(AddKbLikeCountRequest) returns (RemoveVectorResponse);
+}
+

@@ -1,5 +1,6 @@
 package com.cainsgl.user.controller
 
+import cn.dev33.satoken.annotation.SaIgnore
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.user.service.UserExtraInfoServiceImpl
 import jakarta.annotation.Resource
@@ -14,7 +15,7 @@ class HotInfoController
 {
     @Resource
     lateinit var userExtraInfoServiceImpl: UserExtraInfoServiceImpl
-
+    @SaIgnore
     @GetMapping
     fun getHotInfo(@RequestParam id:Long): Any?
     {

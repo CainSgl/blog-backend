@@ -13,6 +13,11 @@ import org.springframework.stereotype.Service
 @Service
 class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, IService<UserEntity>
 {
+
+    companion object{
+        const val USER_MAX_USED_MEMORY=1024*1024*1024*3L
+    }
+
     /**
      * 根据账号和密码和邮件获取用户信息
      * @param account
@@ -46,6 +51,12 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
         val updateWrapper = UpdateWrapper<UserEntity>()
         updateWrapper.eq("id", id).set("extra", extraString)
         this.baseMapper.update(updateWrapper)
+        return this.baseMapper.update(updateWrapper) > 0
+    }
+    
+    override fun mallocMemory(userId: Long, memory: Int): Boolean {
+        val updateWrapper = UpdateWrapper<UserEntity>()
+        updateWrapper.eq("id", userId).setSql("used_memory = used_memory + $memory").le("used_memory",USER_MAX_USED_MEMORY-memory)
         return this.baseMapper.update(updateWrapper) > 0
     }
 }

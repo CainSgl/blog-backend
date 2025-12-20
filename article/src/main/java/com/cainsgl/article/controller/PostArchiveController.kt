@@ -1,5 +1,6 @@
 package com.cainsgl.article.controller
 
+import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.stp.StpUtil
 import com.cainsgl.article.service.PostArchiveServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
@@ -22,6 +23,7 @@ class PostArchiveController {
     /**
      * 根据ID获取归档记录
      */
+    @SaCheckRole("user")
     @GetMapping
     fun get(@RequestParam id: Long): Any {
         val archive = postArchiveService.getPostArchive(id) ?: return ResultCode.RESOURCE_NOT_FOUND

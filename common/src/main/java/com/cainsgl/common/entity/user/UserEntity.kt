@@ -56,6 +56,8 @@ data class UserEntity(
 
     @TableField("phone")
     var phone: String? = null,
+    @TableField("used_memory")
+    var usedMemory: String? = null,
     /**
      * 这两个字段如果是在数据库是一定存在的
      */

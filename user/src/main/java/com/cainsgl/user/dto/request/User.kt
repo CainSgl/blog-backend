@@ -1,5 +1,6 @@
 package com.cainsgl.user.dto.request
 
+import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotEmpty
 
 data class UserLoginRequest(
@@ -12,5 +13,6 @@ data class UserLoginRequest(
 data class UserLogPostRequest(
     @field: NotEmpty(message = "用户行为不能为空")
     val action: String,
-    val info: Map<String, Any>? = null,
+    @field:Min(value=1, message = "id非法")
+    val id:Long
 )

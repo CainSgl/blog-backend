@@ -3,6 +3,7 @@ package com.cainsgl.article.controller
 
 import cn.dev33.satoken.annotation.SaCheckPermission
 import cn.dev33.satoken.annotation.SaCheckRole
+import cn.dev33.satoken.annotation.SaIgnore
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.cainsgl.api.ai.AiService
@@ -55,6 +56,7 @@ class PostController
     lateinit var userExtraInfoService:UserExtraInfoService
     @Resource
     lateinit var aiService:AiService
+    @SaIgnore
     @GetMapping
     fun get(@RequestParam id: Long): Any
     {
@@ -193,7 +195,7 @@ class PostController
         return ResultCode.SUCCESS
     }
 
-    @SaCheckRole("user")
+    @SaIgnore
     @PostMapping("/search")
     fun searchPost(@RequestBody request: SearchPostRequest):Any
     {

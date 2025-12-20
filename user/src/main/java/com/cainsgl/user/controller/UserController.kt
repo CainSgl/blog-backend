@@ -1,6 +1,7 @@
 package com.cainsgl.user.controller
 
 import cn.dev33.satoken.annotation.SaCheckRole
+import cn.dev33.satoken.annotation.SaIgnore
 import cn.dev33.satoken.stp.StpUtil
 import com.cainsgl.common.config.interceptor.StpInterfaceImpl
 import com.cainsgl.common.dto.response.ResultCode
@@ -28,7 +29,7 @@ class UserController
 
     @Resource
     lateinit var userService: UserServiceImpl
-
+    @SaIgnore
     @PostMapping("/login")
     fun login(@RequestBody @Valid loginRequest: UserLoginRequest): Any
     {
@@ -67,7 +68,7 @@ class UserController
         return LoginResponse(token, user.calculateLevelInfo().sanitizeSystemSensitiveData())
     }
 
-
+    @SaCheckRole("user")
     @PostMapping("/logout")
     fun logout(): String
     {
@@ -92,7 +93,7 @@ class UserController
         return userInfo.sanitizeSystemSensitiveData()
     }
 
-
+    @SaIgnore
     @GetMapping
     fun get(@RequestParam id: Long): Any
     {

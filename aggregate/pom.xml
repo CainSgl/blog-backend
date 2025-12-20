@@ -13,15 +13,15 @@
     <artifactId>aggregate</artifactId>
     <name>单体模块</name>
     <description>聚合服务模块</description>
-    <properties>
-        <maven.compiler.source>23</maven.compiler.source>
-        <maven.compiler.target>23</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>com.cainsgl</groupId>
             <artifactId>user</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.cainsgl</groupId>
+            <artifactId>file</artifactId>
             <version>1.0</version>
         </dependency>
         <dependency>
