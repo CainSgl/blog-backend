@@ -32,6 +32,8 @@ actuator
 6在common里创建对应的Grpc代理Service，也就是xxxGrpcService,注解为@ Service和@ConditionalOnMissingBean(type = "com.cainsgl.test.xxx.xxxServiceImpl")(这个是为了和单体架构兼容)
 7上面的两个service分别实现对应的接口，代理类的实现可以参考TestGrpcService
 8在common的application.yml文件下，配置对应grpc的ip，或域名
+9JackSon@注解失效，需要引入单独的依赖
+10前端id精度损失
 (简单来说就3步，创建proto文件，暴露对应的接口，实现自动生成的grpc服务暴露代码，为了兼容单体架构创建对应的代理类，他就是自动的帮我们发送代码给对应的模块)
 其中有些步骤很重复，你可以将下面的promot发送给ai为你自动生成代码
 前提是你的对应模块已经实现，并且service已经实现了

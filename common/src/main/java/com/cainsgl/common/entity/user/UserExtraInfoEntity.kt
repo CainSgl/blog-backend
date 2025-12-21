@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
 
 //为什么会专门建额外的一张用户信息表，这是为了冷热数据分离，这里的数据都是会频繁更新的，我们会缓存在redis，然后定时同步到数据库
 @TableName(value = "user_extra_infos", autoResultMap = true)
-data class UserExtraInfoEntity(
+open class UserExtraInfoEntity(
     @TableField("user_id")
     @JsonSerialize(using = ToStringSerializer::class)
     var userId: Long? = null,

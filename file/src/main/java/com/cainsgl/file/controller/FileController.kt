@@ -72,7 +72,7 @@ class FileController
         }
     }
     @SaCheckRole("user")
-    @GetMapping("download")
+    @GetMapping("/download")
     fun downLoadFile(@RequestParam("f") shorUrl: Long, response: HttpServletResponse):Any?
     {
         val byId = fileUrlService.getById(shorUrl)
@@ -95,7 +95,7 @@ class FileController
     }
 
     @SaCheckRole("user")
-    @GetMapping("free")
+    @GetMapping("/free")
     fun free(@RequestParam("f") shorUrl: Long, response: HttpServletResponse):Any?
     {
         val query=QueryWrapper<FileUrlEntity>()
@@ -111,9 +111,20 @@ class FileController
         {
            //删除他
             fileService.delete(byId.url!!)
-            userService.mallocMemory(userId,)
+            userService.mallocMemory(userId,-byId.fileSize!!)
             fileUrlService.removeById(byId)
             return null
         }
     }
+
+    @SaCheckRole("user")
+    @GetMapping("/list")
+    fun list():Any
+    {
+        val userId = StpUtil.getLoginIdAsLong()
+        val query=QueryWrapper<FileUrlEntity>()
+        query.eq("user_id",userId)
+        return fileUrlService.list(query)
+    }
+
 }

@@ -99,6 +99,8 @@ class UserExtraInfoServiceImpl: ServiceImpl<UserExtraInfoMapper, UserExtraInfoEn
             return byId
         }
         val userExtraInfoEntity = UserExtraInfoEntity(userId = id)
+        userExtraInfoEntity.interestVector=FloatArray(1024)
+        userExtraInfoEntity.interestVector!!.fill(1e-8f)
         save(userExtraInfoEntity)
         userExtraInfoEntity.saveFieldByRedis(redisTemplate)
         return userExtraInfoEntity

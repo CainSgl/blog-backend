@@ -10,7 +10,9 @@ import com.cainsgl.common.exception.BusinessException
 import com.cainsgl.common.util.DeviceUtils
 import com.cainsgl.user.dto.request.UserLoginRequest
 import com.cainsgl.user.dto.response.LoginResponse
-import com.cainsgl.user.dto.response.UserResponse
+import com.cainsgl.user.dto.response.UserCurrentResponse
+import com.cainsgl.user.dto.response.UserGetResponse
+import com.cainsgl.user.service.UserExtraInfoServiceImpl
 import com.cainsgl.user.service.UserServiceImpl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
@@ -26,7 +28,8 @@ private val log = KotlinLogging.logger {}
 class UserController
 {
     val passwordEncoder = BCryptPasswordEncoder()
-
+    @Resource
+    lateinit var userExtraInfoService: UserExtraInfoServiceImpl
     @Resource
     lateinit var userService: UserServiceImpl
     @SaIgnore
@@ -90,7 +93,9 @@ class UserController
     fun getCurrentUser(): UserEntity
     {
         val userInfo = userService.getById(StpUtil.getLoginIdAsLong())
-        return userInfo.sanitizeSystemSensitiveData()
+        //获取自己的热信息
+        val hotInfo = userExtraInfoService.getBySaveOnNull(userInfo.id!!)
+        return  UserCurrentResponse(userInfo.sanitizeSystemSensitiveData(),hotInfo)
     }
 
     @SaIgnore
@@ -100,6 +105,6 @@ class UserController
         val user = userService.getById(id) ?: return ResultCode.RESOURCE_NOT_FOUND
         //去除敏感字段
         user.calculateLevelInfo()
-        return UserResponse(user)
+        return UserGetResponse(user)
     }
 }

@@ -47,7 +47,7 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
             {
                 return postEntity2
             }
-            val entity =super<ServiceImpl>.getById(id)
+            val entity = super<ServiceImpl>.getById(id) ?: return null
             if(entity.status== ArticleStatus.PUBLISHED)
             {
                 //只缓存发布的文章

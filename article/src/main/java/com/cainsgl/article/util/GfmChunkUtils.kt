@@ -18,6 +18,9 @@ object GfmChunkUtils
     private const val BASE_CHUNK_MAX = 2000
     private const val SENTENCES_PER_CHUNK = 4
 
+    /** HTML标签正则表达式 */
+    private val HTML_TAG_REGEX = Regex("<[^>]*>")
+
     private val parser: Parser = Parser.builder(MutableDataSet().apply {
         set(
             Parser.EXTENSIONS, listOf(
@@ -35,7 +38,10 @@ object GfmChunkUtils
     {
         if (gfmContent.isBlank()) return emptyList()
 
-        val document = parser.parse(gfmContent)
+        // 先去除HTML标签但保留内容
+        val contentWithoutHtml = removeHtmlTags(gfmContent)
+
+        val document = parser.parse(contentWithoutHtml)
         val plainTexts = mutableListOf<String>()
 
         // 从AST提取各节点纯文本
@@ -111,6 +117,11 @@ object GfmChunkUtils
             i = end
         }
         return chunks
+    }
+
+    /** 去除HTML标签但保留内容 */
+    private fun removeHtmlTags(text: String): String {
+        return text.replace(HTML_TAG_REGEX, "")
     }
 
     /** 按大小拆分，优先在标点处切断 */

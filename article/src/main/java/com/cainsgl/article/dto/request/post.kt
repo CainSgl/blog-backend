@@ -28,4 +28,5 @@ data class UpdatePostRequest(
     val content: String? = null,
     val summary: String? = null,
     val isTop: Boolean ?=null,
+    val auto:Boolean,
 )

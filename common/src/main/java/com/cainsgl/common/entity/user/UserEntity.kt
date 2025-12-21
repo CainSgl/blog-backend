@@ -11,7 +11,7 @@ import kotlin.math.max
 import kotlin.math.pow
 
 @TableName("users")
-data class UserEntity(
+open class UserEntity(
     @TableId(type = IdType.ASSIGN_ID)
     @JsonSerialize(using = ToStringSerializer::class)
     var id: Long? = null,

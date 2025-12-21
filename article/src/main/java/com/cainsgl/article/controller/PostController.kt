@@ -15,11 +15,13 @@ import com.cainsgl.article.dto.request.UpdatePostRequest
 import com.cainsgl.article.dto.response.CreatePostResponse
 import com.cainsgl.article.service.DirectoryServiceImpl
 import com.cainsgl.article.service.PostChunkVectorServiceImpl
+import com.cainsgl.article.service.PostHistoryServiceImpl
 import com.cainsgl.article.service.PostServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.DirectoryEntity
 import com.cainsgl.common.entity.article.PostEntity
+import com.cainsgl.common.entity.article.PostHistoryEntity
 import com.cainsgl.common.exception.BusinessException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
@@ -50,6 +52,9 @@ class PostController
 
     @Resource
     lateinit var postChunkVectorService: PostChunkVectorServiceImpl
+
+    @Resource
+    lateinit var postHistoryService: PostHistoryServiceImpl
 
     //来自其他模块的，只能通过Service来访问
     @Resource
@@ -130,15 +135,23 @@ class PostController
             title = request.title,
             content = request.content,
             summary = request.summary,
-            top = request.isTop
+            top = request.isTop,
+            status = ArticleStatus.DRAFT,
         )
-        if(entity.status == ArticleStatus.PUBLISHED && !request.content.isNullOrEmpty())
+        if(!request.auto)
         {
-            //修改的是发布状态的内容。需要重新向量化
-            val embedding = aiService.getEmbedding(entity.content!!)
-            postEntity.vecotr=embedding
-            rocketMQClientTemplate.asyncSendNormalMessage("article:publish", request.id, null)
+         //说明是用户手动保存的，记录到历史版本去
+            postHistoryService.save(PostHistoryEntity(userId=userId,postId = entity.id, content = entity.content,))
         }
+        //不再需要，后面重新发布一次
+//        if(entity.status == ArticleStatus.PUBLISHED && !request.content.isNullOrEmpty())
+//        {
+//            //修改的是发布状态的内容。需要重新向量化
+//            val embedding = aiService.getEmbedding(entity.content!!)
+//            postEntity.vecotr=embedding
+//            rocketMQClientTemplate.asyncSendNormalMessage("article:publish", request.id, null)
+//        }
+        //获取
         if (!postService.updateById(postEntity))
         {
             return ResultCode.PARAM_INVALID
@@ -150,8 +163,8 @@ class PostController
     }
 
     @SaCheckRole("user")
-    @PutMapping("/publish")
-    fun updatePost(@RequestBody @Valid request: PubPostRequest): Any
+    @PostMapping("/publish")
+    fun publish(@RequestBody @Valid request: PubPostRequest): Any
     {
         val userId = StpUtil.getLoginIdAsLong()
         //这里是读时更新Read-Modify-Write，正常是要加事务的，但是这里是单个用户，不存在并发问题
@@ -212,7 +225,7 @@ class PostController
         }catch (e:Exception){
             //没有，不管
         }
-        var embedding = aiService.getEmbedding(request.query!!)
+        var embedding = aiService.getEmbedding(request.query)
         if(userOffsetVector!=null)
         {
             embedding += userOffsetVector
