@@ -147,7 +147,7 @@ class DirectoryController
                 return@execute lists
             }
             val dirLists= directoryService.getDirectoryAndSubdirectories(dirId) ?: return@execute emptyList<Long>()
-            val postIds = dirLists.mapNotNull { it.id }.distinct()
+            val postIds = dirLists.mapNotNull { it.postId }.distinct()
             directoryService.removeBatchByIds(dirLists)
             updatePost(postIds)
             return@execute postIds

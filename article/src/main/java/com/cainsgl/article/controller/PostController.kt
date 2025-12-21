@@ -135,7 +135,7 @@ class PostController
             title = request.title,
             content = request.content,
             summary = request.summary,
-            top = request.isTop,
+//            top = request.isTop,
             status = ArticleStatus.DRAFT,
         )
         if(!request.auto)
