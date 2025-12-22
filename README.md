@@ -34,6 +34,7 @@ actuator
 8在common的application.yml文件下，配置对应grpc的ip，或域名
 9JackSon@注解失效，需要引入单独的依赖
 10前端id精度损失
+11 debug了一天的bug，莫名奇妙的后面的版本，无法再向量搜索文档，后面去debug，回溯到很久以前的版本，慢慢查下来，发现居然只是vectorHandler的字符串，halfvector被改成vector
 (简单来说就3步，创建proto文件，暴露对应的接口，实现自动生成的grpc服务暴露代码，为了兼容单体架构创建对应的代理类，他就是自动的帮我们发送代码给对应的模块)
 其中有些步骤很重复，你可以将下面的promot发送给ai为你自动生成代码
 前提是你的对应模块已经实现，并且service已经实现了

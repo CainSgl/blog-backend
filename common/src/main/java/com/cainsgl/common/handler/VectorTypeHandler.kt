@@ -18,7 +18,7 @@ class VectorTypeHandler : BaseTypeHandler<FloatArray>() {
         // 将 FloatArray 转换为 PostgreSQL vector 类型
         val vectorString = "[${parameter.joinToString(",")}]"
         val pgObject = org.postgresql.util.PGobject()
-        pgObject.type = "vector"
+        pgObject.type = "halfvec"
         pgObject.value = vectorString
         ps.setObject(i, pgObject)
     }

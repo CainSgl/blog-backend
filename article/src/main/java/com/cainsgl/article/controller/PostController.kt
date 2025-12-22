@@ -8,10 +8,7 @@ import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.cainsgl.api.ai.AiService
 import com.cainsgl.api.user.extra.UserExtraInfoService
-import com.cainsgl.article.dto.request.CreatePostRequest
-import com.cainsgl.article.dto.request.PubPostRequest
-import com.cainsgl.article.dto.request.SearchPostRequest
-import com.cainsgl.article.dto.request.UpdatePostRequest
+import com.cainsgl.article.dto.request.*
 import com.cainsgl.article.dto.response.CreatePostResponse
 import com.cainsgl.article.service.DirectoryServiceImpl
 import com.cainsgl.article.service.PostChunkVectorServiceImpl
@@ -22,13 +19,13 @@ import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.DirectoryEntity
 import com.cainsgl.common.entity.article.PostEntity
 import com.cainsgl.common.entity.article.PostHistoryEntity
-import com.cainsgl.common.exception.BusinessException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
 import jakarta.validation.Valid
 import org.apache.rocketmq.client.core.RocketMQClientTemplate
 import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.bind.annotation.*
+import java.time.LocalDateTime
 
 
 private val log = KotlinLogging.logger {}
@@ -127,38 +124,29 @@ class PostController
         val entity = postService.getOne(query)
             ?: //没对应的数据
             return ResultCode.RESOURCE_NOT_FOUND
-//        val updateWrapper = UpdateWrapper<PostEntity>()
-//        updateWrapper.eq("id", request.id)
-//        updateWrapper.eq("user_id", userId)
         val postEntity = PostEntity(
             id = request.id,
             title = request.title,
-            content = request.content,
             summary = request.summary,
-//            top = request.isTop,
             status = ArticleStatus.DRAFT,
         )
-        if(!request.auto)
+        val historyQuery = QueryWrapper<PostHistoryEntity>()
+            .eq("post_id", postEntity.id).eq("user_id",userId) .orderByDesc("version").last("LIMIT 1")
+        val one = postHistoryService.getOne(historyQuery)
+        if(one != null)
         {
-         //说明是用户手动保存的，记录到历史版本去
-            postHistoryService.save(PostHistoryEntity(userId=userId,postId = entity.id, content = entity.content,))
+            postHistoryService.updateById(PostHistoryEntity(id=one.id,content = entity.content,createdAt = LocalDateTime.now()))
+        }else
+        {
+            postHistoryService.save(PostHistoryEntity(userId=userId,postId = entity.id, content = entity.content, createdAt = LocalDateTime.now(), version = 1))
         }
-        //不再需要，后面重新发布一次
-//        if(entity.status == ArticleStatus.PUBLISHED && !request.content.isNullOrEmpty())
-//        {
-//            //修改的是发布状态的内容。需要重新向量化
-//            val embedding = aiService.getEmbedding(entity.content!!)
-//            postEntity.vecotr=embedding
-//            rocketMQClientTemplate.asyncSendNormalMessage("article:publish", request.id, null)
-//        }
         //获取
         if (!postService.updateById(postEntity))
         {
             return ResultCode.PARAM_INVALID
         }
-        //发送消息，这里不需要回调，也不需要保证可靠，不是强一致的需求
-        if (request.content != null)
-            rocketMQClientTemplate.asyncSendNormalMessage("article:content", request.id, null)
+//        if (request.content != null)
+//            rocketMQClientTemplate.asyncSendNormalMessage("article:content", request.id, null)
         return ResultCode.SUCCESS
     }
 
@@ -172,18 +160,22 @@ class PostController
         query.eq("id", request.id)
         query.eq("user_id", userId)
         query.eq("status", ArticleStatus.DRAFT)
+        //拿到最新历史版本
         val entity = postService.getOne(query)
             ?: //没对应的数据
             return ResultCode.RESOURCE_NOT_FOUND
+
+        val historyQuery = QueryWrapper<PostHistoryEntity>()
+            .eq("post_id", entity.id).eq("user_id",userId) .orderByDesc("version").last("LIMIT 1")
+        val one = postHistoryService.getOne(historyQuery)
+        //创建新的历史记录快照
+        postHistoryService.save(PostHistoryEntity( userId=one.userId,postId=one.postId,version = one.version!!+1, createdAt = LocalDateTime.now(),content=""))
+        entity.content=one.content
         val embedding = aiService.getEmbedding(entity.content!!)
         entity.vecotr=embedding
         entity.status=ArticleStatus.PUBLISHED
-        if (!postService.updateById(entity))
-        {
-            throw BusinessException("数据库无法更新该数据，可能是资源不存在或者传参问题")
-        }
+        postService.updateById(entity)
         //发送消息，这里不需要回调，也不需要保证可靠，不是强一致的需求
-        //使用grpc传入
         rocketMQClientTemplate.asyncSendNormalMessage("article:publish", request.id, null)
         return ResultCode.SUCCESS
     }
@@ -206,6 +198,15 @@ class PostController
         directoryService.remove(wrapper2)
         rocketMQClientTemplate.asyncSendNormalMessage("article:delete", id, null)
         return ResultCode.SUCCESS
+    }
+
+    @PostMapping("/history")
+    fun history(@RequestBody @Valid request: HistoryPostRequest): List<PostHistoryEntity>
+    {
+        val historyQuery = QueryWrapper<PostHistoryEntity>()
+            .eq("post_id", request.id).orderByDesc("version")
+        return postHistoryService.list(historyQuery).apply { removeLast() }
+
     }
 
     @SaIgnore

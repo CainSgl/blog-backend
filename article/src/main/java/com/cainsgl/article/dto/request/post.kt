@@ -30,3 +30,8 @@ data class UpdatePostRequest(
  //   val isTop: Boolean ?=null,
     val auto:Boolean,
 )
+
+data class HistoryPostRequest(
+    @field:Min(1,  message="文章id非法")
+    val id: Long
+)

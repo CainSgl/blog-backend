@@ -3,11 +3,11 @@ package com.cainsgl.common.entity.article
 import com.baomidou.mybatisplus.annotation.*
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
-import java.time.OffsetDateTime
+import java.time.LocalDateTime
 
 @TableName("posts_history")
 data class PostHistoryEntity(
-    @TableId(type = IdType.NONE)
+    @TableId(type = IdType.ASSIGN_ID)
     @JsonSerialize(using = ToStringSerializer::class)
     var id: Long? = null,
     @TableField("user_id")
@@ -21,5 +21,8 @@ data class PostHistoryEntity(
     var content: String? = null,
 
     @TableField(value = "created_at", fill = FieldFill.INSERT)
-    var createdAt: OffsetDateTime? = null
+    var createdAt: LocalDateTime? = null,
+
+    @TableField("version")
+    var version: Int? = null
 )
