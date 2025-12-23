@@ -31,6 +31,12 @@ import java.time.LocalDateTime
 
 private val log = KotlinLogging.logger {}
 
+/**
+ * 这里的逻辑是这样的，其他用户只能访问对应文章的历史版本，或者发布版本
+ * 历史版本的产生只有作者公布才会产生，发布后，文章的发布版本为历史版本的最新版，并且生成一个新的历史版本提供给当前作者继续使用和保存
+ * 每次修改都是修改的历史版本的最新版本（其他人不可见）
+ * 也就是一个文档会被至少存档4份，一份是post的content（这里比较冗余是版本遗留问题），一份是历史分支的两份（最新一份是方便作者在原来的基础上开发！获取的是最新版本），以及原来发布的那份，可以作为历史版本回溯，一份是postClone表，也是历史版本的遗留导致的，他是为了验证用户是否更新了版本来重新登录向量，预计在最新版本移除
+ */
 @RestController
 @RequestMapping("/post")
 class PostController
@@ -91,7 +97,7 @@ class PostController
         val post = postService.getPost(id) ?: return ResultCode.RESOURCE_NOT_FOUND
         val userId = StpUtil.getLoginIdAsLong()
         val historyQuery = QueryWrapper<PostHistoryEntity>()
-            .eq("post_id", post.id).eq("user_id",userId) .orderByDesc("version").last("LIMIT 1 OFFSET 1")
+            .eq("post_id", post.id).eq("user_id",userId) .orderByDesc("version").last("LIMIT 1")
         val one = postHistoryService.getOne(historyQuery)
             ?: //无权限，直接返回
             return ResultCode.PERMISSION_DENIED
@@ -153,6 +159,7 @@ class PostController
             postHistoryService.updateById(PostHistoryEntity(id=one.id,content = entity.content,createdAt = LocalDateTime.now()))
         }else
         {
+            //这里是为了防止没有最新版本供作者使用
             postHistoryService.save(PostHistoryEntity(userId=userId,postId = entity.id, content = entity.content, createdAt = LocalDateTime.now(), version = 1))
         }
         //获取
@@ -160,8 +167,6 @@ class PostController
         {
             return ResultCode.PARAM_INVALID
         }
-//        if (request.content != null)
-//            rocketMQClientTemplate.asyncSendNormalMessage("article:content", request.id, null)
         return ResultCode.SUCCESS
     }
 
@@ -179,24 +184,29 @@ class PostController
         val entity = postService.getOne(query)
             ?: //没对应的数据
             return ResultCode.RESOURCE_NOT_FOUND
-
+        //获取编辑文档的最新版本，用来发布
         val historyQuery = QueryWrapper<PostHistoryEntity>()
             .eq("post_id", entity.id).eq("user_id",userId) .orderByDesc("version").last("LIMIT 1")
         val one = postHistoryService.getOne(historyQuery)
-        //创建新的历史记录快照
-        postHistoryService.save(PostHistoryEntity( userId=one.userId,postId=one.postId,version = one.version!!+1, createdAt = LocalDateTime.now(),content="咦，你是怎么看见我的？"))
         // 对文章内容进行XSS清理
         val sanitizedContent = XssSanitizerUtils.sanitize(one.content ?: "")
+        //检验是否有内容变更
+        if(entity.content==sanitizedContent)
+        {
+            //完全是之前的版本，什么都不用做
+            return ResultCode.SUCCESS
+        }
         entity.content=sanitizedContent
         //重新写回历史版本，防止有人查看历史版本被攻击
         one.content=sanitizedContent
         postHistoryService.updateById(one)
-
+        //注：这里再发布一个最新版本，是为了作者下次编辑文档的时候，返回他就好了
+        postHistoryService.save(PostHistoryEntity( userId=one.userId,postId=one.postId,version = one.version!!+1, createdAt = LocalDateTime.now(),content=sanitizedContent))
         val embedding = aiService.getEmbedding(entity.content!!)
         entity.vecotr=embedding
         entity.status=ArticleStatus.PUBLISHED
         postService.updateById(entity)
-        //发送消息，这里不需要回调，也不需要保证可靠，不是强一致的需求
+        //发送消息，这里不需要回调，也不需要保证可靠，不是强一致的需求，毕竟只是一次版本的迭代，问题不大
         rocketMQClientTemplate.asyncSendNormalMessage("article:publish", request.id, null)
         return ResultCode.SUCCESS
     }
