@@ -6,6 +6,7 @@ import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.annotation.SaIgnore
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.cainsgl.api.ai.AiService
 import com.cainsgl.api.user.extra.UserExtraInfoService
 import com.cainsgl.article.dto.request.*
@@ -96,13 +97,17 @@ class PostController
     {
         val post = postService.getPost(id) ?: return ResultCode.RESOURCE_NOT_FOUND
         val userId = StpUtil.getLoginIdAsLong()
+        if(post.userId != userId)
+        {
+            //不是他的，这个是历史版本的缓存版本
+            return ResultCode.PERMISSION_DENIED
+        }
         val historyQuery = QueryWrapper<PostHistoryEntity>()
+            .select("content")
             .eq("post_id", post.id).eq("user_id",userId) .orderByDesc("version").last("LIMIT 1")
         val one = postHistoryService.getOne(historyQuery)
-            ?: //无权限，直接返回
-            return ResultCode.PERMISSION_DENIED
         //检查用户是否有权访问
-        post.content=one.content
+        post.content=one?.content
         return post
     }
     @SaCheckPermission("article.post")
@@ -149,24 +154,22 @@ class PostController
             id = request.id,
             title = request.title,
             summary = request.summary,
-            status = ArticleStatus.DRAFT,
+            img=request.img
         )
         val historyQuery = QueryWrapper<PostHistoryEntity>()
             .eq("post_id", postEntity.id).eq("user_id",userId) .orderByDesc("version").last("LIMIT 1")
         val one = postHistoryService.getOne(historyQuery)
         if(one != null)
         {
-            postHistoryService.updateById(PostHistoryEntity(id=one.id,content = entity.content,createdAt = LocalDateTime.now()))
+            postHistoryService.updateById(PostHistoryEntity(id=one.id,content = request.content,createdAt = LocalDateTime.now()))
         }else
         {
             //这里是为了防止没有最新版本供作者使用
-            postHistoryService.save(PostHistoryEntity(userId=userId,postId = entity.id, content = entity.content, createdAt = LocalDateTime.now(), version = 1))
+            postHistoryService.save(PostHistoryEntity(userId=userId,postId = entity.id, content = request.content, createdAt = LocalDateTime.now(), version = 1))
         }
         //获取
-        if (!postService.updateById(postEntity))
-        {
-            return ResultCode.PARAM_INVALID
-        }
+        if(postEntity.needUpdate())
+          postService.updateById(postEntity)
         return ResultCode.SUCCESS
     }
 
@@ -179,17 +182,16 @@ class PostController
         val query = QueryWrapper<PostEntity>()
         query.eq("id", request.id)
         query.eq("user_id", userId)
-        query.eq("status", ArticleStatus.DRAFT)
         //拿到最新历史版本
         val entity = postService.getOne(query)
             ?: //没对应的数据
             return ResultCode.RESOURCE_NOT_FOUND
         //获取编辑文档的最新版本，用来发布
         val historyQuery = QueryWrapper<PostHistoryEntity>()
+            .select("id","content","version")
             .eq("post_id", entity.id).eq("user_id",userId) .orderByDesc("version").last("LIMIT 1")
         val one = postHistoryService.getOne(historyQuery)
-        // 对文章内容进行XSS清理
-        val sanitizedContent = XssSanitizerUtils.sanitize(one.content ?: "")
+        val sanitizedContent = XssSanitizerUtils.sanitize(one.content!!)
         //检验是否有内容变更
         if(entity.content==sanitizedContent)
         {
@@ -201,13 +203,20 @@ class PostController
         one.content=sanitizedContent
         postHistoryService.updateById(one)
         //注：这里再发布一个最新版本，是为了作者下次编辑文档的时候，返回他就好了
-        postHistoryService.save(PostHistoryEntity( userId=one.userId,postId=one.postId,version = one.version!!+1, createdAt = LocalDateTime.now(),content=sanitizedContent))
-        val embedding = aiService.getEmbedding(entity.content!!)
-        entity.vecotr=embedding
-        entity.status=ArticleStatus.PUBLISHED
-        postService.updateById(entity)
-        //发送消息，这里不需要回调，也不需要保证可靠，不是强一致的需求，毕竟只是一次版本的迭代，问题不大
-        rocketMQClientTemplate.asyncSendNormalMessage("article:publish", request.id, null)
+        postHistoryService.save(PostHistoryEntity( userId=one.userId,postId=entity.id,version = one.version!!+1, createdAt = LocalDateTime.now(),content=sanitizedContent))
+        //剩下的异步去处理就好了
+        Thread.ofVirtual().start{
+            if(entity.content!!.isEmpty())
+            {
+                return@start
+            }
+            val embedding = aiService.getEmbedding(entity.content!!)
+            entity.vecotr=embedding
+            entity.status=ArticleStatus.PUBLISHED
+            postService.updateById(entity)
+            //发送消息，这里不需要回调，也不需要保证可靠，不是强一致的需求，毕竟只是一次版本的迭代，问题不大
+            rocketMQClientTemplate.asyncSendNormalMessage("article:publish", request.id, null)
+        }
         return ResultCode.SUCCESS
     }
 
@@ -217,9 +226,10 @@ class PostController
     {
         //还需要删除目录
         val userId = StpUtil.getLoginIdAsLong()
-        val wrapper= QueryWrapper<PostEntity>()
+        val wrapper= UpdateWrapper<PostEntity>()
         wrapper.eq("id",id)
         wrapper.eq("user_id", userId)
+        wrapper.set("status", ArticleStatus.OFF_SHELF)
         if (!postService.remove(wrapper))
         {
             return ResultCode.RESOURCE_NOT_FOUND
@@ -227,7 +237,7 @@ class PostController
         val wrapper2= QueryWrapper<DirectoryEntity>()
         wrapper2.eq("post_id",id)
         directoryService.remove(wrapper2)
-        rocketMQClientTemplate.asyncSendNormalMessage("article:delete", id, null)
+    //    rocketMQClientTemplate.asyncSendNormalMessage("article:delete", id, null)
         return ResultCode.SUCCESS
     }
 

@@ -43,7 +43,7 @@ spring:
       host: ${redis.host}
       port: ${redis.port}
       password: ${redis.password}
-      timeout: 3000ms
+      timeout: 15000ms
       jedis:
         pool:
           max-active: 8

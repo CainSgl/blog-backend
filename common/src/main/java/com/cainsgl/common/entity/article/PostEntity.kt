@@ -70,4 +70,9 @@ data class PostEntity(
     var kbId: Long? = null,
     @TableField("vector", select = false,typeHandler = VectorTypeHandler::class)
     var vecotr: FloatArray? = null,
-)
+){
+    fun needUpdate():Boolean
+    {
+        return  id!=null&&(title!=null ||   summary!=null || status!=null  || tags != null)
+    }
+}

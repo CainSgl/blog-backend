@@ -24,8 +24,8 @@ class RedissonClientConfig
             .setConnectionPoolSize((maxActive / 2).coerceAtLeast(2))
             .setConnectionMinimumIdleSize(2)
             .setIdleConnectionTimeout(redisProperties.connectTimeout?.toMillis()?.toInt() ?: 10000)
-            .setConnectTimeout(redisProperties.connectTimeout?.toMillis()?.toInt()?:10000)
-            .setTimeout(redisProperties.timeout?.toMillis()?.toInt() ?: 3000)
+            .setConnectTimeout(redisProperties.connectTimeout?.toMillis()?.toInt()?:30000)
+            .setTimeout(redisProperties.timeout?.toMillis()?.toInt() ?: 10000)
             .setRetryAttempts(3)
             .setRetryInterval((maxWait / 10).coerceAtLeast(100))
         config.setNettyThreads((Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1));

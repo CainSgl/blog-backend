@@ -120,7 +120,7 @@ object GfmChunkUtils
     }
 
     /** 去除HTML标签但保留内容 */
-    private fun removeHtmlTags(text: String): String {
+    fun removeHtmlTags(text: String): String {
         return text.replace(HTML_TAG_REGEX, "")
     }
 

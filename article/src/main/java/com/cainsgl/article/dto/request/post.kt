@@ -27,8 +27,8 @@ data class UpdatePostRequest(
     val title: String? =null,
     val content: String? = null,
     val summary: String? = null,
+    val img:String?=null,
  //   val isTop: Boolean ?=null,
-    val auto:Boolean,
 )
 
 data class HistoryPostRequest(
