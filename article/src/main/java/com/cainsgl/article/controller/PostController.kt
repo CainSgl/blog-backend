@@ -14,6 +14,7 @@ import com.cainsgl.article.service.DirectoryServiceImpl
 import com.cainsgl.article.service.PostChunkVectorServiceImpl
 import com.cainsgl.article.service.PostHistoryServiceImpl
 import com.cainsgl.article.service.PostServiceImpl
+import com.cainsgl.article.util.XssSanitizerUtils
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.DirectoryEntity
@@ -83,7 +84,21 @@ class PostController
         }
         return ResultCode.PERMISSION_DENIED
     }
-
+    @SaCheckRole("user")
+    @GetMapping("/last")
+    fun getByLast(@RequestParam id: Long): Any
+    {
+        val post = postService.getPost(id) ?: return ResultCode.RESOURCE_NOT_FOUND
+        val userId = StpUtil.getLoginIdAsLong()
+        val historyQuery = QueryWrapper<PostHistoryEntity>()
+            .eq("post_id", post.id).eq("user_id",userId) .orderByDesc("version").last("LIMIT 1 OFFSET 1")
+        val one = postHistoryService.getOne(historyQuery)
+            ?: //无权限，直接返回
+            return ResultCode.PERMISSION_DENIED
+        //检查用户是否有权访问
+        post.content=one.content
+        return post
+    }
     @SaCheckPermission("article.post")
     @PostMapping
     fun createPost(@RequestBody @Valid request: CreatePostRequest): Any
@@ -169,8 +184,14 @@ class PostController
             .eq("post_id", entity.id).eq("user_id",userId) .orderByDesc("version").last("LIMIT 1")
         val one = postHistoryService.getOne(historyQuery)
         //创建新的历史记录快照
-        postHistoryService.save(PostHistoryEntity( userId=one.userId,postId=one.postId,version = one.version!!+1, createdAt = LocalDateTime.now(),content=""))
-        entity.content=one.content
+        postHistoryService.save(PostHistoryEntity( userId=one.userId,postId=one.postId,version = one.version!!+1, createdAt = LocalDateTime.now(),content="咦，你是怎么看见我的？"))
+        // 对文章内容进行XSS清理
+        val sanitizedContent = XssSanitizerUtils.sanitize(one.content ?: "")
+        entity.content=sanitizedContent
+        //重新写回历史版本，防止有人查看历史版本被攻击
+        one.content=sanitizedContent
+        postHistoryService.updateById(one)
+
         val embedding = aiService.getEmbedding(entity.content!!)
         entity.vecotr=embedding
         entity.status=ArticleStatus.PUBLISHED

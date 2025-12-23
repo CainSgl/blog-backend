@@ -57,7 +57,8 @@ data class PostEntity(
 
     @TableField("seo_description")
     var seoDescription: String? = null,
-
+    @TableField("img")
+    var img: String? = null,
     @TableField(value = "created_at", fill = FieldFill.INSERT)
     var createdAt: OffsetDateTime?=null,
     @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)

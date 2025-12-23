@@ -34,6 +34,13 @@ class AiController
     {
         return aiService.getTagsByContent(generateTagsRequest.content)
     }
+    @SaCheckRole("user")
+    @PostMapping("/summary/generate")
+    @RateLimitByToken(message = "生成标签接口不能频繁访问", interval = 10000, limit = 1)
+    fun getSummaryByAI(@RequestBody @Valid generateTagsRequest: ContentRequest): Any
+    {
+        return aiService.getSummaryByContent(generateTagsRequest.content)
+    }
 
     @PostMapping("/chat", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     @RateLimitByToken(message = "聊天过于频繁", interval = 10000, limit = 1)
