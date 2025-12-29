@@ -11,13 +11,13 @@ import kotlin.math.max
 import kotlin.math.pow
 
 @TableName("users")
-open class UserEntity(
+data class UserEntity(
     @TableId(type = IdType.ASSIGN_ID)
     @JsonSerialize(using = ToStringSerializer::class)
     var id: Long? = null,
 
     @TableField("username")
-    var  username: String = "",
+    var username: String? = null,
 
     @TableField("email")
     var email: String? = null,
@@ -27,68 +27,76 @@ open class UserEntity(
     var passwordHash: String? = null,
 
     @TableField("nickname")
-    var nickname: String = "",
+    var nickname: String? = null,
 
     @TableField("avatar_url")
-    var avatarUrl: String = "",
+    var avatarUrl: String? = null,
 
     @TableField("bio")
-    var bio: String = "",
+    var bio: String? = null,
 
     @TableField("level")
-    var level: Int = 0,
+    var level: Int? = null,
+
+    @TableField("gender")
+    var gender: String? = null,
 
     @TableField("experience")
-    var experience: Int = 0,
+    var experience: Int? = null,
 
     @TableField(value = "roles", typeHandler = StringListTypeHandler::class)
-    var roles: List<String> = ArrayList(),
+    var roles: List<String>?=null,
 
     @TableField(value = "permissions", typeHandler = StringListTypeHandler::class)
-    var permissions: List<String> = ArrayList(),
+    var permissions: List<String>?=null,
 
     @JSONField(serialize = false)
     @TableField("status")
-    var status: String = "",
-
+    var status: String? = null,
     @TableField("email_verified")
-    var emailVerified: Boolean = false,
-
+    var emailVerified: Boolean? = null,
     @TableField("phone")
     var phone: String? = null,
     @TableField("used_memory")
     var usedMemory: String? = null,
-    /**
-     * 这两个字段如果是在数据库是一定存在的
-     */
     @TableField(value = "created_at", fill = FieldFill.INSERT)
-    var createdAt: OffsetDateTime?=null,
+    var createdAt: OffsetDateTime? = null,
     @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
-    var updatedAt: OffsetDateTime?=null
+    var updatedAt: OffsetDateTime? = null,
+    @TableField(value = "extra", select = false)
+    var extra: String? = null
 )
 {
+    companion object{
+        val BASIC_COL= listOf("id","nickname","avatar_url","level","gender")
+    }
 
     //到下一级的总经验值
     @TableField(exist = false)
-    var nextLevelTotalExp: Int?=null
+    var nextLevelTotalExp: Int? = null
     //从现在到下一级需要的经验值
     @TableField(exist = false)
-    var expToNextLevel: Int?=null
+    var expToNextLevel: Int? = null
 
 
     //计算对应的成员变量
-    fun calculateLevelInfo():UserEntity
+    fun calculateLevelInfo(): UserEntity
     {
-        this.nextLevelTotalExp = (2.0.pow(this.level + 1) + this.level).toInt()
-        this.expToNextLevel = max(0, this.nextLevelTotalExp!! - this.experience)
+        if(this.level != null&&this.experience!=null)
+        {
+            this.nextLevelTotalExp = (2.0.pow(this.level!! + 1) + this.level!!).toInt()
+            this.expToNextLevel = max(0, this.nextLevelTotalExp!! - this.experience!!)
+        }
         return this
     }
+
     //去除系统级别的字段，比如密码
-    fun sanitizeSystemSensitiveData():UserEntity
+    fun sanitizeSystemSensitiveData(): UserEntity
     {
         this.passwordHash = null
         return this
     }
+
     fun isActive(): Boolean
     {
         return "active" == this.status

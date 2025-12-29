@@ -31,4 +31,8 @@ data class KnowledgeBaseEntity(
     var index: String? = null,
     @TableField(value = "like_count")
     var likeCount: Int? = null,
+    @TableField(value = "cover_url")
+    var coverUrl: String? = null,
+    @TableField(value = "post_count")
+    var postCount: Int? = null,
 )

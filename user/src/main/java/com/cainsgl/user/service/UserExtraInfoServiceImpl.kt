@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.api.user.extra.UserExtraInfoService
 import com.cainsgl.common.entity.user.UserExtraInfoEntity
+import com.cainsgl.user.misc.IncrSessionCallback
 import com.cainsgl.user.repository.UserExtraInfoMapper
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
@@ -18,13 +19,14 @@ import java.io.Serializable
 private val logger = KotlinLogging.logger {}
 
 @Service
-class UserExtraInfoServiceImpl: ServiceImpl<UserExtraInfoMapper, UserExtraInfoEntity>(), UserExtraInfoService, IService<UserExtraInfoEntity>
+class UserExtraInfoServiceImpl : ServiceImpl<UserExtraInfoMapper, UserExtraInfoEntity>(), UserExtraInfoService,
+    IService<UserExtraInfoEntity>
 {
     @Resource
     lateinit var redissonClient: RedissonClient
 
     @Resource
-    lateinit var redisTemplate: RedisTemplate<String, String>
+    lateinit var redisTemplate: RedisTemplate<String, Int>
 
     companion object
     {
@@ -33,7 +35,7 @@ class UserExtraInfoServiceImpl: ServiceImpl<UserExtraInfoMapper, UserExtraInfoEn
 
     override fun getInterestVector(userId: Long): FloatArray?
     {
-        val queryWrapper=QueryWrapper<UserExtraInfoEntity>()
+        val queryWrapper = QueryWrapper<UserExtraInfoEntity>()
         queryWrapper.select("interest_vector")
         queryWrapper.eq("user_id", userId)
         val selectOne = baseMapper.selectOne(queryWrapper)
@@ -66,7 +68,7 @@ class UserExtraInfoServiceImpl: ServiceImpl<UserExtraInfoMapper, UserExtraInfoEn
             if (!isLockAcquired)
             {
                 //时间太长了，采用备用方案
-             //   throw BSystemException("获取热点数据失败，缓存问题")
+                //   throw BSystemException("获取热点数据失败，缓存问题")
                 return super<ServiceImpl>.getById(id)
             }
             try
@@ -99,10 +101,32 @@ class UserExtraInfoServiceImpl: ServiceImpl<UserExtraInfoMapper, UserExtraInfoEn
             return byId
         }
         val userExtraInfoEntity = UserExtraInfoEntity(userId = id)
-        userExtraInfoEntity.interestVector=FloatArray(1024)
+        userExtraInfoEntity.interestVector = FloatArray(1024)
         userExtraInfoEntity.interestVector!!.fill(1e-8f)
         save(userExtraInfoEntity)
         userExtraInfoEntity.saveFieldByRedis(redisTemplate)
         return userExtraInfoEntity
+    }
+
+    fun incrFlowCount(followerId: Long, followeeId: Long)
+    {
+        redisTemplate.execute(
+            IncrSessionCallback(
+                "${UserExtraInfoEntity.USER_EXTRA_INFO_REDIS_PREFIX}$followerId",
+                "${UserExtraInfoEntity.USER_EXTRA_INFO_REDIS_PREFIX}$followeeId",
+                1
+            )
+        )
+    }
+
+    fun decrFlowCount(followerId: Long, followeeId: Long)
+    {
+        redisTemplate.execute(
+            IncrSessionCallback(
+                "${UserExtraInfoEntity.USER_EXTRA_INFO_REDIS_PREFIX}$followerId",
+                "${UserExtraInfoEntity.USER_EXTRA_INFO_REDIS_PREFIX}$followeeId",
+                -1
+            )
+        )
     }
 }

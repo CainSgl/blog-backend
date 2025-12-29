@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cainsgl.user.repository.UsersFollowMapper">
+    
+
+    <select id="checkFollowing" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM users_follow 
+            WHERE follower_id = #{followerId} AND followee_id = #{followeeId}
+        )
+    </select>
+    
+    <select id="getFollowerUsers" resultType="com.cainsgl.user.dto.response.FollowUserResponse">
+        SELECT u.id, u.nickname, u.avatar_url, u.level, u.gender
+        FROM users_follow uf
+        LEFT JOIN users u ON uf.follower_id = u.id
+        WHERE uf.followee_id = #{userId} AND uf.id > #{lastId}
+        ORDER BY uf.id DESC
+        LIMIT 20
+    </select>
+    
+    <select id="getFolloweeUsers" resultType="com.cainsgl.user.dto.response.FollowUserResponse">
+        SELECT u.id, u.nickname, u.avatar_url, u.level, u.gender
+        FROM users_follow uf
+        LEFT JOIN users u ON uf.followee_id = u.id
+        WHERE uf.follower_id = #{userId} AND uf.id > #{lastId}
+        ORDER BY uf.id DESC
+        LIMIT 20
+    </select>
+    
+</mapper>

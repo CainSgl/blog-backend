@@ -38,7 +38,7 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
         val postEntity = redisTemplate.opsForValue().get("$POST_INFO_REDIS_PREFIX$id")
         if(postEntity!=null)
         {
-            redisTemplate.expire("$POST_INFO_REDIS_PREFIX$id", Duration.ofDays(1))
+            redisTemplate.expire("$POST_INFO_REDIS_PREFIX$id", Duration.ofMinutes(20))
             return postEntity
         }
         synchronized(this) {
@@ -51,12 +51,14 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
             if(entity.status== ArticleStatus.PUBLISHED)
             {
                 //只缓存发布的文章
-                redisTemplate.opsForValue().setIfAbsent("$POST_INFO_REDIS_PREFIX$id", entity,Duration.ofDays(1))
+                redisTemplate.opsForValue().setIfAbsent("$POST_INFO_REDIS_PREFIX$id", entity,Duration.ofMinutes(10))
             }
             return entity
         }
     }
-
+    fun removeCache(id: Long) {
+        redisTemplate.delete("$POST_INFO_REDIS_PREFIX$id")
+    }
     override fun getById(id: Long): PostEntity?
     {
         return baseMapper.selectById(id)

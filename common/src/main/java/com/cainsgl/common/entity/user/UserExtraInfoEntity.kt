@@ -18,21 +18,21 @@ open class UserExtraInfoEntity(
     var userId: Long? = null,
 
     @TableField("follower_count")
-    var followerCount: Int = 0,
+    var followerCount: Int? = null,
 
     @TableField("following_count")
-    var followingCount: Int = 0,
+    var followingCount: Int? = null,
 
     @TableField("like_count")
-    var likeCount: Int = 0,
+    var likeCount: Int? = null,
 
     @TableField("comment_count")
-    var commentCount: Int = 0,
+    var commentCount: Int? = null,
 
     @TableField("post_count")
-    var postCount: Int = 0,
+    var postCount: Int? = null,
     @TableField("article_view_count")
-    var articleViewCount: Int = 0,
+    var articleViewCount: Int? = null,
 
     @TableField(value = "interest_vector", typeHandler = VectorTypeHandler::class, select = false)
     var interestVector: FloatArray? = null
@@ -41,81 +41,40 @@ open class UserExtraInfoEntity(
     companion object
     {
         const val USER_EXTRA_INFO_REDIS_PREFIX = "user:extraInfo:"
-//        fun RedisTemplate<String, String>.fillFieldByRedis(entity: UserExtraInfoEntity): Boolean
-//        {
-//            val map = this.opsForHash<String, String>().entries(USER_EXTRA_INFO_REDIS_PREFIX + entity.userId)
-//            // 获取所有带@TableField注解的字段
-//            val fields = entity::class.java.declaredFields.filter { it.isAnnotationPresent(TableField::class.java) }
-//            // 空map返回true（表示无缓存）
-//            if (map.isEmpty()) return false
-//            // 检查所有字段是否都存在，不完整返回false
-//            val fieldNames = fields.map { it.name }
-//            if (!map.keys.containsAll(fieldNames)) return false
-//            // 通过反射填充字段
-//            for (field in fields)
-//            {
-//                field.isAccessible = true
-//                val value = map[field.name] ?: continue
-//                when (field.type)
-//                {
-//                    Int::class.java, Int::class.javaPrimitiveType -> field.setInt(entity, value.toInt())
-//                    Long::class.java, Long::class.javaPrimitiveType -> field.setLong(entity, value.toLong())
-//                    FloatArray::class.java -> field.set(
-//                        entity, value.split(",").map { it.toFloat() }
-//                            .toFloatArray())
-//
-//                    else -> field.set(entity, value)
-//                }
-//            }
-//            return true
-//        }
     }
 
-    fun fillFieldByRedis(redisTemplate: RedisTemplate<String, String>): Boolean
+    fun fillFieldByRedis(redisTemplate: RedisTemplate<String, Int>): Boolean
     {
-        val map = redisTemplate.opsForHash<String, String>().entries(USER_EXTRA_INFO_REDIS_PREFIX + userId)
-        // 获取所有带@TableField注解的字段
-        val fields = this::class.java.declaredFields.filter { it.isAnnotationPresent(TableField::class.java) }
-        // 空map返回true（表示无缓存）
+        val map = redisTemplate.opsForHash<String, Int>().entries(USER_EXTRA_INFO_REDIS_PREFIX + userId)
         if (map.isEmpty()) return false
-        // 检查所有字段是否都存在，不完整返回false
-        val fieldNames = fields.map { it.name }
-        if (!map.keys.containsAll(fieldNames)) return false
-        // 通过反射填充字段
+        val fields = this::class.java.declaredFields.filter { it.isAnnotationPresent(TableField::class.java) }
         for (field in fields)
         {
             field.isAccessible = true
             val value = map[field.name] ?: continue
             when (field.type)
             {
-                Int::class.java, Int::class.javaPrimitiveType   -> field.setInt(this, value.toInt())
-                Long::class.java, Long::class.javaPrimitiveType -> field.setLong(this, value.toLong())
-                FloatArray::class.java                          -> field.set(this, value.split(",").map { it.toFloat() }
-                    .toFloatArray())
-
-                else                                            -> field.set(this, value)
+                Integer::class.java  -> field.set(this, value)
+                Long::class.java -> field.set(this, value.toLong())
             }
         }
         return true
     }
 
-    fun saveFieldByRedis(redisTemplate: RedisTemplate<String, String>): Boolean
+    fun saveFieldByRedis(redisTemplate: RedisTemplate<String, Int>): Boolean
     {
-        val hashOps = redisTemplate.opsForHash<String, String>()
+        val hashOps = redisTemplate.opsForHash<String, Int>()
         val redisKey = USER_EXTRA_INFO_REDIS_PREFIX + userId
-        val map = mutableMapOf<String, String>()
-        // 获取所有带@TableField注解的字段，null值忽略
+        val map = mutableMapOf<String, Int>()
         val fields = this::class.java.declaredFields.filter { it.isAnnotationPresent(TableField::class.java) }
         for (field in fields)
         {
             field.isAccessible = true
             val value = field.get(this) ?: continue
-            val strValue = when (value)
+            if(value is Int)
             {
-                is FloatArray -> value.joinToString(",")
-                else          -> value.toString()
+                map[field.name] = value
             }
-            map[field.name] = strValue
         }
         if (map.isNotEmpty())
         {

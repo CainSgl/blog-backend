@@ -16,3 +16,4 @@ data class UserLogPostRequest(
     @field:Min(value=1, message = "id非法")
     val id:Long
 )
+

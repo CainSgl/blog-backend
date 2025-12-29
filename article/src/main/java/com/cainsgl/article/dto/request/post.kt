@@ -10,10 +10,10 @@ data class CreatePostRequest(
     val parentId: Long?,
 )
 
-data class PubPostRequest(
-    @field:Min(1,  message="公布的文章id非法")
-    val id: Long
-)
+//data class PubPostRequest(
+//    @field:Min(1,  message="公布的文章id非法")
+//    val id: Long
+//)
 
 
 data class SearchPostRequest(
@@ -31,7 +31,7 @@ data class UpdatePostRequest(
  //   val isTop: Boolean ?=null,
 )
 
-data class HistoryPostRequest(
-    @field:Min(1,  message="文章id非法")
-    val id: Long
-)
+//data class HistoryPostRequest(
+//    @field:Min(1,  message="文章id非法")
+//    val id: Long
+//)

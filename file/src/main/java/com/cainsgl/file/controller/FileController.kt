@@ -44,8 +44,12 @@ class FileController
     }
     @SaIgnore
     @GetMapping
-    fun getFile(@RequestParam("f") shorUrl: Long, response: HttpServletResponse):Any?
+    fun getFile(@RequestParam("f") shorUrl: Long, @RequestParam("width", required = false) width: String?,response: HttpServletResponse):Any?
     {
+        if(width!=null)
+        {
+            response.setHeader("X-Image-Render-Width", width)
+        }
         val byId = fileUrlService.getById(shorUrl)
         if(byId==null)
         {

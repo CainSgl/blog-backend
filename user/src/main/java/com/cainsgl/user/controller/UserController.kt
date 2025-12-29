@@ -90,7 +90,7 @@ class UserController
      */
     @SaCheckRole("user")
     @GetMapping("/current")
-    fun getCurrentUser(): UserEntity
+    fun getCurrentUser(): UserCurrentResponse
     {
         val userInfo = userService.getById(StpUtil.getLoginIdAsLong())
         //获取自己的热信息
@@ -105,6 +105,7 @@ class UserController
         val user = userService.getById(id) ?: return ResultCode.RESOURCE_NOT_FOUND
         //去除敏感字段
         user.calculateLevelInfo()
-        return UserGetResponse(user)
+        val hotInfo = userExtraInfoService.getBySaveOnNull(user.id!!)
+        return UserGetResponse(user,hotInfo)
     }
 }

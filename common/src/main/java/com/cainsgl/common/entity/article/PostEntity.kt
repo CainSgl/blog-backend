@@ -68,9 +68,15 @@ data class PostEntity(
     @TableField("kb_id")
     @JsonSerialize(using = ToStringSerializer::class)
     var kbId: Long? = null,
+    @TableField("version")
+    var version: Int? = null,
     @TableField("vector", select = false,typeHandler = VectorTypeHandler::class)
     var vecotr: FloatArray? = null,
 ){
+    companion object{
+         val BASIC_COL= listOf("id","title","summary","status","is_top","is_recommend","view_count","like_count","comment_count","tags","user_id","published_at","kb_id","version","img","created_at","category_id","seo_keywords","seo_description")
+    }
+
     fun needUpdate():Boolean
     {
         return  id!=null&&(title!=null ||   summary!=null || status!=null  || tags != null)

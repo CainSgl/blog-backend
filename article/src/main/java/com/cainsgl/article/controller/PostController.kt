@@ -9,13 +9,14 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.cainsgl.api.ai.AiService
 import com.cainsgl.api.user.extra.UserExtraInfoService
-import com.cainsgl.article.dto.request.*
+import com.cainsgl.article.dto.request.CreatePostRequest
+import com.cainsgl.article.dto.request.SearchPostRequest
+import com.cainsgl.article.dto.request.UpdatePostRequest
 import com.cainsgl.article.dto.response.CreatePostResponse
-import com.cainsgl.article.service.DirectoryServiceImpl
-import com.cainsgl.article.service.PostChunkVectorServiceImpl
-import com.cainsgl.article.service.PostHistoryServiceImpl
-import com.cainsgl.article.service.PostServiceImpl
+import com.cainsgl.article.dto.response.GetPostResponse
+import com.cainsgl.article.service.*
 import com.cainsgl.article.util.XssSanitizerUtils
+import com.cainsgl.common.dto.request.OnlyId
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.DirectoryEntity
@@ -60,7 +61,8 @@ class PostController
 
     @Resource
     lateinit var postHistoryService: PostHistoryServiceImpl
-
+    @Resource
+    lateinit var postOperationService: PostOperationServiceImpl
     //来自其他模块的，只能通过Service来访问
     @Resource
     lateinit var userExtraInfoService:UserExtraInfoService
@@ -68,13 +70,24 @@ class PostController
     lateinit var aiService:AiService
     @SaIgnore
     @GetMapping
-    fun get(@RequestParam id: Long): Any
+    fun get(@RequestParam id: Long,@RequestParam simple: Boolean=false): Any
     {
         val post = postService.getPost(id) ?: return ResultCode.RESOURCE_NOT_FOUND
         //检查用户是否有权访问
         if (post.status == ArticleStatus.PUBLISHED)
         {
-            return post
+            if(simple)
+            {
+                return post
+            }
+            //获取自己是否点赞的信息，并添加上
+            if (StpUtil.isLogin())
+            {
+                val userId = StpUtil.getLoginIdAsLong()
+                val operate= postOperationService.getOperateByUserIdAndPostId(userId=userId,postId=post.id!!)
+                return GetPostResponse(post,operate)
+            }
+            return GetPostResponse(post, emptySet())
         }
         //限制为只允许该用户访问
         try
@@ -82,7 +95,12 @@ class PostController
             val userId = StpUtil.getLoginIdAsLong()
             if (userId == post.userId)
             {
-                return post
+                if(simple)
+                {
+                    return post
+                }
+                val operate= postOperationService.getOperateByUserIdAndPostId(userId=userId,postId=post.id!!)
+                return GetPostResponse(post,operate)
             }
         } catch (e: Exception)
         {
@@ -91,6 +109,19 @@ class PostController
         }
         return ResultCode.PERMISSION_DENIED
     }
+
+    @GetMapping("/top")
+    fun getTopPostByUserId(@RequestParam id: Long): Any
+    {
+        val query= QueryWrapper<PostEntity>()
+        query.select(PostEntity.BASIC_COL)
+        query.eq("user_id", id)
+        query.eq("is_top",true)
+        query.eq("status",ArticleStatus.PUBLISHED)
+        query.orderByDesc("published_at")
+        return postService.list(query)
+    }
+
     @SaCheckRole("user")
     @GetMapping("/last")
     fun getByLast(@RequestParam id: Long): Any
@@ -175,7 +206,7 @@ class PostController
 
     @SaCheckRole("user")
     @PostMapping("/publish")
-    fun publish(@RequestBody @Valid request: PubPostRequest): Any
+    fun publish(@RequestBody @Valid request: OnlyId): Any
     {
         val userId = StpUtil.getLoginIdAsLong()
         //这里是读时更新Read-Modify-Write，正常是要加事务的，但是这里是单个用户，不存在并发问题
@@ -199,13 +230,14 @@ class PostController
             return ResultCode.SUCCESS
         }
         entity.content=sanitizedContent
+        entity.version=one.version
         //重新写回历史版本，防止有人查看历史版本被攻击
         one.content=sanitizedContent
-        postHistoryService.updateById(one)
-        //注：这里再发布一个最新版本，是为了作者下次编辑文档的时候，返回他就好了
-        postHistoryService.save(PostHistoryEntity( userId=one.userId,postId=entity.id,version = one.version!!+1, createdAt = LocalDateTime.now(),content=sanitizedContent))
         //剩下的异步去处理就好了
         Thread.ofVirtual().start{
+            postHistoryService.updateById(one)
+            //注：这里再发布一个最新版本，是为了作者下次编辑文档的时候，返回他就好了
+            postHistoryService.save(PostHistoryEntity( userId=one.userId,postId=entity.id,version = one.version!!+1, createdAt = LocalDateTime.now(),content=sanitizedContent))
             if(entity.content!!.isEmpty())
             {
                 return@start
@@ -216,6 +248,11 @@ class PostController
             postService.updateById(entity)
             //发送消息，这里不需要回调，也不需要保证可靠，不是强一致的需求，毕竟只是一次版本的迭代，问题不大
             rocketMQClientTemplate.asyncSendNormalMessage("article:publish", request.id, null)
+            //延时双删
+            //删除缓存
+            postService.removeCache(entity.id!!)
+            Thread.sleep(500)
+            postService.removeCache(entity.id!!)
         }
         return ResultCode.SUCCESS
     }
@@ -230,19 +267,23 @@ class PostController
         wrapper.eq("id",id)
         wrapper.eq("user_id", userId)
         wrapper.set("status", ArticleStatus.OFF_SHELF)
-        if (!postService.remove(wrapper))
-        {
-            return ResultCode.RESOURCE_NOT_FOUND
-        }
-        val wrapper2= QueryWrapper<DirectoryEntity>()
-        wrapper2.eq("post_id",id)
-        directoryService.remove(wrapper2)
+        return transactionTemplate.execute {
+            if (!postService.update(wrapper))
+            {
+                return@execute ResultCode.RESOURCE_NOT_FOUND
+            }
+            val wrapper2= QueryWrapper<DirectoryEntity>()
+            wrapper2.eq("post_id",id)
+            directoryService.remove(wrapper2)
+        }?:ResultCode.SUCCESS
+
+        //删除历史版本
+
     //    rocketMQClientTemplate.asyncSendNormalMessage("article:delete", id, null)
-        return ResultCode.SUCCESS
     }
 
     @PostMapping("/history")
-    fun history(@RequestBody @Valid request: HistoryPostRequest): List<PostHistoryEntity>
+    fun history(@RequestBody @Valid request: OnlyId): List<PostHistoryEntity>
     {
         val historyQuery = QueryWrapper<PostHistoryEntity>()
             .eq("post_id", request.id).orderByDesc("version")

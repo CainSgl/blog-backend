@@ -16,4 +16,6 @@ class KnowledgeBaseServiceImpl : ServiceImpl<KnowledgeBaseMapper, KnowledgeBaseE
         wrapper.setSql("like_count = like_count + $addCount")
         baseMapper.update(wrapper)
     }
+
+
 }

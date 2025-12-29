@@ -1,6 +1,5 @@
 package com.cainsgl.aggregate
 
-import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock
 import org.mybatis.spring.annotation.MapperScan
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -13,7 +12,7 @@ import org.springframework.scheduling.annotation.EnableScheduling
  * 扫描所有业务模块的包，实现单体架构
  */
 @EnableScheduling
-@EnableSchedulerLock(defaultLockAtMostFor = "PT10M")
+//@EnableSchedulerLock(defaultLockAtMostFor = "PT10M")
 @SpringBootApplication
 @ComponentScan(
     basePackages = ["com.cainsgl"],

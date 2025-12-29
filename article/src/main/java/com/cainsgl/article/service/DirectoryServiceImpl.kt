@@ -1,5 +1,6 @@
 package com.cainsgl.article.service
 
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.baomidou.mybatisplus.core.toolkit.IdWorker
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
@@ -8,15 +9,30 @@ import com.cainsgl.article.dto.DirectoryTreeDTO
 import com.cainsgl.article.repository.DirectoryMapper
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.DirectoryEntity
+import com.cainsgl.common.entity.article.KnowledgeBaseEntity
+import com.cainsgl.common.util.FineLockCacheUtils.getWithFineLock
+import jakarta.annotation.Resource
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
+import java.time.Duration
 
 @Service
-class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), DirectoryService, IService<DirectoryEntity>
+class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), DirectoryService,
+    IService<DirectoryEntity>
 {
+    @Resource
+    lateinit var knowledgeBaseService: KnowledgeBaseServiceImpl
 
 
+    @Resource
+    lateinit var redisTemplate: RedisTemplate<String, List<DirectoryTreeDTO>>
+
+    companion object
+    {
+        const val DIR_REDIS_PRE_FIX = "dir:"
+    }
     /**
      * 递归查询知识库的完整目录树结构
      * @param kbId 知识库ID
@@ -24,40 +40,58 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
      */
     fun getDirectoryTreeByKbId(kbId: Long): List<DirectoryTreeDTO>
     {
-        val list = baseMapper.getDirectoryTreeByKbId(kbId)
-        if (list.isNullOrEmpty())
+        //根据id去缓存
+        if (kbId < 0)
         {
-            return emptyList()
+            return emptyList();
         }
+        return redisTemplate.getWithFineLock("$DIR_REDIS_PRE_FIX$kbId",Duration.ofMinutes(10)
+        ,{
+            val list = baseMapper.getDirectoryTreeByKbId(kbId)
+            if (list.isNullOrEmpty())
+            {
+                return@getWithFineLock emptyList()
+            }
 
-        // 创建ID到节点的映射
-        val nodeMap = list.associateBy { it.id }
-        // 递归排序节点
-        fun sortChildren(nodes: List<DirectoryTreeDTO>)
-        {
-            nodes.forEach { node ->
-                node.children.let {
-                    node.children = it.sortedBy { child -> child.sortNum }.also(::sortChildren)
+            // 创建ID到节点的映射
+            val nodeMap = list.associateBy { it.id }
+            // 递归排序节点
+            fun sortChildren(nodes: List<DirectoryTreeDTO>)
+            {
+                nodes.forEach { node ->
+                    node.children.let {
+                        node.children = it.sortedBy { child -> child.sortNum }.also(::sortChildren)
+                    }
                 }
             }
-        }
-        // 找出所有根节点
-        val rootNodes = list.filter { it.parentId == null }
-        // 将子节点添加到对应的父节点中
-        list.filter { it.parentId != null }.forEach { node ->
-            nodeMap[node.parentId]?.let { parent ->
-                parent.children = parent.children.toMutableList().apply { add(node) }
+            // 找出所有根节点
+            val rootNodes = list.filter { it.parentId == null }
+            // 将子节点添加到对应的父节点中
+            list.filter { it.parentId != null }.forEach { node ->
+                nodeMap[node.parentId]?.let { parent ->
+                    parent.children = parent.children.toMutableList().apply { add(node) }
+                }
             }
-        }
-        // 对所有层级进行排序
-        sortChildren(rootNodes)
-        return rootNodes
-    }
+            // 对所有层级进行排序
+            sortChildren(rootNodes)
 
+            return@getWithFineLock rootNodes
+        }
+        )?: emptyList()
+    }
+    fun removeCache(kbId: Long)
+    {
+        redisTemplate.delete("$DIR_REDIS_PRE_FIX$kbId")
+        Thread.ofVirtual().start{
+            Thread.sleep(1000)
+            redisTemplate.delete("$DIR_REDIS_PRE_FIX$kbId")
+        }
+    }
     fun getDirectoryWithPermissionCheck(directoryId: Long, kbId: Long, userId: Long): DirectoryEntity?
     {
         return baseMapper.selectDirectoryWithPermissionCheck(directoryId, kbId, userId)
     }
+
     fun updateDirectory(id: Long, kbId: Long, userId: Long, name: String?, parentId: Long?): Boolean
     {
         val baseMapper = getBaseMapper()
@@ -78,7 +112,7 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
             return false
         }
     }
-
+    @Transactional(propagation = Propagation.REQUIRED)
     fun saveDirectory(kbId: Long, userId: Long, name: String, parentId: Long? = null, postId: Long? = null): Long
     {
         val baseMapper = getBaseMapper()
@@ -87,11 +121,17 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
             val directoryId = IdWorker.getId()
             val success = baseMapper.insertDirectoryWithValidation(
                 directoryId, kbId = kbId, userId = userId, parentId = parentId, name = name, postId = postId
-            )>0
-            return if(success)
+            ) > 0
+            //去增加kb的post_count
+            if(postId!=null)
+            {
+                val query= UpdateWrapper <KnowledgeBaseEntity>().eq("id",kbId).set("post_count","post_count+1")
+                knowledgeBaseService.update(query)
+            }
+            return if (success)
             {
                 directoryId
-            }else
+            } else
             {
                 -1
             }
@@ -151,10 +191,13 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
     }
 
     @Transactional(propagation = Propagation.SUPPORTS)
-    @Deprecated("废弃，因为可以在获取的时候检验", ReplaceWith("baseMapper.deleteDirectoryWithPermissionCheck(id, kbId, userId) > 0"))
+    @Deprecated(
+        "废弃，因为可以在获取的时候检验",
+        ReplaceWith("baseMapper.deleteDirectoryWithPermissionCheck(id, kbId, userId) > 0")
+    )
     fun deleteDirectory(id: Long, kbId: Long, userId: Long): Boolean
     {
-        return baseMapper.deleteDirectoryWithPermissionCheck(id, kbId, userId)>0
+        return baseMapper.deleteDirectoryWithPermissionCheck(id, kbId, userId) > 0
     }
 
     @Transactional(propagation = Propagation.SUPPORTS)

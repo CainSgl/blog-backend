@@ -9,8 +9,10 @@ import com.cainsgl.article.dto.request.MoveRequest
 import com.cainsgl.article.dto.request.ReSortRequest
 import com.cainsgl.article.dto.request.UpdateDirectoryRequest
 import com.cainsgl.article.service.DirectoryServiceImpl
+import com.cainsgl.article.service.KnowledgeBaseServiceImpl
 import com.cainsgl.article.service.PostServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
+import com.cainsgl.common.entity.article.KnowledgeBaseEntity
 import com.cainsgl.common.entity.article.PostEntity
 import jakarta.annotation.Resource
 import jakarta.validation.Valid
@@ -33,6 +35,8 @@ class DirectoryController
 
     @Resource
     lateinit var directoryService: DirectoryServiceImpl
+    @Resource
+    lateinit var knowledgeBaseService: KnowledgeBaseServiceImpl
     @Resource
     lateinit var transactionTemplate: TransactionTemplate
     @SaCheckRole("user")
@@ -63,6 +67,7 @@ class DirectoryController
         }
         val userId = StpUtil.getLoginIdAsLong()
         val resortDirectory = directoryService.resortDirectory(request.id, request.kbId, userId, request.lastId)
+        directoryService.removeCache(request.kbId)
         return resortDirectory
     }
 
@@ -98,6 +103,7 @@ class DirectoryController
         {
             return ResultCode.UNKNOWN_ERROR
         }
+        directoryService.removeCache(request.kbId)
         return res
     }
 
@@ -112,6 +118,7 @@ class DirectoryController
         {
             return id.toString()
         }
+        directoryService.removeCache(request.kbId)
         return ResultCode.DB_ERROR
     }
     @SaCheckRole("user")
@@ -130,6 +137,9 @@ class DirectoryController
             val updateWrapper= UpdateWrapper<PostEntity>()
             updateWrapper.`in`("id",ids).eq("user_id",userId).set("kb_id",null)
             //获取所有的postId
+            //设置知识库的数量扣减
+            val updateWrapper2= UpdateWrapper<KnowledgeBaseEntity>().eq("kb_id",kbId).set("post_count","post_count-${ids.size}")
+            knowledgeBaseService.update(updateWrapper2)
            return postService.update(updateWrapper)
         }
 
@@ -160,6 +170,7 @@ class DirectoryController
         {
             rocketMQClientTemplate.asyncSendNormalMessage("article:content", postId, null)
         }
+        directoryService.removeCache(kbId)
         return res.size
     }
 }

@@ -4,18 +4,22 @@ import cn.dev33.satoken.annotation.SaCheckPermission
 import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.annotation.SaIgnore
 import cn.dev33.satoken.stp.StpUtil
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page
 import com.cainsgl.article.dto.DirectoryTreeDTO
 import com.cainsgl.article.dto.request.CreateKnowledgeBaseRequest
+import com.cainsgl.article.dto.request.KnowledgeBaseListRequest
 import com.cainsgl.article.dto.request.UpdateKnowledgeBaseRequest
 import com.cainsgl.article.service.DirectoryServiceImpl
 import com.cainsgl.article.service.KnowledgeBaseServiceImpl
+import com.cainsgl.common.dto.response.PageResponse
 import com.cainsgl.common.dto.response.ResultCode
+import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.KnowledgeBaseEntity
 import jakarta.annotation.Resource
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Min
-import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -23,29 +27,92 @@ import org.springframework.web.bind.annotation.*
 class KnowledgeBaseController
 {
 
-    @Resource
-    private lateinit var redisTemplate: RedisTemplate<Any, Any>
 
     @Resource
     lateinit var knowledgeBaseService: KnowledgeBaseServiceImpl
+
     @Resource
     lateinit var directoryService: DirectoryServiceImpl
+
     @SaIgnore
     @GetMapping
     fun get(@RequestParam @Min(value = 1, message = "知识库id非法") id: Long): Any
     {
         val knowledgeBase: KnowledgeBaseEntity = knowledgeBaseService.getById(id)
             ?: return ResultCode.RESOURCE_NOT_FOUND
+        if (knowledgeBase.status != ArticleStatus.PUBLISHED)
+        {
+            val userId = StpUtil.getLoginIdAsLong()
+            if (userId != knowledgeBase.userId)
+            {
+                return ResultCode.PERMISSION_DENIED
+            }
+        }
         val directoryTree: List<DirectoryTreeDTO> = directoryService.getDirectoryTreeByKbId(id)
         return Pair(knowledgeBase, directoryTree)
     }
+
+    @SaIgnore
+    @GetMapping("/basic")
+    fun getBasic(@RequestParam @Min(value = 1, message = "知识库id非法") id: Long): Any
+    {
+        val knowledgeBase: KnowledgeBaseEntity = knowledgeBaseService.getById(id)
+            ?: return ResultCode.RESOURCE_NOT_FOUND
+        if (knowledgeBase.status != ArticleStatus.PUBLISHED)
+        {
+            val userId = StpUtil.getLoginIdAsLong()
+            if (userId != knowledgeBase.userId)
+            {
+                return ResultCode.PERMISSION_DENIED
+            }
+        }
+        return knowledgeBase
+    }
+
+
+    @SaIgnore
+    @PostMapping("/list")
+    fun list(@RequestBody @Valid request: KnowledgeBaseListRequest): PageResponse<KnowledgeBaseEntity>
+    {
+        val pageParam = Page<KnowledgeBaseEntity>(request.page, request.size).apply {
+            if (request.simple)
+            {
+                setSearchCount(false)
+            }
+        }
+
+        val queryWrapper = QueryWrapper<KnowledgeBaseEntity>()
+        // 只查询已发布的知识库
+        queryWrapper.eq("status", ArticleStatus.PUBLISHED)
+        // 如果提供了用户ID，则按用户ID过滤
+        queryWrapper.eq("user_id", request.userId)
+        queryWrapper.orderByDesc("created_at")
+        val result = knowledgeBaseService.page(pageParam, queryWrapper)
+        return PageResponse(
+            records = result.records,
+            total = result.total,
+            pages = result.pages,
+            current = result.current,
+            size = result.size
+        )
+    }
+
+
+    @SaIgnore
+    @GetMapping("/index")
+    fun getIndex(@RequestParam @Min(value = 1, message = "知识库id非法") id: Long): Any
+    {
+        val query = QueryWrapper<KnowledgeBaseEntity>().select("index", "id").eq("id", id)
+        return knowledgeBaseService.getOne(query) ?: ResultCode.RESOURCE_NOT_FOUND
+    }
+
 
     @SaCheckPermission("kb.post")
     @PostMapping
     fun createKnowledgeBase(@RequestBody @Valid request: CreateKnowledgeBaseRequest): ResultCode
     {
         val userId = StpUtil.getLoginIdAsLong()
-        val kbEntity = KnowledgeBaseEntity(userId=userId, name = request.name)
+        val kbEntity = KnowledgeBaseEntity(userId = userId, name = request.name)
         if (knowledgeBaseService.save(kbEntity))
         {
             return ResultCode.SUCCESS
@@ -61,7 +128,12 @@ class KnowledgeBaseController
         val updateWrapper = UpdateWrapper<KnowledgeBaseEntity>()
         updateWrapper.eq("id", request.id)
         updateWrapper.eq("user_id", userId)
-        val kbEntity = KnowledgeBaseEntity(status = request.status, name = request.name)
+        val kbEntity = KnowledgeBaseEntity(
+            status = request.status,
+            name = request.name,
+            index = request.content,
+            coverUrl = request.coverUrl
+        )
         if (knowledgeBaseService.update(kbEntity, updateWrapper))
         {
             return ResultCode.SUCCESS
@@ -72,8 +144,8 @@ class KnowledgeBaseController
 
     @SaCheckRole("admin")
     @GetMapping("/changeLikeCount")
-    fun changeLikeCount(@RequestParam count:Int,@RequestParam kbId:Long)
+    fun changeLikeCount(@RequestParam count: Int, @RequestParam kbId: Long)
     {
-        return knowledgeBaseService.addKbLikeCount(kbId=kbId,count)
+        return knowledgeBaseService.addKbLikeCount(kbId = kbId, count)
     }
 }
