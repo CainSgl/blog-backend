@@ -28,10 +28,6 @@ data class UpdatePostRequest(
     val content: String? = null,
     val summary: String? = null,
     val img:String?=null,
- //   val isTop: Boolean ?=null,
+    val isTop: Boolean ?=null,
 )
 
-//data class HistoryPostRequest(
-//    @field:Min(1,  message="文章id非法")
-//    val id: Long
-//)

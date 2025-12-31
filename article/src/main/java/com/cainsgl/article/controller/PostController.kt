@@ -7,9 +7,11 @@ import cn.dev33.satoken.annotation.SaIgnore
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page
 import com.cainsgl.api.ai.AiService
 import com.cainsgl.api.user.extra.UserExtraInfoService
 import com.cainsgl.article.dto.request.CreatePostRequest
+import com.cainsgl.article.dto.request.PageUserIdListRequest
 import com.cainsgl.article.dto.request.SearchPostRequest
 import com.cainsgl.article.dto.request.UpdatePostRequest
 import com.cainsgl.article.dto.response.CreatePostResponse
@@ -17,6 +19,7 @@ import com.cainsgl.article.dto.response.GetPostResponse
 import com.cainsgl.article.service.*
 import com.cainsgl.article.util.XssSanitizerUtils
 import com.cainsgl.common.dto.request.OnlyId
+import com.cainsgl.common.dto.response.PageResponse
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.DirectoryEntity
@@ -119,6 +122,7 @@ class PostController
         query.eq("is_top",true)
         query.eq("status",ArticleStatus.PUBLISHED)
         query.orderByDesc("published_at")
+        query.last("limit 10")
         return postService.list(query)
     }
 
@@ -185,7 +189,8 @@ class PostController
             id = request.id,
             title = request.title,
             summary = request.summary,
-            img=request.img
+            img=request.img,
+            top = request.isTop
         )
         val historyQuery = QueryWrapper<PostHistoryEntity>()
             .eq("post_id", postEntity.id).eq("user_id",userId) .orderByDesc("version").last("LIMIT 1")
@@ -314,6 +319,53 @@ class PostController
             embedding += userOffsetVector
         }
         return postChunkVectorService.getPostsByVector(targetVector = embedding, request.vectorOffset!!)
+    }
+
+    @SaIgnore
+    @PostMapping("/list")
+    fun list(@RequestBody @Valid request: PageUserIdListRequest):Any
+    {
+        //这里先用数据库的模糊搜索，因为数据量目前不多
+        val pageParam = Page<PostEntity>(request.page, request.size).apply {
+            if (request.simple)
+            {
+                setSearchCount(false)
+            }
+        }
+        val queryWrapper = QueryWrapper<PostEntity>().apply {
+            eq("user_id", request.userId)
+            if(StpUtil.isLogin())
+            {
+                val userId= StpUtil.getLoginIdAsLong()
+                if(userId!=request.userId)
+                {
+                    eq("status", ArticleStatus.PUBLISHED)
+                }
+            }else
+            {
+                eq("status", ArticleStatus.PUBLISHED)
+            }
+            if(!request.option.isNullOrEmpty())
+            {
+                if (PageUserIdListRequest.postOptions.contains(request.option))
+                {
+                    //可以作为orderBy
+                    orderByDesc(request.option)
+                }
+            }
+            if(!request.keyword.isNullOrEmpty())
+            {
+                like("title", request.keyword.lowercase())
+            }
+        }
+        val result = postService.page(pageParam, queryWrapper)
+        return PageResponse(
+            records = result.records,
+            total = result.total,
+            pages = result.pages,
+            current = result.current,
+            size = result.size
+        )
     }
 
 }

@@ -8,6 +8,7 @@ import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.user.UserEntity
 import com.cainsgl.common.exception.BusinessException
 import com.cainsgl.common.util.DeviceUtils
+import com.cainsgl.user.dto.request.UpdateUserRequest
 import com.cainsgl.user.dto.request.UserLoginRequest
 import com.cainsgl.user.dto.response.LoginResponse
 import com.cainsgl.user.dto.response.UserCurrentResponse
@@ -107,5 +108,17 @@ class UserController
         user.calculateLevelInfo()
         val hotInfo = userExtraInfoService.getBySaveOnNull(user.id!!)
         return UserGetResponse(user,hotInfo)
+    }
+    @SaCheckRole("user")
+    @PutMapping
+    fun update(@RequestBody request: UpdateUserRequest)
+    {
+        val userEntity=UserEntity(id=StpUtil.getLoginIdAsLong()).apply {
+            nickname=request.nickname
+            avatarUrl=request.avatarUrl
+            bio=request.bio
+            gender=request.gender
+        }
+        userService.updateById(userEntity)
     }
 }

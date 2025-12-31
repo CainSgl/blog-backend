@@ -9,7 +9,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page
 import com.cainsgl.article.dto.DirectoryTreeDTO
 import com.cainsgl.article.dto.request.CreateKnowledgeBaseRequest
-import com.cainsgl.article.dto.request.KnowledgeBaseListRequest
+import com.cainsgl.article.dto.request.PageUserIdListRequest
 import com.cainsgl.article.dto.request.UpdateKnowledgeBaseRequest
 import com.cainsgl.article.service.DirectoryServiceImpl
 import com.cainsgl.article.service.KnowledgeBaseServiceImpl
@@ -72,7 +72,7 @@ class KnowledgeBaseController
 
     @SaIgnore
     @PostMapping("/list")
-    fun list(@RequestBody @Valid request: KnowledgeBaseListRequest): PageResponse<KnowledgeBaseEntity>
+    fun list(@RequestBody @Valid request: PageUserIdListRequest): PageResponse<KnowledgeBaseEntity>
     {
         val pageParam = Page<KnowledgeBaseEntity>(request.page, request.size).apply {
             if (request.simple)
@@ -80,13 +80,32 @@ class KnowledgeBaseController
                 setSearchCount(false)
             }
         }
-
-        val queryWrapper = QueryWrapper<KnowledgeBaseEntity>()
-        // 只查询已发布的知识库
-        queryWrapper.eq("status", ArticleStatus.PUBLISHED)
-        // 如果提供了用户ID，则按用户ID过滤
-        queryWrapper.eq("user_id", request.userId)
-        queryWrapper.orderByDesc("created_at")
+        val queryWrapper = QueryWrapper<KnowledgeBaseEntity>().apply {
+            eq("user_id", request.userId)
+            if(StpUtil.isLogin())
+            {
+                val userId= StpUtil.getLoginIdAsLong()
+                if(userId!=request.userId)
+                {
+                    eq("status", ArticleStatus.PUBLISHED)
+                }
+            }else
+            {
+                eq("status", ArticleStatus.PUBLISHED)
+            }
+            if (!request.option.isNullOrEmpty())
+            {
+                if (PageUserIdListRequest.kbOptions.contains(request.option))
+                {
+                    //可以作为orderBy
+                    orderByDesc(request.option)
+                }
+            }
+            if (!request.keyword.isNullOrEmpty())
+            {
+                like("name", request.keyword.lowercase())
+            }
+        }
         val result = knowledgeBaseService.page(pageParam, queryWrapper)
         return PageResponse(
             records = result.records,

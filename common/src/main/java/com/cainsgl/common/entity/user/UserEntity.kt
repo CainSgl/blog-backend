@@ -58,7 +58,7 @@ data class UserEntity(
     @TableField("phone")
     var phone: String? = null,
     @TableField("used_memory")
-    var usedMemory: String? = null,
+    var usedMemory: Int? = null,
     @TableField(value = "created_at", fill = FieldFill.INSERT)
     var createdAt: OffsetDateTime? = null,
     @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)

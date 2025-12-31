@@ -178,10 +178,6 @@ class FileService
             response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate")
             response.setHeader("Pragma", "no-cache")
             response.setHeader("Expires", "0")
-        } else
-        {
-            response.setHeader("Cache-Control", "public, max-age=86400")
-            response.setHeader("Expires", (System.currentTimeMillis() + 86400 * 1000).toString())
         }
         if (isDownload)
         {

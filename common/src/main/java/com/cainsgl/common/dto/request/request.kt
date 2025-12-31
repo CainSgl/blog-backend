@@ -9,6 +9,6 @@ data class OnlyId(
 data class CursorList(
     @field:Min(value=1, message = "id非法")
     val id:Long,
-    @field:Min(value=1, message = "id非法")
+    @field:Min(value=0, message = "id非法")
     val lastId:Long=0
 )

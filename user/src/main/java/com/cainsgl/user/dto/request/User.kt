@@ -17,3 +17,9 @@ data class UserLogPostRequest(
     val id:Long
 )
 
+data class UpdateUserRequest(
+    val nickname: String?=null,
+    val avatarUrl: String?=null,
+    val bio: String?=null,
+    val gender: String?=null,
+)

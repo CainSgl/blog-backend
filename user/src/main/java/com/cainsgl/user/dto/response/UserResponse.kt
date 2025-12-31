@@ -24,6 +24,7 @@ data class UserGetResponse(
     var likeCount: Int?,
     var postCount:Int?,
     var articleViewCount: Int? = null,
+    var usedMemory: Int?,
 )
 {
     constructor(userEntity: UserEntity, hotInfo: UserExtraInfoEntity? = null) : this(
@@ -41,6 +42,7 @@ data class UserGetResponse(
         hotInfo?.likeCount,
         hotInfo?.postCount,
         hotInfo?.articleViewCount,
+        userEntity.usedMemory
     )
 }
 
