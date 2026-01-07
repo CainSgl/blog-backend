@@ -48,32 +48,36 @@ object FineLockCacheUtils
             }
             return cacheData
         }
-        val lockObj = LOCK_OBJ_POOL.putIfAbsent(cacheKey, LockInt()) ?: LOCK_OBJ_POOL[cacheKey]!!
-        // 双重检查缓存
-        synchronized(lockObj) {
-            lockObj.lock() //计数+1
-            try
+        return withFineLock(cacheKey){
+            // 双重检查
+            val doubleCheckData = this.opsForValue().get(cacheKey)
+            val loadDataTime = expireTimeGetter(doubleCheckData)
+            if (doubleCheckData != null)
             {
-                // 双重检查
-                val doubleCheckData = this.opsForValue().get(cacheKey)
-                val loadDataTime = expireTimeGetter(doubleCheckData)
-                if (doubleCheckData != null)
-                {
-                    if(loadDataTime!=null)
-                        this.expire(cacheKey, loadDataTime)
-                    return doubleCheckData
-                }
-                // 缓存未命中
-                val loadData: T? = loader()
-                // 写入缓存
-                if (loadData != null)
-                {
-                    val loadDataTime2 = expireTimeGetter(loadData)
-                    if (loadDataTime2 != null)
-                        this.opsForValue().set(cacheKey, loadData, loadDataTime2)
-                }
-                return loadData
-            } finally
+                if(loadDataTime!=null)
+                    this.expire(cacheKey, loadDataTime)
+                return@withFineLock doubleCheckData
+            }
+            // 缓存未命中
+            val loadData: T? = loader()
+            // 写入缓存
+            if (loadData != null)
+            {
+                val loadDataTime2 = expireTimeGetter(loadData)
+                if (loadDataTime2 != null)
+                    this.opsForValue().set(cacheKey, loadData, loadDataTime2)
+            }
+            return@withFineLock loadData
+        }
+    }
+    fun <T : Any>withFineLock(cacheKey:String, operate:()->T?): T?
+    {
+        val lockObj = LOCK_OBJ_POOL.putIfAbsent(cacheKey, LockInt()) ?: LOCK_OBJ_POOL[cacheKey]!!
+        synchronized(lockObj) {
+            lockObj.lock()
+            try{
+               return operate()
+            }finally
             {
                 if (lockObj.tryRemove())
                 {
@@ -82,5 +86,4 @@ object FineLockCacheUtils
             }
         }
     }
-
 }

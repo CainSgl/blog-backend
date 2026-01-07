@@ -42,3 +42,8 @@ actuator
 
 如果只想使用单体架构
 你可以直接将功能加在对应的aggregate模块里，而无需考虑其他。所有的api在单体架构下都会在前面加上/api，这是为了和前端的请求进行区分，方便和nginx做集成
+
+
+TODO LIST
+1.写回评论的数量，在paragraphServiceImpl里可以查看
+2.写回用户的粉丝和关注数量，在userServiceImpl里可以查看

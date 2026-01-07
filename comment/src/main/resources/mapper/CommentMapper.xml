@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cainsgl.comment.repository.CommentMapper">
+
+    <resultMap id="BaseResultMap" type="com.cainsgl.comment.entity.CommentEntity">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="post_id" property="postId" />
+        <result column="data_id" property="dataId" />
+        <result column="content" property="content" />
+        <result column="version" property="version" />
+        <result column="like_count" property="likeCount" />
+        <result column="created_at" property="createdAt" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,user_id,paragraph_id,post_id,data_id,content,version,like_count,created_at
+    </sql>
+
+    <select id="selectByCursor" parameterType="map" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM paragraph_comments
+        WHERE post_id = #{postId}
+        AND data_id = #{dataId}
+        AND version = #{version}
+        AND count > 0
+        <if test="lastCreatedAt != null and lastLikeCount != null">
+            AND (created_at &lt; #{lastCreatedAt} OR (created_at = #{lastCreatedAt} AND like_count &lt; #{lastLikeCount}))
+        </if>
+        ORDER BY created_at DESC, like_count DESC
+        LIMIT 10
+    </select>
+
+</mapper>
