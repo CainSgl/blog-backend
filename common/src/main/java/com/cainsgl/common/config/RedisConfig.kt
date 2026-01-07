@@ -1,13 +1,17 @@
 package com.cainsgl.common.config
 
 import com.alibaba.fastjson2.support.spring6.data.redis.GenericFastJsonRedisSerializer
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.task.TaskExecutor
 import org.springframework.data.redis.connection.RedisConnectionFactory
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.serializer.StringRedisSerializer
-
+import org.springframework.scheduling.concurrent.ConcurrentTaskExecutor
+import java.util.concurrent.Executors
+val log= KotlinLogging.logger {}
 @Configuration
 @ConditionalOnClass(RedisConnectionFactory::class)
 class RedisConfig
@@ -27,5 +31,18 @@ class RedisConfig
         template.hashValueSerializer = fastJsonSerializer
         template.afterPropertiesSet()
         return template
+    }
+    @Bean
+    fun taskExecutor(): TaskExecutor?
+    {
+        return try {
+            val virtualThreadFactory = Thread.ofVirtual()
+                .name("virtual-task-")
+                .factory()
+            ConcurrentTaskExecutor(Executors.newThreadPerTaskExecutor(virtualThreadFactory))
+        } catch (e: Exception) {
+            log.error { "Failed to create virtual thread executor: ${e.message}" }
+            return null
+        }
     }
 }

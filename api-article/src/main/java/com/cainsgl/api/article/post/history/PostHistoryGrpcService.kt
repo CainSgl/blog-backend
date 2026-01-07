@@ -7,7 +7,6 @@ import net.devh.boot.grpc.client.inject.GrpcClient
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
-import java.time.OffsetDateTime
 
 @Service
 @ConditionalOnMissingBean(type = ["com.cainsgl.article.service.PostHistoryServiceImpl"])
@@ -33,11 +32,10 @@ class PostHistoryGrpcService : PostHistoryService
             userId = this.userId,
             postId = this.postId,
             content = this.content,
-            createdAt = this.createdAt.takeIf { it.isNotEmpty() }?.let { 
-                // 尝试解析为OffsetDateTime，然后转换为LocalDateTime
+            createdAt = this.createdAt.takeIf { it.isNotEmpty() }?.let {
                 try {
-                    val offsetDateTime = OffsetDateTime.parse(it)
-                    offsetDateTime.toLocalDateTime()
+                    val dateTime = LocalDateTime.parse(it)
+                   return@let dateTime
                 } catch (e: Exception) {
                     // 如果解析失败，尝试直接解析为LocalDateTime
                     LocalDateTime.parse(it)

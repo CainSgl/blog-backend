@@ -6,6 +6,7 @@ import com.cainsgl.api.article.kb.KnowledgeBaseService
 import com.cainsgl.article.repository.KnowledgeBaseMapper
 import com.cainsgl.common.entity.article.KnowledgeBaseEntity
 import org.springframework.stereotype.Service
+import java.time.LocalDateTime
 
 @Service
 class KnowledgeBaseServiceImpl : ServiceImpl<KnowledgeBaseMapper, KnowledgeBaseEntity>(), KnowledgeBaseService, IService<KnowledgeBaseEntity> {
@@ -15,6 +16,15 @@ class KnowledgeBaseServiceImpl : ServiceImpl<KnowledgeBaseMapper, KnowledgeBaseE
         wrapper.eq("id", kbId)
         wrapper.setSql("like_count = like_count + $addCount")
         baseMapper.update(wrapper)
+    }
+
+    fun cursor(lastCreatedAt: LocalDateTime?, lastLike: Int?, lastId: Long?, pageSize: Int): List<KnowledgeBaseEntity>
+    {
+        if (lastCreatedAt == null || lastLike == null || lastId == null)
+        {
+            return baseMapper.selectFirstPage(pageSize)
+        }
+        return baseMapper.selectKbByCursor(lastCreatedAt, lastLike, lastId, pageSize)
     }
 
 

@@ -125,7 +125,7 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
             //去增加kb的post_count
             if(postId!=null)
             {
-                val query= UpdateWrapper <KnowledgeBaseEntity>().eq("id",kbId).set("post_count","post_count+1")
+                val query= UpdateWrapper <KnowledgeBaseEntity>().eq("id",kbId).setSql("post_count = post_count + 1");
                 knowledgeBaseService.update(query)
             }
             return if (success)

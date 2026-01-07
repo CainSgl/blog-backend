@@ -7,8 +7,10 @@ import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page
+import com.cainsgl.api.user.follow.UserFollowService
 import com.cainsgl.article.dto.DirectoryTreeDTO
 import com.cainsgl.article.dto.request.CreateKnowledgeBaseRequest
+import com.cainsgl.article.dto.request.CursorKbRequest
 import com.cainsgl.article.dto.request.PageUserIdListRequest
 import com.cainsgl.article.dto.request.UpdateKnowledgeBaseRequest
 import com.cainsgl.article.service.DirectoryServiceImpl
@@ -17,9 +19,11 @@ import com.cainsgl.common.dto.response.PageResponse
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.KnowledgeBaseEntity
+import com.cainsgl.common.exception.BusinessException
 import jakarta.annotation.Resource
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Min
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -27,6 +31,9 @@ import org.springframework.web.bind.annotation.*
 class KnowledgeBaseController
 {
 
+
+    @Autowired
+    private lateinit var userFollowService: UserFollowService
 
     @Resource
     lateinit var knowledgeBaseService: KnowledgeBaseServiceImpl
@@ -42,10 +49,22 @@ class KnowledgeBaseController
             ?: return ResultCode.RESOURCE_NOT_FOUND
         if (knowledgeBase.status != ArticleStatus.PUBLISHED)
         {
+            if (knowledgeBase.status == ArticleStatus.ONLY_FANS)
+            {
+                if (userFollowService.hasFollow(StpUtil.getLoginIdAsLong(), knowledgeBase.userId!!))
+                {
+                    val directoryTree: List<DirectoryTreeDTO> = directoryService.getDirectoryTreeByKbId(id)
+                    return Pair(knowledgeBase, directoryTree)
+
+                }else
+                {
+                    throw BusinessException(knowledgeBase.userId.toString())
+                }
+            }
             val userId = StpUtil.getLoginIdAsLong()
             if (userId != knowledgeBase.userId)
             {
-                return ResultCode.PERMISSION_DENIED
+                throw BusinessException("由于私密性设置无法访问该知识库")
             }
         }
         val directoryTree: List<DirectoryTreeDTO> = directoryService.getDirectoryTreeByKbId(id)
@@ -60,10 +79,17 @@ class KnowledgeBaseController
             ?: return ResultCode.RESOURCE_NOT_FOUND
         if (knowledgeBase.status != ArticleStatus.PUBLISHED)
         {
+            if (knowledgeBase.status == ArticleStatus.ONLY_FANS)
+            {
+                if (!userFollowService.hasFollow(StpUtil.getLoginIdAsLong(), knowledgeBase.userId!!))
+                {
+                    throw BusinessException(knowledgeBase.userId.toString())
+                }
+            }
             val userId = StpUtil.getLoginIdAsLong()
             if (userId != knowledgeBase.userId)
             {
-                return ResultCode.PERMISSION_DENIED
+                throw BusinessException("由于私密性设置无法访问该知识库")
             }
         }
         return knowledgeBase
@@ -82,16 +108,20 @@ class KnowledgeBaseController
         }
         val queryWrapper = QueryWrapper<KnowledgeBaseEntity>().apply {
             eq("user_id", request.userId)
-            if(StpUtil.isLogin())
+            if (StpUtil.isLogin())
             {
-                val userId= StpUtil.getLoginIdAsLong()
-                if(userId!=request.userId)
+                val userId = StpUtil.getLoginIdAsLong()
+                if (userId == request.userId && request.status != null)
                 {
-                    eq("status", ArticleStatus.PUBLISHED)
+                    eq("status", request.status)
+                } else if (userId != request.userId)
+                {
+                    //登录，但是不是本人
+                    eq("status", ArticleStatus.PUBLISHED).or().eq("status",ArticleStatus.ONLY_FANS)
                 }
-            }else
+            } else
             {
-                eq("status", ArticleStatus.PUBLISHED)
+                eq("status", ArticleStatus.PUBLISHED).or().eq("status",ArticleStatus.ONLY_FANS)
             }
             if (!request.option.isNullOrEmpty())
             {
@@ -128,13 +158,18 @@ class KnowledgeBaseController
 
     @SaCheckPermission("kb.post")
     @PostMapping
-    fun createKnowledgeBase(@RequestBody @Valid request: CreateKnowledgeBaseRequest): ResultCode
+    fun createKnowledgeBase(@RequestBody @Valid request: CreateKnowledgeBaseRequest): Any
     {
         val userId = StpUtil.getLoginIdAsLong()
-        val kbEntity = KnowledgeBaseEntity(userId = userId, name = request.name)
+        val kbEntity = KnowledgeBaseEntity(
+            userId = userId,
+            name = request.name,
+            index = request.index,
+            coverUrl = request.coverUrl
+        )
         if (knowledgeBaseService.save(kbEntity))
         {
-            return ResultCode.SUCCESS
+            return kbEntity
         }
         return ResultCode.DB_ERROR
     }
@@ -166,5 +201,12 @@ class KnowledgeBaseController
     fun changeLikeCount(@RequestParam count: Int, @RequestParam kbId: Long)
     {
         return knowledgeBaseService.addKbLikeCount(kbId = kbId, count)
+    }
+
+    @SaIgnore
+    @PostMapping("/cursor")
+    fun cursor(@RequestBody request: CursorKbRequest):Any
+    {
+        return knowledgeBaseService.cursor(request.lastCreatedAt,request.lastLike,request.lastId,request.pageSize)
     }
 }

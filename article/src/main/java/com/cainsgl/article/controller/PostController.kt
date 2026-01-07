@@ -10,10 +10,8 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page
 import com.cainsgl.api.ai.AiService
 import com.cainsgl.api.user.extra.UserExtraInfoService
-import com.cainsgl.article.dto.request.CreatePostRequest
-import com.cainsgl.article.dto.request.PageUserIdListRequest
-import com.cainsgl.article.dto.request.SearchPostRequest
-import com.cainsgl.article.dto.request.UpdatePostRequest
+import com.cainsgl.api.user.follow.UserFollowService
+import com.cainsgl.article.dto.request.*
 import com.cainsgl.article.dto.response.CreatePostResponse
 import com.cainsgl.article.dto.response.GetPostResponse
 import com.cainsgl.article.service.*
@@ -25,8 +23,11 @@ import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.DirectoryEntity
 import com.cainsgl.common.entity.article.PostEntity
 import com.cainsgl.common.entity.article.PostHistoryEntity
+import com.cainsgl.common.exception.BusinessException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import org.apache.rocketmq.client.core.RocketMQClientTemplate
 import org.springframework.transaction.support.TransactionTemplate
@@ -71,16 +72,27 @@ class PostController
     lateinit var userExtraInfoService:UserExtraInfoService
     @Resource
     lateinit var aiService:AiService
+    @Resource
+    lateinit var userFollowService: UserFollowService
     @SaIgnore
     @GetMapping
-    fun get(@RequestParam id: Long,@RequestParam simple: Boolean=false): Any
+    fun get(@RequestParam id: Long, @RequestParam simple: Boolean=false, request: HttpServletRequest,response: HttpServletResponse): Any
     {
+        //TODO，这个接口的功能目前太多了，直接返回了所有信息，不好方便缓存，后续优化，后续为该接口做统一缓存，目前先直接手动的etag
         val post = postService.getPost(id) ?: return ResultCode.RESOURCE_NOT_FOUND
         //检查用户是否有权访问
         if (post.status == ArticleStatus.PUBLISHED)
         {
             if(simple)
             {
+                val eTag = request.getHeader("If-None-Match")
+                if (!eTag.isNullOrEmpty() && (eTag == post.version.toString()))
+                {
+                    //内容相同，不需要写入，直接返回
+                    response.status = HttpServletResponse.SC_NOT_MODIFIED
+                    return ResultCode.SUCCESS;
+                }
+                response.setHeader("ETag", post.version.toString());
                 return post
             }
             //获取自己是否点赞的信息，并添加上
@@ -100,10 +112,30 @@ class PostController
             {
                 if(simple)
                 {
+                    val eTag = request.getHeader("If-None-Match")
+                    if (!eTag.isNullOrEmpty() && (eTag == post.version.toString()))
+                    {
+                        //内容相同，不需要写入，直接返回
+                        response.status = HttpServletResponse.SC_NOT_MODIFIED
+                        return ResultCode.SUCCESS;
+                    }
+                    response.setHeader("ETag", post.version.toString());
                     return post
                 }
                 val operate= postOperationService.getOperateByUserIdAndPostId(userId=userId,postId=post.id!!)
                 return GetPostResponse(post,operate)
+            }
+            if(post.status==ArticleStatus.ONLY_FANS)
+            {
+                //去检测是否为粉丝关系
+                if (userFollowService.hasFollow(userId,post.userId!!))
+                {
+                    val operate= postOperationService.getOperateByUserIdAndPostId(userId=userId,postId=post.id!!)
+                    return GetPostResponse(post,operate)
+                }else
+                {
+                    throw BusinessException(post.userId.toString())
+                }
             }
         } catch (e: Exception)
         {
@@ -126,35 +158,18 @@ class PostController
         return postService.list(query)
     }
 
-    @SaCheckRole("user")
-    @GetMapping("/last")
-    fun getByLast(@RequestParam id: Long): Any
-    {
-        val post = postService.getPost(id) ?: return ResultCode.RESOURCE_NOT_FOUND
-        val userId = StpUtil.getLoginIdAsLong()
-        if(post.userId != userId)
-        {
-            //不是他的，这个是历史版本的缓存版本
-            return ResultCode.PERMISSION_DENIED
-        }
-        val historyQuery = QueryWrapper<PostHistoryEntity>()
-            .select("content")
-            .eq("post_id", post.id).eq("user_id",userId) .orderByDesc("version").last("LIMIT 1")
-        val one = postHistoryService.getOne(historyQuery)
-        //检查用户是否有权访问
-        post.content=one?.content
-        return post
-    }
+
     @SaCheckPermission("article.post")
     @PostMapping
     fun createPost(@RequestBody @Valid request: CreatePostRequest): Any
     {
         val userId = StpUtil.getLoginIdAsLong()
         //创建一个目录，然后让他的postId=新建的文档ID
-        val postEntity = PostEntity(title = request.title, userId = userId, kbId = request.kbId)
+        val postEntity = PostEntity(title = request.title, userId = userId, kbId = request.kbId, version = 1)
         //开启事务
         return transactionTemplate.execute { status ->
             //事务内执行
+
             if (!postService.save(postEntity))
             {
                 status.setRollbackOnly()
@@ -192,12 +207,18 @@ class PostController
             img=request.img,
             top = request.isTop
         )
+        if(request.content.isNullOrEmpty())
+        {
+            if(postEntity.needUpdate())
+                postService.updateById(postEntity)
+            return ResultCode.SUCCESS
+        }
         val historyQuery = QueryWrapper<PostHistoryEntity>()
             .eq("post_id", postEntity.id).eq("user_id",userId) .orderByDesc("version").last("LIMIT 1")
         val one = postHistoryService.getOne(historyQuery)
         if(one != null)
         {
-            postHistoryService.updateById(PostHistoryEntity(id=one.id,content = request.content,createdAt = LocalDateTime.now()))
+            postHistoryService.updateById(PostHistoryEntity(id=one.id,content = request.content, userId =userId))
         }else
         {
             //这里是为了防止没有最新版本供作者使用
@@ -219,45 +240,48 @@ class PostController
         query.eq("id", request.id)
         query.eq("user_id", userId)
         //拿到最新历史版本
-        val entity = postService.getOne(query)
+        val post = postService.getOne(query)
             ?: //没对应的数据
             return ResultCode.RESOURCE_NOT_FOUND
         //获取编辑文档的最新版本，用来发布
         val historyQuery = QueryWrapper<PostHistoryEntity>()
-            .select("id","content","version")
-            .eq("post_id", entity.id).eq("user_id",userId) .orderByDesc("version").last("LIMIT 1")
-        val one = postHistoryService.getOne(historyQuery)
-        val sanitizedContent = XssSanitizerUtils.sanitize(one.content!!)
+            .select("id","content","version","user_id")
+            .eq("post_id", post.id).eq("user_id",userId).orderByDesc("version").last("LIMIT 1")
+        val history = postHistoryService.getOne(historyQuery)
+        val sanitizedContent = XssSanitizerUtils.sanitize(history.content!!)
         //检验是否有内容变更
-        if(entity.content==sanitizedContent)
+        if(post.content==sanitizedContent)
         {
             //完全是之前的版本，什么都不用做
             return ResultCode.SUCCESS
         }
-        entity.content=sanitizedContent
-        entity.version=one.version
+        post.content=sanitizedContent
+        post.version=history.version
         //重新写回历史版本，防止有人查看历史版本被攻击
-        one.content=sanitizedContent
+        history.content=sanitizedContent
+        history.createdAt=LocalDateTime.now()
         //剩下的异步去处理就好了
         Thread.ofVirtual().start{
-            postHistoryService.updateById(one)
+            postHistoryService.updateById(history)
             //注：这里再发布一个最新版本，是为了作者下次编辑文档的时候，返回他就好了
-            postHistoryService.save(PostHistoryEntity( userId=one.userId,postId=entity.id,version = one.version!!+1, createdAt = LocalDateTime.now(),content=sanitizedContent))
-            if(entity.content!!.isEmpty())
+            postHistoryService.save(PostHistoryEntity( userId=history.userId,postId=post.id,version = history.version!!+1, createdAt = LocalDateTime.now(),content=sanitizedContent))
+            if(post.content!!.isEmpty())
             {
                 return@start
             }
-            val embedding = aiService.getEmbedding(entity.content!!)
-            entity.vecotr=embedding
-            entity.status=ArticleStatus.PUBLISHED
-            postService.updateById(entity)
+            val embedding = aiService.getEmbedding(post.content!!)
+            post.vecotr=embedding
+            post.status=ArticleStatus.PUBLISHED
+            post.publishedAt=LocalDateTime.now()
+            post.version=history.version
+            postService.updateById(post)
             //发送消息，这里不需要回调，也不需要保证可靠，不是强一致的需求，毕竟只是一次版本的迭代，问题不大
             rocketMQClientTemplate.asyncSendNormalMessage("article:publish", request.id, null)
             //延时双删
             //删除缓存
-            postService.removeCache(entity.id!!)
-            Thread.sleep(500)
-            postService.removeCache(entity.id!!)
+            postService.removeCache(post.id!!)
+            Thread.sleep(1000)
+            postService.removeCache(post.id!!)
         }
         return ResultCode.SUCCESS
     }
@@ -287,14 +311,6 @@ class PostController
     //    rocketMQClientTemplate.asyncSendNormalMessage("article:delete", id, null)
     }
 
-    @PostMapping("/history")
-    fun history(@RequestBody @Valid request: OnlyId): List<PostHistoryEntity>
-    {
-        val historyQuery = QueryWrapper<PostHistoryEntity>()
-            .eq("post_id", request.id).orderByDesc("version")
-        return postHistoryService.list(historyQuery).apply { removeLast() }
-
-    }
 
     @SaIgnore
     @PostMapping("/search")
@@ -337,13 +353,16 @@ class PostController
             if(StpUtil.isLogin())
             {
                 val userId= StpUtil.getLoginIdAsLong()
-                if(userId!=request.userId)
+                if(userId==request.userId&&request.status!=null)
                 {
-                    eq("status", ArticleStatus.PUBLISHED)
+                    eq("status",request.status)
+                }else if(userId!=request.userId)
+                {
+                    eq("status", ArticleStatus.PUBLISHED).or().eq("status",ArticleStatus.ONLY_FANS)
                 }
             }else
             {
-                eq("status", ArticleStatus.PUBLISHED)
+                eq("status", ArticleStatus.PUBLISHED).or().eq("status",ArticleStatus.ONLY_FANS)
             }
             if(!request.option.isNullOrEmpty())
             {
@@ -353,6 +372,7 @@ class PostController
                     orderByDesc(request.option)
                 }
             }
+            //TODO 后续可以靠es优化
             if(!request.keyword.isNullOrEmpty())
             {
                 like("title", request.keyword.lowercase())
@@ -368,4 +388,11 @@ class PostController
         )
     }
 
+
+    @SaIgnore
+    @PostMapping("/cursor")
+    fun cursor(@RequestBody request: CursorPostRequest):Any
+    {
+        return postService.cursor(request.lastUpdatedAt,request.lastLikeRatio,request.lastId,request.pageSize)
+    }
 }

@@ -26,4 +26,10 @@ data class FileUrlEntity(
     var fileSize: Int? = null,
     @TableField("created_at")
     var createdAt: LocalDate? = null,
+
 )
+{
+    companion object{
+        val BASIC_COL= listOf("shorUrl","name","file_size","created_at")
+    }
+}

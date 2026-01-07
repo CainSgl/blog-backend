@@ -54,3 +54,17 @@ service UserExtraInfoService {
     rpc getInterestVector (GetInterestVectorRequest) returns (GetInterestVectorResponse);
     rpc setInterestVector (SetInterestVectorRequest) returns (SetInterestVectorResponse);
 }
+
+// UserFollow Service
+message HasFollowRequest {
+    int64 follower_id = 1;
+    int64 followee_id = 2;
+}
+
+message HasFollowResponse {
+    bool has_follow = 1;
+}
+
+service UserFollowService {
+    rpc hasFollow (HasFollowRequest) returns (HasFollowResponse);
+}

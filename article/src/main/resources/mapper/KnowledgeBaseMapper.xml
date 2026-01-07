@@ -5,8 +5,30 @@
     <resultMap id="KnowledgeBaseResultMap" type="com.cainsgl.common.entity.article.KnowledgeBaseEntity">
     </resultMap>
     <!-- 通用列片段 -->
-    <sql id="Base_Column_List">
-        id, user_id, name, created_at
+    <sql id="Basic_Column_List">
+        id, user_id, name, created_at, status, index, like_count, cover_url, post_count
     </sql>
+
+    <!-- 游标分页查询文章列表 -->
+    <select id="selectKbByCursor" resultMap="KnowledgeBaseResultMap">
+        SELECT <include refid="Basic_Column_List"/>
+        FROM knowledge_bases
+        WHERE
+        (
+        (created_at::date &lt; #{lastCreatedAt}::date) OR
+        (created_at::date = #{lastCreatedAt}::date AND like_count &lt; #{lastLike}) OR
+        (created_at::date = #{lastCreatedAt}::date AND like_count = #{lastLike} AND id &lt; #{lastId})
+        ) AND
+        status >= 'published'::article_status
+        ORDER BY created_at::date DESC, like_count DESC, id DESC
+        LIMIT #{pageSize}
+    </select>
+    <select id="selectFirstPage" resultMap="KnowledgeBaseResultMap">
+        SELECT <include refid="Basic_Column_List"/>
+        FROM knowledge_bases
+        WHERE status >= 'published'::article_status
+        ORDER BY created_at::date DESC, like_count DESC, id DESC
+        LIMIT #{pageSize}
+    </select>
 
 </mapper>

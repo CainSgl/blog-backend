@@ -96,7 +96,7 @@ class UserController
         val userInfo = userService.getById(StpUtil.getLoginIdAsLong())
         //获取自己的热信息
         val hotInfo = userExtraInfoService.getBySaveOnNull(userInfo.id!!)
-        return  UserCurrentResponse(userInfo.sanitizeSystemSensitiveData(),hotInfo)
+        return  UserCurrentResponse(userInfo.calculateLevelInfo().sanitizeSystemSensitiveData(),hotInfo)
     }
 
     @SaIgnore
@@ -111,7 +111,7 @@ class UserController
     }
     @SaCheckRole("user")
     @PutMapping
-    fun update(@RequestBody request: UpdateUserRequest)
+    fun update(@RequestBody request: UpdateUserRequest):Any
     {
         val userEntity=UserEntity(id=StpUtil.getLoginIdAsLong()).apply {
             nickname=request.nickname
@@ -120,5 +120,6 @@ class UserController
             gender=request.gender
         }
         userService.updateById(userEntity)
+        return ResultCode.SUCCESS
     }
 }

@@ -54,25 +54,12 @@ class GlobalResponseBodyAdvice : ResponseBodyAdvice<Any>
         {
             return body
         }
-        // null值直接返回Result.success()
-        if (body == null)
-        {
-            return Result(ResultCode.SUCCESS.code,ResultCode.SUCCESS.message)
+        return when (body) {
+            null -> Result.success()
+            is ResultCode -> Result.fromCode(body)
+            is Result -> body
+            is String -> JSON.toJSONString(Result.success(body))
+            else -> Result.success(body)
         }
-        // 已经是Result类型的不重复包装
-        if (body is Result)
-        {
-            return body
-        }
-        if(body is ResultCode)
-        {
-            return Result(body.code, body.message)
-        }
-        val result = Result.success(body)
-        if (body is String)
-        {
-            return JSON.toJSONString(result)
-        }
-        return result
     }
 }

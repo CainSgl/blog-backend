@@ -3,21 +3,37 @@ package com.cainsgl.common.util
 import org.springframework.data.redis.core.RedisTemplate
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
+
+class LockInt{
+    private var num:Int=0;
+    fun tryRemove():Boolean
+    {
+        return --num==0
+    }
+    fun lock()
+    {
+        num++;
+    }
+}
 
 
 object FineLockCacheUtils
 {
     // 锁对象池
-    private val LOCK_OBJ_POOL = ConcurrentHashMap<String, Any>()
-
-    // 引用计数池
-    private val REF_COUNT_POOL = ConcurrentHashMap<String, AtomicInteger>()
+    private val LOCK_OBJ_POOL = ConcurrentHashMap<String, LockInt>()
     fun <T : Any> RedisTemplate<String, T>.getWithFineLock(
         cacheKey: String,
         expireTime: Duration,
+        loader: () -> T?
+    ): T?
+    {
+       return this.getWithFineLock(cacheKey, {expireTime}, loader)
+    }
+
+    fun <T : Any> RedisTemplate<String, T>.getWithFineLock(
+        cacheKey: String,
+        expireTimeGetter: (t: T?) -> Duration?,
         loader: () -> T?,
-        needLoad: (t: T?) -> Duration? = { expireTime }
     ): T?
     {
         // 检查缓存
@@ -25,19 +41,22 @@ object FineLockCacheUtils
         if (cacheData != null)
         {
             // 重置缓存过期时间
-            this.expire(cacheKey, expireTime)
+            val expireTime=expireTimeGetter(cacheData)
+            if (expireTime != null)
+            {
+                this.expire(cacheKey, expireTime)
+            }
             return cacheData
         }
-        val lockObj = LOCK_OBJ_POOL.putIfAbsent(cacheKey, Any()) ?: LOCK_OBJ_POOL[cacheKey]!!
+        val lockObj = LOCK_OBJ_POOL.putIfAbsent(cacheKey, LockInt()) ?: LOCK_OBJ_POOL[cacheKey]!!
         // 双重检查缓存
         synchronized(lockObj) {
-            val refCount = REF_COUNT_POOL.putIfAbsent(cacheKey, AtomicInteger(0)) ?: REF_COUNT_POOL[cacheKey]!!
+            lockObj.lock() //计数+1
             try
             {
-                refCount.incrementAndGet() // 计数+1
                 // 双重检查
                 val doubleCheckData = this.opsForValue().get(cacheKey)
-                val loadDataTime = needLoad(doubleCheckData)
+                val loadDataTime = expireTimeGetter(doubleCheckData)
                 if (doubleCheckData != null)
                 {
                     if(loadDataTime!=null)
@@ -49,24 +68,19 @@ object FineLockCacheUtils
                 // 写入缓存
                 if (loadData != null)
                 {
-                    val loadDataTime2 = needLoad(loadData)
+                    val loadDataTime2 = expireTimeGetter(loadData)
                     if (loadDataTime2 != null)
                         this.opsForValue().set(cacheKey, loadData, loadDataTime2)
                 }
                 return loadData
             } finally
             {
-                // 保证计数必递减，避免内存泄漏
-                val currentCount = refCount.decrementAndGet()
-                // 计数归0时，删除锁对象和计数器
-                if (currentCount <= 0)
+                if (lockObj.tryRemove())
                 {
                     LOCK_OBJ_POOL.remove(cacheKey)
-                    REF_COUNT_POOL.remove(cacheKey)
                 }
             }
         }
     }
-
 
 }

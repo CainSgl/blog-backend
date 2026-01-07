@@ -6,7 +6,6 @@ import com.cainsgl.common.handler.StringListTypeHandler
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
 import java.time.LocalDateTime
-import java.time.OffsetDateTime
 import kotlin.math.max
 import kotlin.math.pow
 
@@ -60,9 +59,9 @@ data class UserEntity(
     @TableField("used_memory")
     var usedMemory: Int? = null,
     @TableField(value = "created_at", fill = FieldFill.INSERT)
-    var createdAt: OffsetDateTime? = null,
+    var createdAt: LocalDateTime? = null,
     @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
-    var updatedAt: OffsetDateTime? = null,
+    var updatedAt: LocalDateTime? = null,
     @TableField(value = "extra", select = false)
     var extra: String? = null
 )

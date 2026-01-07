@@ -3,6 +3,7 @@ package com.cainsgl.article.repository
 import com.baomidou.mybatisplus.core.mapper.BaseMapper
 import com.cainsgl.common.entity.article.PostEntity
 import org.apache.ibatis.annotations.Mapper
+import java.time.LocalDateTime
 
 @Mapper
 interface PostMapper : BaseMapper<PostEntity> {
@@ -13,4 +14,15 @@ interface PostMapper : BaseMapper<PostEntity> {
     fun selectBasicInfoByIds(ids: List<Long>): List<PostEntity>
 
     fun selectVectorById(id:Long):FloatArray?
+    
+    /**
+     * 游标分页查询文章列表
+     */
+    fun selectPostsByCursor(
+        lastUpdatedAt: LocalDateTime,
+        lastLikeRatio: Double,
+        lastId: Long,
+        pageSize: Int
+    ): List<PostEntity>
+    fun selectFirstPage(page:Int):List<PostEntity>
 }

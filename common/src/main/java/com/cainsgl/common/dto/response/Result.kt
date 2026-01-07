@@ -16,7 +16,16 @@ data class Result(
 
     companion object
     {
-        private val SUCCESS_DEFAULT_RESULT = Result(SUCCESS.code, SUCCESS.message, null, null)
+        private val CODE_RES_MAP= mutableMapOf<ResultCode, Result>()
+        init
+        {
+            //去缓存所有的code
+            entries.forEach {
+                CODE_RES_MAP[it] = Result(it.code,it.message)
+            }
+        }
+
+      //  private val SUCCESS_DEFAULT_RESULT = Result(SUCCESS.code, SUCCESS.message, null, null)
         @JvmStatic
         fun success(body: Any?): Result
         {
@@ -26,7 +35,7 @@ data class Result(
         @JvmStatic
         fun success(): Result
         {
-            return SUCCESS_DEFAULT_RESULT
+            return fromCode(SUCCESS)
         }
         //未捕获的异常
         @JvmStatic
@@ -54,7 +63,7 @@ data class Result(
         @JvmStatic
         fun fromCode( code:ResultCode):Result
         {
-            return Result(code.code, code.message,null, debug = "from code");
+            return CODE_RES_MAP[code]!!
         }
     }
 }

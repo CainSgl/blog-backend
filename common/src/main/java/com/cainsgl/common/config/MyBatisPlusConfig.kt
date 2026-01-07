@@ -4,11 +4,10 @@ import com.baomidou.mybatisplus.annotation.DbType
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor
-
 import org.apache.ibatis.reflection.MetaObject
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import java.time.OffsetDateTime
+import java.time.LocalDateTime
 
 @Configuration
 class MyBatisPlusConfig
@@ -16,8 +15,7 @@ class MyBatisPlusConfig
     /**
      * 自动填充处理器
      * 支持以下字段类型的自动填充：
-     * - OffsetDateTime: createdAt, updatedAt
-     * - LocalDateTime: 任何 LocalDateTime 类型的字段
+     * - LocalDateTime: createdAt, updatedAt
      */
     @Bean
     fun metaObjectHandler(): MetaObjectHandler
@@ -26,12 +24,12 @@ class MyBatisPlusConfig
         {
             override fun insertFill(metaObject: MetaObject)
             {
-                this.strictInsertFill(metaObject, "createdAt", OffsetDateTime::class.java, OffsetDateTime.now())
-                this.strictInsertFill(metaObject, "updatedAt", OffsetDateTime::class.java, OffsetDateTime.now())
+                this.strictInsertFill(metaObject, "createdAt", LocalDateTime::class.java, LocalDateTime.now())
+                this.strictInsertFill(metaObject, "updatedAt", LocalDateTime::class.java, LocalDateTime.now())
             }
             override fun updateFill(metaObject: MetaObject)
             {
-                this.setFieldValByName("updatedAt", OffsetDateTime.now(), metaObject)
+                this.setFieldValByName("updatedAt", LocalDateTime.now(), metaObject)
             }
         }
     }

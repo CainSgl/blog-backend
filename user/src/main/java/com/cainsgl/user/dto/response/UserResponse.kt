@@ -5,7 +5,7 @@ import com.cainsgl.common.entity.user.UserExtraInfoEntity
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
 import org.springframework.beans.BeanUtils
-import java.time.OffsetDateTime
+import java.time.LocalDateTime
 
 //这个是给别人看的，屏蔽一些用户的字段
 data class UserGetResponse(
@@ -17,7 +17,7 @@ data class UserGetResponse(
     var bio: String?,
     var level: Int?,
     var status: String?,
-    var createdAt: OffsetDateTime?,
+    var createdAt: LocalDateTime?,
     var gender: String,
     val followerCount: Int?,
     var followingCount: Int?,
@@ -63,8 +63,8 @@ data class UserCurrentResponse(
     var emailVerified: Boolean? = null,
     var phone: String? = null,
     var usedMemory: String? = null,
-    var createdAt: OffsetDateTime? = null,
-    var updatedAt: OffsetDateTime? = null,
+    var createdAt: LocalDateTime? = null,
+    var updatedAt: LocalDateTime? = null,
     var extra: String? = null,
     var followerCount: Int? = null,
     var followingCount: Int? = null,
@@ -72,6 +72,8 @@ data class UserCurrentResponse(
     var commentCount: Int? = null,
     var postCount: Int? = null,
     var articleViewCount: Int? = null,
+    var nextLevelTotalExp:Int?=null,
+    var expToNextLevel: Int? = null
 )
 {
     constructor(user: UserEntity, hotInfo: UserExtraInfoEntity) : this()

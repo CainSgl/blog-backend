@@ -57,6 +57,7 @@ class AiServiceImpl : AiService
         """.trimIndent()
         val GENERATE_SUMMARY_PROMPT = """
             你是擅长分析文本内容并生成准确、简洁摘要的专家，请严格按以下步骤执行：
+            特殊提醒，若内容过多，请忽略多余的内容，可以简略生成，无需深度思考。
             任务：分析用户后续提供的文章内容，生成内容摘要。
             摘要语言：摘要必须为简体中文。
             内容处理规则：
@@ -76,13 +77,14 @@ class AiServiceImpl : AiService
     override fun getEmbedding(text: String): FloatArray
     {
         //降低到对应的维度，并且归一化
-        val embed = embeddingModel.embed(text)
+        val embed = embeddingModel.embed(text.truncateText(3000))
         return VectorUtils.reduceDimension(embed, dimensions)
     }
 
     override fun getEmbedding(texts: List<String>): List<FloatArray>
     {
-        val embeds = embeddingModel.embed(texts)
+        val newTexts=texts.map { it.truncateText(3000) }
+        val embeds = embeddingModel.embed(newTexts)
         return VectorUtils.reduceDimensionBatch(embeds, dimensions)
     }
 
@@ -90,17 +92,24 @@ class AiServiceImpl : AiService
     {
         val res = arkService.use()
             .systemMsg(GENERATE_TAG_PROMPT)
-            .userMsg(content)
+            .userMsg(content.truncateText(3000))
             .noThinKing()
             .send()
         val tagCoreList = mutableListOf<TagCore>()
-        val array = JSON.parseArray(res)
-        array.chunked(2).forEach { chunk ->
-            val tagName = chunk[0].toString().replace("\"", "")
-            val core = chunk[1].toString().replace("\"", "").toFloat()
-            tagCoreList.add(TagCore(tagName, core))
+        try{
+            val array = JSON.parseArray(res)
+            array.chunked(2).forEach { chunk ->
+                val tagName = chunk[0].toString().replace("\"", "")
+                val core = chunk[1].toString().replace("\"", "").toFloat()
+                tagCoreList.add(TagCore(tagName, core))
+            }
+            return tagCoreList
+        }catch(ex:Exception)
+        {
+            return listOf(TagCore(res,1f))
         }
-        return tagCoreList
+
+
     }
 
     fun chat(content: String, emitter: SseEmitter, userId: Long)
@@ -125,7 +134,7 @@ class AiServiceImpl : AiService
                 val sb = StringBuilder()
                 arkService.use()
                     .systemMsg(DEFAULT_PROMPT)
-                    .userMsg(content)
+                    .userMsg(content.truncateText(1000))
                     .thinKing()
                     .send({ res ->
                         emitter.send(res.choices)
@@ -159,10 +168,20 @@ class AiServiceImpl : AiService
     {
         val res = arkService.use()
             .systemMsg(GENERATE_SUMMARY_PROMPT)
-            .userMsg(content)
+            .userMsg(content.truncateText(3000))
             .noThinKing()
             .send()
        return res
     }
 
+}
+fun String.truncateText(maxLength: Int): String {
+    // 空安全处理：如果text为null，直接返回空字符串
+    val nonNullText = this ?: ""
+    // 判断长度，超过则截取前maxLength个字符，否则返回原字符串
+    return if (nonNullText.length > maxLength) {
+        nonNullText.substring(0, maxLength)
+    } else {
+        nonNullText
+    }
 }

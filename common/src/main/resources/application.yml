@@ -5,8 +5,7 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
       file-size-threshold: 1MB
-      location: ${java.io.tmpdir} # 临时文件存储路径（可选）
-
+      location: ${java.io.tmpdir}
   config:
     import: classpath:env.yaml
   jackson:
@@ -94,8 +93,6 @@ grpc:
     port: ${server.grpc-port}
     security:
       enabled: false
-    await-termination: ${system.grpc-await-termination}
-
 # RocketMQ 配置
 rocketmq:
   producer:

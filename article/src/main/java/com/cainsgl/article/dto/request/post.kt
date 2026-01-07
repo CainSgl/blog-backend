@@ -1,12 +1,14 @@
 package com.cainsgl.article.dto.request
 
+import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
+import java.time.LocalDateTime
 
 data class CreatePostRequest(
     val title: String = "新建文章",
     @field:Min(value = 1, message = "知识库id非法")
     val kbId: Long,
-    @field:Min(1,  message="挂载的目录id非法")
+    @field:Min(1, message = "挂载的目录id非法")
     val parentId: Long?,
 )
 
@@ -24,10 +26,17 @@ data class SearchPostRequest(
 data class UpdatePostRequest(
     @field:Min(value = 1, message = "文章id非法")
     val id: Long,
-    val title: String? =null,
+    val title: String? = null,
     val content: String? = null,
     val summary: String? = null,
-    val img:String?=null,
-    val isTop: Boolean ?=null,
+    val img: String? = null,
+    val isTop: Boolean? = null,
 )
 
+data class CursorPostRequest(
+    val lastUpdatedAt: LocalDateTime?,
+    val lastLikeRatio: Double?,
+    val lastId: Long?,
+    @field:Max(value = 100, message = "分页最大不能超过100")
+    val pageSize: Int
+)

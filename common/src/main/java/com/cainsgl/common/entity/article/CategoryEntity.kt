@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableId
 import com.baomidou.mybatisplus.annotation.TableName
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
-import java.time.OffsetDateTime
+import java.time.LocalDateTime
 
 @TableName("categories")
 class CategoryEntity(
@@ -19,5 +19,5 @@ class CategoryEntity(
     @JsonSerialize(using = ToStringSerializer::class)
     var parentId: Long? = null,
     @TableField("created_at")
-    var createdAt: OffsetDateTime? = null
+    var createdAt: LocalDateTime? = null
 )

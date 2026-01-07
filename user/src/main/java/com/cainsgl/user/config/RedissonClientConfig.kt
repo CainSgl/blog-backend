@@ -28,7 +28,8 @@ class RedissonClientConfig
             .setTimeout(redisProperties.timeout?.toMillis()?.toInt() ?: 10000)
             .setRetryAttempts(3)
             .setRetryInterval((maxWait / 10).coerceAtLeast(100))
-        config.setNettyThreads((Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1));
+
+        config.setNettyThreads( (Runtime.getRuntime().availableProcessors() / 4).coerceAtLeast(1) );
         return Redisson.create(config)
     }
 }

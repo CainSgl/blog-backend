@@ -2,6 +2,7 @@ package com.cainsgl.user.service
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
+import com.cainsgl.api.user.follow.UserFollowService
 import com.cainsgl.common.entity.user.UsersFollowEntity
 import com.cainsgl.user.dto.response.FollowUserResponse
 import com.cainsgl.user.repository.UsersFollowMapper
@@ -10,7 +11,7 @@ import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-class UserFollowServiceImpl : ServiceImpl<UsersFollowMapper, UsersFollowEntity>()
+class UserFollowServiceImpl : ServiceImpl<UsersFollowMapper, UsersFollowEntity>(), UserFollowService
 {
 
 
@@ -67,5 +68,11 @@ class UserFollowServiceImpl : ServiceImpl<UsersFollowMapper, UsersFollowEntity>(
     fun getFolloweeUsers(userId: Long, lastId: Long): List<FollowUserResponse>
     {
         return this.baseMapper.getFolloweeUsers(userId, lastId)
+    }
+
+    override fun hasFollow(followerId: Long, followeeId: Long): Boolean
+    {
+        //忽略自身调用的aop失效，这里无需
+        return  this.baseMapper.checkFollowing(followerId, followeeId)
     }
 }

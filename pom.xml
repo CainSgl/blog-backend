@@ -35,6 +35,7 @@
         <module>scheduler</module>
         <!-- 聚合模块 -->
         <module>aggregate</module>
+        <module>comment</module>
     </modules>
 
     <properties>

@@ -1,5 +1,6 @@
 package com.cainsgl.article.dto.request
 
+import com.cainsgl.common.entity.article.ArticleStatus
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 
@@ -14,6 +15,8 @@ data class PageUserIdListRequest(
     val keyword:String?=null,
     //下面是可选项，代表最新发布，最多播放，最多收藏
     val option:String?=null,
+    //下面是只允许是当前用户才生效，方便用户看自己的文档哪些未发布
+    var status: ArticleStatus?=null,
 ){
     companion object{
         val kbOptions:List<String> = listOf("created_at","like_count")

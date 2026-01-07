@@ -9,7 +9,7 @@ import com.cainsgl.grpc.article.PostServiceGrpc
 import net.devh.boot.grpc.client.inject.GrpcClient
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.stereotype.Service
-import java.time.OffsetDateTime
+import java.time.LocalDateTime
 
 @Service
 @ConditionalOnMissingBean(type = ["com.cainsgl.article.service.PostServiceImpl"])
@@ -66,9 +66,9 @@ class PostGrpcService : PostService
             categoryId = this.categoryId,
             seoKeywords = this.seoKeywords,
             seoDescription = this.seoDescription,
-            createdAt = this.createdAt.takeIf { it.isNotEmpty() }?.let { OffsetDateTime.parse(it) },
-            updatedAt = this.updatedAt.takeIf { it.isNotEmpty() }?.let { OffsetDateTime.parse(it) },
-            publishedAt = this.publishedAt.takeIf { it.isNotEmpty() }?.let { OffsetDateTime.parse(it) },
+            createdAt = this.createdAt.takeIf { it.isNotEmpty() }?.let { LocalDateTime.parse(it) },
+            updatedAt = this.updatedAt.takeIf { it.isNotEmpty() }?.let { LocalDateTime.parse(it) },
+            publishedAt = this.publishedAt.takeIf { it.isNotEmpty() }?.let { LocalDateTime.parse(it) },
             kbId = this.kbId
         )
     }

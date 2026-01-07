@@ -12,6 +12,7 @@ import com.cainsgl.article.service.DirectoryServiceImpl
 import com.cainsgl.article.service.KnowledgeBaseServiceImpl
 import com.cainsgl.article.service.PostServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
+import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.KnowledgeBaseEntity
 import com.cainsgl.common.entity.article.PostEntity
 import jakarta.annotation.Resource
@@ -116,9 +117,9 @@ class DirectoryController
         val id = directoryService.saveDirectory(request.kbId, userId, request.name, request.parentId)
         if(id>0)
         {
+            directoryService.removeCache(request.kbId)
             return id.toString()
         }
-        directoryService.removeCache(request.kbId)
         return ResultCode.DB_ERROR
     }
     @SaCheckRole("user")
@@ -127,7 +128,7 @@ class DirectoryController
                         @RequestParam @Min(value = 1,message = "目录id非法") dirId: Long): Int
     {
         val userId = StpUtil.getLoginIdAsLong()
-        //创建新目录，先检查用户是否拥有该kb
+
         fun updatePost(ids:List<Long>):Boolean
         {
             if(ids.isEmpty())
@@ -135,11 +136,15 @@ class DirectoryController
                 return true
             }
             val updateWrapper= UpdateWrapper<PostEntity>()
-            updateWrapper.`in`("id",ids).eq("user_id",userId).set("kb_id",null)
+            updateWrapper.`in`("id",ids).eq("user_id",userId).set("kb_id",null).set("status",ArticleStatus.NO_KB)
             //获取所有的postId
             //设置知识库的数量扣减
-            val updateWrapper2= UpdateWrapper<KnowledgeBaseEntity>().eq("kb_id",kbId).set("post_count","post_count-${ids.size}")
-            knowledgeBaseService.update(updateWrapper2)
+            if(ids.isNotEmpty())
+            {
+                val updateWrapper2= UpdateWrapper<KnowledgeBaseEntity>().eq("id",kbId).setSql("post_count = post_count - ${ids.size}");
+                knowledgeBaseService.update(updateWrapper2)
+            }
+
            return postService.update(updateWrapper)
         }
 
@@ -160,6 +165,7 @@ class DirectoryController
             val postIds = dirLists.mapNotNull { it.postId }.distinct()
             directoryService.removeBatchByIds(dirLists)
             updatePost(postIds)
+            directoryService.removeCache(kbId)
             return@execute postIds
         }
         if(res.isNullOrEmpty())

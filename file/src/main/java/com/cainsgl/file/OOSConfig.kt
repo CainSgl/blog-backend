@@ -57,7 +57,7 @@ class FileService
     lateinit var bucketName: String
 
     @Throws(IOException::class)
-    fun upload(file: MultipartFile): String?
+    fun upload(file: MultipartFile): String
     {
         if (file.isEmpty)
         {
@@ -179,6 +179,7 @@ class FileService
             response.setHeader("Pragma", "no-cache")
             response.setHeader("Expires", "0")
         }
+        response.setHeader("Cache-Control", "public, max-age=3600");
         if (isDownload)
         {
             response.setHeader("Content-Disposition", "attachment; filename=\"$name\"")

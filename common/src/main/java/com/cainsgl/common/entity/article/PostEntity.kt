@@ -6,7 +6,7 @@ import com.cainsgl.common.handler.StringListTypeHandler
 import com.cainsgl.common.handler.VectorTypeHandler
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
-import java.time.OffsetDateTime
+import java.time.LocalDateTime
 
 @TableName(value = "posts", autoResultMap = true)
 data class PostEntity(
@@ -60,16 +60,19 @@ data class PostEntity(
     @TableField("img")
     var img: String? = null,
     @TableField(value = "created_at", fill = FieldFill.INSERT)
-    var createdAt: OffsetDateTime?=null,
+    var createdAt: LocalDateTime?=null,
     @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
-    var updatedAt: OffsetDateTime?=null,
+    var updatedAt: LocalDateTime?=null,
     @TableField("published_at")
-    var publishedAt: OffsetDateTime? = null,
+    var publishedAt: LocalDateTime? = null,
     @TableField("kb_id")
     @JsonSerialize(using = ToStringSerializer::class)
     var kbId: Long? = null,
     @TableField("version")
     var version: Int? = null,
+    @TableField(value="like_ratio",updateStrategy=FieldStrategy.NEVER,insertStrategy=FieldStrategy.NEVER)
+    @JsonSerialize(using = ToStringSerializer::class)
+    var likeRatio: Double? = null,
     @TableField("vector", select = false,typeHandler = VectorTypeHandler::class)
     var vecotr: FloatArray? = null,
 ){
@@ -79,6 +82,6 @@ data class PostEntity(
 
     fun needUpdate():Boolean
     {
-        return  id!=null&&(title!=null ||   summary!=null || status!=null  || tags != null)
+        return  id!=null&&(title!=null ||  img!=null|| summary!=null || status!=null  || tags != null||top!=null)
     }
 }

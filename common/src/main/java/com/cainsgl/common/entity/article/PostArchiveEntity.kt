@@ -7,7 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableId
 import com.baomidou.mybatisplus.annotation.TableName
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
-import java.time.OffsetDateTime
+import java.time.LocalDateTime
 
 @TableName("post_archives")
 data class PostArchiveEntity(
@@ -26,7 +26,7 @@ data class PostArchiveEntity(
     var archiveType: String?=null,
 
     @TableField("archive_time")
-    var archiveTime: OffsetDateTime? =null,
+    var archiveTime: LocalDateTime? =null,
 
     @TableField("operator_id")
     @JsonSerialize(using = ToStringSerializer::class)

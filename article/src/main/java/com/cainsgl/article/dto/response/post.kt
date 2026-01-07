@@ -6,7 +6,7 @@ import com.cainsgl.common.entity.article.PostEntity
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
 import org.springframework.beans.BeanUtils
-import java.time.OffsetDateTime
+import java.time.LocalDateTime
 
 data class CreatePostResponse(
     val post: PostEntity,
@@ -33,9 +33,9 @@ data class GetPostResponse(
     var seoKeywords: String? = null,
     var seoDescription: String? = null,
     var img: String? = null,
-    var createdAt: OffsetDateTime?=null,
-    var updatedAt: OffsetDateTime?=null,
-    var publishedAt: OffsetDateTime? = null,
+    var createdAt: LocalDateTime?=null,
+    var updatedAt: LocalDateTime?=null,
+    var publishedAt: LocalDateTime? = null,
     @JsonSerialize(using = ToStringSerializer::class)
     var kbId: Long? = null,
     var operate:Set<OperateType>

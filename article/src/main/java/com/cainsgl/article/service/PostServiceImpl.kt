@@ -12,13 +12,16 @@ import jakarta.annotation.Resource
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
 import java.time.Duration
+import java.time.LocalDateTime
 
 @Service
 class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, IService<PostEntity>
 {
     @Resource
     lateinit var redisTemplate: RedisTemplate<String, PostEntity>
-    companion object{
+
+    companion object
+    {
         const val POST_INFO_REDIS_PREFIX = "post:"
     }
 
@@ -30,35 +33,48 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
     fun getPost(id: Long): PostEntity?
     {
         //使用双重检查锁
-        if(id<0)
+        if (id < 0)
         {
             return null
         }
         //从redis里尝试获取
         val postEntity = redisTemplate.opsForValue().get("$POST_INFO_REDIS_PREFIX$id")
-        if(postEntity!=null)
+        if (postEntity != null)
         {
             redisTemplate.expire("$POST_INFO_REDIS_PREFIX$id", Duration.ofMinutes(20))
             return postEntity
         }
+        //TODO 后续优化
         synchronized(this) {
             val postEntity2 = redisTemplate.opsForValue().get("$POST_INFO_REDIS_PREFIX$id")
-            if(postEntity2!=null)
+            if (postEntity2 != null)
             {
                 return postEntity2
             }
             val entity = super<ServiceImpl>.getById(id) ?: return null
-            if(entity.status== ArticleStatus.PUBLISHED)
+            if (entity.status == ArticleStatus.PUBLISHED || entity.status == ArticleStatus.ONLY_FANS)
             {
                 //只缓存发布的文章
-                redisTemplate.opsForValue().setIfAbsent("$POST_INFO_REDIS_PREFIX$id", entity,Duration.ofMinutes(10))
+                redisTemplate.opsForValue().setIfAbsent("$POST_INFO_REDIS_PREFIX$id", entity, Duration.ofMinutes(10))
             }
             return entity
         }
     }
-    fun removeCache(id: Long) {
+
+    fun removeCache(id: Long)
+    {
         redisTemplate.delete("$POST_INFO_REDIS_PREFIX$id")
     }
+
+    fun cursor(lastUpdatedAt: LocalDateTime?, lastLikeRatio: Double?, lastId: Long?, pageSize: Int): List<PostEntity>
+    {
+        if (lastUpdatedAt == null || lastLikeRatio == null || lastId == null)
+        {
+            return baseMapper.selectFirstPage(pageSize)
+        }
+        return baseMapper.selectPostsByCursor(lastUpdatedAt, lastLikeRatio, lastId, pageSize)
+    }
+
     override fun getById(id: Long): PostEntity?
     {
         return baseMapper.selectById(id)
@@ -67,7 +83,7 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
     override fun getVectorById(id: Long): FloatArray?
     {
         //去数据库查
-        val queryWrapper= QueryWrapper<PostEntity>()
+        val queryWrapper = QueryWrapper<PostEntity>()
         queryWrapper.select("vector")
         queryWrapper.eq("id", id)
         val entity = baseMapper.selectOne(queryWrapper)
@@ -75,12 +91,12 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
         //    return baseMapper.selectVectorById(id)
     }
 
-    override fun addViewCount(id: Long, count: Int):Boolean
+    override fun addViewCount(id: Long, count: Int): Boolean
     {
         val wrapper = UpdateWrapper<PostEntity>()
         wrapper.eq("id", id)
         wrapper.setSql("viewCount=viewCount+$count")
-        return baseMapper.update(wrapper)>0
+        return baseMapper.update(wrapper) > 0
     }
 
 }

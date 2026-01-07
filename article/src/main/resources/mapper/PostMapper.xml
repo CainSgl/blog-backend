@@ -5,17 +5,18 @@
     <resultMap id="PostResultMap" type="com.cainsgl.common.entity.article.PostEntity">
     </resultMap>
     <!-- 通用列片段 -->
-    <sql id="Base_Column_List">
+    <sql id="All_Column_List">
         id, title, content, summary, status, is_top, is_recommend, 
-        view_count, like_count, comment_count, tags, user_id, category_id, 
-        seo_keywords, seo_description, created_at, updated_at, published_at
+        view_count, like_count, comment_count, tags, user_id,
+        created_at, updated_at, published_at,like_ratio,img
+        category_id,seo_keywords,seo_description
     </sql>
     
     <!-- 基础信息列片段（排除content等大字段） -->
     <sql id="Basic_Column_List">
         id, title, summary, status, is_top, is_recommend, 
-        view_count, like_count, comment_count, tags, user_id, 
-        created_at, updated_at, published_at, kb_id
+        view_count, like_count, comment_count, tags, user_id,img,
+        created_at, updated_at, published_at, kb_id,like_ratio
     </sql>
     
     <!-- 批量查询文章基础信息 -->
@@ -34,4 +35,25 @@
         WHERE id = #{id}
     </select>
 
+    <!-- 游标分页查询文章列表 -->
+    <select id="selectPostsByCursor" resultMap="PostResultMap">
+        SELECT <include refid="Basic_Column_List"/>
+        FROM posts
+        WHERE
+            (
+                (updated_at::date &lt; #{lastUpdatedAt}::date) OR
+                (updated_at::date = #{lastUpdatedAt}::date AND like_ratio &lt; #{lastLikeRatio}) OR
+                (updated_at::date = #{lastUpdatedAt}::date AND like_ratio = #{lastLikeRatio} AND id &lt; #{lastId})
+            ) AND
+        status &gt;= 'published'
+        ORDER BY updated_at::date DESC, like_ratio DESC, id DESC
+        LIMIT #{pageSize}
+    </select>
+    <select id="selectFirstPage" resultMap="PostResultMap">
+        SELECT <include refid="Basic_Column_List"/>
+        FROM posts
+        WHERE status &gt;= 'published'
+        ORDER BY updated_at::date DESC, like_ratio DESC, id DESC
+        LIMIT #{pageSize}
+    </select>
 </mapper>

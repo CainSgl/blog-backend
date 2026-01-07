@@ -7,50 +7,47 @@
         <groupId>com.cainsgl</groupId>
         <artifactId>blog-backend</artifactId>
         <version>1.0</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>aggregate</artifactId>
-    <name>单体模块</name>
-    <description>聚合服务模块</description>
+    <artifactId>comment</artifactId>
+    <name>评论服务(comment)</name>
+    <description>评论服务模块</description>
+
+
+    <properties>
+        <maven.compiler.source>23</maven.compiler.source>
+        <maven.compiler.target>23</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.cainsgl</groupId>
-            <artifactId>user</artifactId>
+            <artifactId>common</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <!-- Redis集成 -->
+        <dependency>
+            <groupId>com.cainsgl</groupId>
+            <artifactId>api-user</artifactId>
             <version>1.0</version>
         </dependency>
         <dependency>
-            <groupId>com.cainsgl</groupId>
-            <artifactId>file</artifactId>
-            <version>1.0</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
-            <groupId>com.cainsgl</groupId>
-            <artifactId>article</artifactId>
-            <version>1.0</version>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.cainsgl</groupId>
-            <artifactId>ai</artifactId>
-            <version>1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.cainsgl</groupId>
-            <artifactId>comment</artifactId>
-            <version>1.0</version>
-        </dependency>
-<!--        <dependency>-->
-<!--            <groupId>com.cainsgl</groupId>-->
-<!--            <artifactId>scheduler</artifactId>-->
-<!--            <version>1.0</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>com.cainsgl</groupId>-->
-<!--            <artifactId>consumer</artifactId>-->
-<!--            <version>1.0</version>-->
-<!--        </dependency>-->
-
     </dependencies>
+
     <build>
         <plugins>
             <plugin>
@@ -58,7 +55,8 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <skip>false</skip>
-                    <mainClass>com.cainsgl.aggregate.Application</mainClass>
+                    <mainClass>com.cainsgl.user.Application</mainClass>
+                    <classifier>exec</classifier>
                 </configuration>
                 <executions>
                     <execution>
@@ -115,6 +113,7 @@
                     </dependency>
                 </dependencies>
             </plugin>
+
         </plugins>
     </build>
 </project>

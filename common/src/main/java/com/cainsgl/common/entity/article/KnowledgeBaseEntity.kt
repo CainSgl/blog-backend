@@ -7,7 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableName
 import com.cainsgl.common.handler.ArticleStatusTypeHandler
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
-import java.time.OffsetDateTime
+import java.time.LocalDateTime
 
 @TableName("knowledge_bases")
 data class KnowledgeBaseEntity(
@@ -23,7 +23,7 @@ data class KnowledgeBaseEntity(
     var name: String? = null,
 
     @TableField("created_at")
-    var createdAt: OffsetDateTime? = null,
+    var createdAt: LocalDateTime? = null,
 
     @TableField(value = "status", typeHandler = ArticleStatusTypeHandler::class)
     var status: ArticleStatus? = null,
