@@ -27,7 +27,7 @@ data class UserLogEntity(
 
     @JSONField(serialize = false)
     @TableField("created_at")
-    var createdAt: LocalDateTime? = null
+    var createdAt: LocalDateTime? = null,
 )
 {
     fun isValidAction(): Boolean

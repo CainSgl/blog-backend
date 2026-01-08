@@ -33,9 +33,10 @@
         <module>ai</module>
         <module>consumer</module>
         <module>scheduler</module>
+        <module>comment</module>
         <!-- 聚合模块 -->
         <module>aggregate</module>
-        <module>comment</module>
+
     </modules>
 
     <properties>

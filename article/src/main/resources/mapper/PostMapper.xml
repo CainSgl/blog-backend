@@ -56,4 +56,17 @@
         ORDER BY updated_at::date DESC, like_ratio DESC, id DESC
         LIMIT #{pageSize}
     </select>
+    
+    <!-- 根据指定post_id的向量查找最相似的文章 -->
+    <select id="selectSimilarPostsByVector" resultMap="PostResultMap">
+        SELECT p2.id, p2.title, p2.summary, p2.status, p2.is_top, p2.is_recommend, p2.tags, p2.user_id,p2.img,p2.created_at, p2.updated_at, p2.published_at, p2.kb_id,
+               (p1.vector &lt;-&gt; p2.vector) AS similarity_distance
+        FROM posts p1, posts p2
+        WHERE p1.id = #{postId}
+          AND p2.id != p1.id
+          AND p2.status &gt;= 'published'
+        ORDER BY (p1.vector &lt;-&gt; p2.vector)
+        LIMIT #{limit}
+    </select>
+
 </mapper>

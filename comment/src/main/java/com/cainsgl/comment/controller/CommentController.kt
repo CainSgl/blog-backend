@@ -1,10 +1,11 @@
 package com.cainsgl.comment.controller
 
+import cn.dev33.satoken.stp.StpUtil
+import com.baomidou.mybatisplus.core.toolkit.IdWorker
 import com.cainsgl.comment.dto.request.CreateParagraphRequest
 import com.cainsgl.comment.entity.CommentEntity
 import com.cainsgl.comment.service.CommentServiceImpl
 import com.cainsgl.comment.service.ParagraphServiceImpl
-import com.cainsgl.common.dto.response.ResultCode
 import jakarta.annotation.Resource
 import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.bind.annotation.*
@@ -25,26 +26,29 @@ class CommentController
 
     //创建评论
     @PostMapping
-    fun createParagraph(@RequestBody request: CreateParagraphRequest): ResultCode
+    fun createComment(@RequestBody request: CreateParagraphRequest): String
     {
-        transactionTemplate.execute {
+        return transactionTemplate.execute {
+            val id=IdWorker.getId()
             paragraphService.incrementCount(postId = request.postId, version = request.version, dataId = request.dataId)
             commentService.save(
                 CommentEntity(
+                    id=id,
+                    userId = StpUtil.getLoginIdAsLong(),
                     dataId = request.dataId,
                     version = request.version,
                     postId = request.postId,
                     content = request.content
                 )
             )
-        }
-        return ResultCode.SUCCESS
+            return@execute id.toString()
+        }?:"error"
     }
 
     //游标获取评论
     @GetMapping
     fun getComment(
-        @RequestParam postId: Int,
+        @RequestParam postId: Long,
         @RequestParam version: Int,
         @RequestParam dataId: Int,
         @RequestParam lastCreatedAt: LocalDate?,

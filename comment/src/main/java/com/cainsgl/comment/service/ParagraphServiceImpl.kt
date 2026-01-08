@@ -10,7 +10,6 @@ import org.redisson.api.RedissonClient
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Duration
 
 @Service
 class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
@@ -42,8 +41,6 @@ class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
                     ParagraphEntity(
                         dataId = dataId.toInt(),
                         count = count,
-                        postId = id,
-                        version = version
                     )
                 }
             }
@@ -61,7 +58,7 @@ class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
         {
             return data
         }
-        val lock = redissonClient.getLock(redisKey)
+        val lock = redissonClient.getLock("lock:"+redisKey)
         val isLockAcquired = lock.tryLock(5, java.util.concurrent.TimeUnit.SECONDS)
         if (isLockAcquired)
         {
@@ -83,12 +80,10 @@ class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
                        }
                    }
                    hashOps.putAll(redisKey, hashData)
-                   redisTemplate.expire(redisKey, Duration.ofMinutes(10))
                } else
                {
                    //防止缓存穿透
                    hashOps.put(redisKey, "-1", 0)
-                   redisTemplate.expire(redisKey, Duration.ofMinutes(10))
                }
                return entities
            }finally
@@ -121,7 +116,7 @@ class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
             //该情况比较极端，发生在用户阅读文章十分钟后，并且这期间没有其他用户阅读，数据已经过期
             //去数据库里，单独的把他加载进来放入内存
             //存在更极端的情况，就是放进redis的时候，有其他用户来加载数据了，所以仍然需要双重检查锁，并且由于数据是会变更的，不能用本地锁，需要使用分布式锁
-            val lock = redissonClient.getLock(redisKey)
+            val lock = redissonClient.getLock("lock:"+redisKey)
             val isLockAcquired = lock.tryLock(8, java.util.concurrent.TimeUnit.SECONDS)
             try{
                 if (isLockAcquired)
@@ -132,7 +127,6 @@ class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
                     val paragraphEntity = this.baseMapper.selectOne(query)
                     val value = paragraphEntity.count!! + 1;
                     hashOps.put(redisKey, hashKey, value)
-                    redisTemplate.expire(redisKey, Duration.ofMinutes(10))
                 }else
                 {
                     //极端情况，直接自增数据库的
@@ -147,7 +141,6 @@ class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
             return false
         }
         hashOps.increment(redisKey, hashKey, 1)
-        redisTemplate.expire(redisKey, Duration.ofMinutes(10))
         return true
     }
 
@@ -161,8 +154,6 @@ class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
         // 直接设置 Redis Hash 中的字段值
         val hashOps = redisTemplate.opsForHash<String, Int>()
         hashOps.put(redisKey, hashKey, value)
-        // 设置过期时间
-        redisTemplate.expire(redisKey, Duration.ofMinutes(10))
     }
 
 }

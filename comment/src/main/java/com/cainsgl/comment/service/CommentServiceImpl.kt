@@ -9,7 +9,7 @@ import java.time.LocalDate
 @Service
 class CommentServiceImpl : ServiceImpl<CommentMapper, CommentEntity>() {
     fun getByCursor(
-        postId: Int,
+        postId: Long,
         version: Int,
         dataId: Int,
         lastCreatedAt: LocalDate?,

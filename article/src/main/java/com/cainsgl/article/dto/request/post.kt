@@ -40,3 +40,10 @@ data class CursorPostRequest(
     @field:Max(value = 100, message = "分页最大不能超过100")
     val pageSize: Int
 )
+data class CommentPostRequest(
+    val lastUpdatedAt: LocalDateTime?,
+    val lastLikeRatio: Double?,
+    val lastId: Long?,
+    @field:Max(value = 100, message = "分页最大不能超过100")
+    val pageSize: Int
+)

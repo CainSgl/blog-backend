@@ -30,7 +30,7 @@ class UserExtraInfoServiceImpl : ServiceImpl<UserExtraInfoMapper, UserExtraInfoE
 
     companion object
     {
-        const val LOCK_PREFIX_KEY = "lock:user:extra:"
+        const val USER_EXTRA_PREFIX_KEY="user:extra"
     }
 
     override fun getInterestVector(userId: Long): FloatArray?
@@ -63,7 +63,7 @@ class UserExtraInfoServiceImpl : ServiceImpl<UserExtraInfoMapper, UserExtraInfoE
                 return ueInfo
             }
             //说明填充失败，尝试从数据库里获取
-            val lock = redissonClient.getLock(LOCK_PREFIX_KEY + id)
+            val lock = redissonClient.getLock("lock:"+USER_EXTRA_PREFIX_KEY + id)
             val isLockAcquired = lock.tryLock(15, java.util.concurrent.TimeUnit.SECONDS)
             if (!isLockAcquired)
             {

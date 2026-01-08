@@ -42,6 +42,11 @@
             <artifactId>shedlock-provider-redis-spring</artifactId>
             <version>5.10.0</version>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

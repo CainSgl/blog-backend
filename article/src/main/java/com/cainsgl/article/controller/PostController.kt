@@ -395,4 +395,17 @@ class PostController
     {
         return postService.cursor(request.lastUpdatedAt,request.lastLikeRatio,request.lastId,request.pageSize)
     }
+
+    @PostMapping("/comment")
+    fun comment(@RequestBody request: CommentPostRequest):Any
+    {
+        //TODO
+    }
+    @SaIgnore
+    @GetMapping("/recommend")
+    fun recommend(@RequestParam id:Long):Any
+    {
+
+        return postService.similarPost(id)
+    }
 }

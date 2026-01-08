@@ -8,6 +8,7 @@ import com.cainsgl.api.article.post.PostService
 import com.cainsgl.article.repository.PostMapper
 import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.PostEntity
+import com.cainsgl.common.util.FineLockCacheUtils.getWithFineLock
 import jakarta.annotation.Resource
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
@@ -74,7 +75,14 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
         }
         return baseMapper.selectPostsByCursor(lastUpdatedAt, lastLikeRatio, lastId, pageSize)
     }
-
+    fun similarPost(id: Long): List<PostEntity>
+    {
+        //由于这里性能损耗比较大，直接缓存
+        val redisTemplate2 =redisTemplate as RedisTemplate<String, List<PostEntity>>
+        return  redisTemplate2.getWithFineLock("similar:$POST_INFO_REDIS_PREFIX$id", Duration.ofMinutes(20)){
+          return@getWithFineLock  baseMapper.selectSimilarPostsByVector(id,10)
+        }?: emptyList()
+    }
     override fun getById(id: Long): PostEntity?
     {
         return baseMapper.selectById(id)

@@ -10,5 +10,5 @@ interface CommentMapper : BaseMapper<CommentEntity> {
     /**
      * 游标分页查询评论 - 根据postId, dataId, version以及游标参数进行查询
      */
-    fun selectByCursor(postId: Int, version: Int, dataId: Int, lastCreatedAt: LocalDate?, lastLikeCount: Int?): List<CommentEntity>
+    fun selectByCursor(postId: Long, version: Int, dataId: Int, lastCreatedAt: LocalDate?, lastLikeCount: Int?): List<CommentEntity>
 }

@@ -38,7 +38,8 @@ data class GetPostResponse(
     var publishedAt: LocalDateTime? = null,
     @JsonSerialize(using = ToStringSerializer::class)
     var kbId: Long? = null,
-    var operate:Set<OperateType>
+    var operate:Set<OperateType>,
+    var version:Int?=null,
 ){
     constructor(post: PostEntity,operate:Set<OperateType>):this(operate=operate)
     {

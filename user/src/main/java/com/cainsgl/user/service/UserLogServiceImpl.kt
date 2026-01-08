@@ -1,10 +1,10 @@
 package com.cainsgl.user.service
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.api.user.log.UserLogService
-import com.cainsgl.common.entity.user.UserLogArchiveEntity
 import com.cainsgl.common.entity.user.UserLogEntity
 import com.cainsgl.common.exception.BSystemException
 import com.cainsgl.user.repository.UserLogMapper
@@ -31,8 +31,7 @@ class UserLogServiceImpl : ServiceImpl<UserLogMapper, UserLogEntity>(), UserLogS
     @Resource
     private lateinit var redisTemplate: RedisTemplate<Any, Any>
 
-    @Resource
-    lateinit var userLogArchiveService: UserLogArchiveServiceImpl
+
 
     @Resource
     lateinit var transactionTemplate: TransactionTemplate
@@ -42,7 +41,7 @@ class UserLogServiceImpl : ServiceImpl<UserLogMapper, UserLogEntity>(), UserLogS
     {
         //直接从userLog里获取，统计完成后再往旧数据里放
         val queryWrapper = QueryWrapper<UserLogEntity>()
-        queryWrapper.last("limit $value")
+        queryWrapper.last("limit $value").eq("processed",false)
         var list: List<UserLogEntity>? = null
         val size = transactionTemplate.execute { status ->
             list = list(queryWrapper)
@@ -51,10 +50,8 @@ class UserLogServiceImpl : ServiceImpl<UserLogMapper, UserLogEntity>(), UserLogS
                 return@execute 0
             }
             val ids = list!!.mapNotNull { it.id }
-            removeByIds(ids)
-            //归档到旧数据
-            val list2: List<UserLogArchiveEntity> = list!!.map { UserLogArchiveEntity(it) }
-            userLogArchiveService.saveBatch(list2)
+            val update= UpdateWrapper<UserLogEntity>().set("processed",true).`in`("id",ids)
+            update(update)
             return@execute list!!.size
         }
         if (size == null || size < -1)
@@ -67,6 +64,7 @@ class UserLogServiceImpl : ServiceImpl<UserLogMapper, UserLogEntity>(), UserLogS
             return ""
         }
         val key= REDIS_PREFIX_LOGS
+        //数据丢失了也无所谓，只是一些不重要的日志，容忍
         redisTemplate.opsForList().rightPushAll(key, list!!)
         return key
     }
