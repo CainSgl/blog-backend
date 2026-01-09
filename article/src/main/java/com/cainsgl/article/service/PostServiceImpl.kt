@@ -103,7 +103,15 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
     {
         val wrapper = UpdateWrapper<PostEntity>()
         wrapper.eq("id", id)
-        wrapper.setSql("viewCount=viewCount+$count")
+        wrapper.setSql("viewCount = viewCount + $count")
+        return baseMapper.update(wrapper) > 0
+    }
+
+    override fun addCommentCount(id: Long, count: Int): Boolean
+    {
+        val wrapper = UpdateWrapper<PostEntity>()
+        wrapper.eq("id", id)
+        wrapper.setSql("comment_count = comment_count + $count")
         return baseMapper.update(wrapper) > 0
     }
 

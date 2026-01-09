@@ -48,6 +48,15 @@ class PostGrpcService : PostService
         return response.success
     }
 
+    override fun addCommentCount(id: Long, count: Int): Boolean
+    {
+        val request = AddViewCountRequest.newBuilder()
+            .setId(id)
+            .build()
+        val response = postServiceGrpc.addCommentCount(request)
+        return response.success
+    }
+
     private fun com.cainsgl.grpc.article.PostEntity.toEntity(): PostEntity
     {
         return PostEntity(

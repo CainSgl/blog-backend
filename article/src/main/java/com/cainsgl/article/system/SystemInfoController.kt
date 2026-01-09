@@ -28,8 +28,6 @@ class SystemInfoController
         //去读redis的缓存，并且缓存时间必定是一天
         return carouselServiceImpl.getCarousels()
     }
-
-
     @GetMapping("/announcement")
     fun getAnnouncement():List<PostEntity>
     {
@@ -38,4 +36,5 @@ class SystemInfoController
             return@getWithFineLock postService.list(query)
         }?:emptyList()
     }
+
 }

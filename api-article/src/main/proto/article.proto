@@ -63,6 +63,7 @@ service PostService {
     rpc getById (GetPostByIdRequest) returns (GetPostByIdResponse);
     rpc getVectorById (GetVectorByIdRequest) returns(GetVectorByIdResponse);
     rpc addViewCount (AddViewCountRequest) returns (RemoveVectorResponse);
+    rpc addCommentCount (AddViewCountRequest) returns (RemoveVectorResponse);
 }
 
 message ReloadVectorRequest {

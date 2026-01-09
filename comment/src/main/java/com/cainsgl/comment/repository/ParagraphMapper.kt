@@ -6,5 +6,5 @@ import org.apache.ibatis.annotations.Mapper
 
 @Mapper
 interface ParagraphMapper : BaseMapper<ParagraphEntity> {
-    // 暂时留空，后续根据需要添加方法
+
 }

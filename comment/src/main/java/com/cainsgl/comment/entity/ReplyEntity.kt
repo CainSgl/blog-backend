@@ -8,31 +8,34 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
 import java.time.LocalDate
 
-@TableName(value = "paragraph_comments")
-data class CommentEntity(
+@TableName(value = "replys")
+data class ReplyEntity(
     @TableId(type = IdType.ASSIGN_ID)
     @JsonSerialize(using = ToStringSerializer::class)
     var id: Long? = null,
+
+    @TableField("par_comment_id")
+    @JsonSerialize(using = ToStringSerializer::class)
+    var parCommentId: Long? = null,
 
     @TableField("user_id")
     @JsonSerialize(using = ToStringSerializer::class)
     var userId: Long? = null,
 
-    @TableField("data_id")
-    @JsonSerialize(using = ToStringSerializer::class)
-    var dataId: Int? = null,
-
-    @TableField("post_id")
-    @JsonSerialize(using = ToStringSerializer::class)
-    var postId: Long? = null,
-
     @TableField("content")
     var content: String? = null,
 
-    @TableField("version")
-    var version: Int? = null,
     @TableField("like_count")
     var likeCount: Int? = null,
+
     @TableField("created_at")
     var createdAt: LocalDate? = null,
+
+    @TableField("post_comment_id")
+    @JsonSerialize(using = ToStringSerializer::class)
+    var postCommentId: Long? = null,
+
+    @TableField("reply_id")
+    @JsonSerialize(using = ToStringSerializer::class)
+    var replyId: Long? = null,
 )

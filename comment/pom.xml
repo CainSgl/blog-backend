@@ -29,7 +29,7 @@
         <!-- Redis集成 -->
         <dependency>
             <groupId>com.cainsgl</groupId>
-            <artifactId>api-user</artifactId>
+            <artifactId>api-article</artifactId>
             <version>1.0</version>
         </dependency>
         <dependency>

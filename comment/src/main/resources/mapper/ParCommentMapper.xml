@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.cainsgl.comment.repository.CommentMapper">
+<mapper namespace="com.cainsgl.comment.repository.ParCommentMapper">
 
-    <resultMap id="BaseResultMap" type="com.cainsgl.comment.entity.CommentEntity">
+    <resultMap id="BaseResultMap" type="com.cainsgl.comment.entity.ParCommentEntity">
         <id column="id" property="id" />
         <result column="user_id" property="userId" />
         <result column="post_id" property="postId" />
@@ -14,7 +14,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,user_id,content,like_count,created_at
+        id,user_id,content,like_count,created_at,reply_count
     </sql>
 
     <select id="selectByCursor" parameterType="map" resultMap="BaseResultMap">
@@ -25,9 +25,16 @@
         AND data_id = #{dataId}
         AND version = #{version}
         <if test="lastCreatedAt != null and lastLikeCount != null">
-            AND (created_at &lt; #{lastCreatedAt} OR (created_at = #{lastCreatedAt} AND like_count &lt; #{lastLikeCount}))
+            AND (
+            like_count &lt; #{lastLikeCount}
+            OR
+            (like_count = #{lastLikeCount} AND created_at  &lt; #{lastCreatedAt})
+            )
+            OR
+            (like_count = #{lastLikeCount} AND created_at  = #{lastCreatedAt} AND id &lt; #{lastId})
+            )
         </if>
-        ORDER BY created_at DESC, like_count DESC
+        ORDER BY created_at DESC, like_count DESC,id DESC
         LIMIT 10
     </select>
 

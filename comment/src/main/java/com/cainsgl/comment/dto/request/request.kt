@@ -13,3 +13,20 @@ data class CreateParagraphRequest(
     @field:NotEmpty
     val content:String,
 )
+data class CreateReplyRequest(
+    val postCommentId: Long?,
+    val parCommentId:Long?,
+    val dataId:Int?,
+    val replyId:Long?,
+    @field:NotEmpty
+    val content:String,
+    val postId:Long,
+    val version:Int,
+)
+data class CommentPostRequest(
+    @field:NotEmpty
+    val content: String,
+    var version: Int,
+    @field:Min(0)
+    val postId: Long,
+)

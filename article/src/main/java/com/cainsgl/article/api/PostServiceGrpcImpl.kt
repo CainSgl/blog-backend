@@ -53,6 +53,13 @@ class PostServiceGrpcImpl : PostServiceGrpc.PostServiceImplBase()
         responseObserver.onCompleted()
     }
 
+    override fun addCommentCount(request: AddViewCountRequest, responseObserver: StreamObserver<RemoveVectorResponse>)
+    {
+        val success = postService.addCommentCount(request.id, request.count)
+        val response = RemoveVectorResponse.newBuilder().setSuccess(success).build()
+        responseObserver.onNext(response)
+        responseObserver.onCompleted()
+    }
     private fun PostEntity.toProto(): com.cainsgl.grpc.article.PostEntity
     {
         return com.cainsgl.grpc.article.PostEntity.newBuilder()

@@ -67,6 +67,8 @@ class PostController
     lateinit var postHistoryService: PostHistoryServiceImpl
     @Resource
     lateinit var postOperationService: PostOperationServiceImpl
+
+
     //来自其他模块的，只能通过Service来访问
     @Resource
     lateinit var userExtraInfoService:UserExtraInfoService
@@ -74,6 +76,7 @@ class PostController
     lateinit var aiService:AiService
     @Resource
     lateinit var userFollowService: UserFollowService
+
     @SaIgnore
     @GetMapping
     fun get(@RequestParam id: Long, @RequestParam simple: Boolean=false, request: HttpServletRequest,response: HttpServletResponse): Any
@@ -396,11 +399,6 @@ class PostController
         return postService.cursor(request.lastUpdatedAt,request.lastLikeRatio,request.lastId,request.pageSize)
     }
 
-    @PostMapping("/comment")
-    fun comment(@RequestBody request: CommentPostRequest):Any
-    {
-        //TODO
-    }
     @SaIgnore
     @GetMapping("/recommend")
     fun recommend(@RequestParam id:Long):Any
