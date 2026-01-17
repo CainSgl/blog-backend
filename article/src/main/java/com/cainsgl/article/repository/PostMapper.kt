@@ -30,5 +30,5 @@ interface PostMapper : BaseMapper<PostEntity> {
      * 根据指定post_id的向量查找最相似的文章
      */
     fun selectSimilarPostsByVector(postId: Long, limit: Int): List<PostEntity>
-
+    fun selectPostsByVector(targetVector: FloatArray, limit: Int): List<PostEntity>
 }

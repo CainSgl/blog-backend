@@ -18,13 +18,6 @@ enum class ArticleStatus(
     OFF_SHELF("off_shelf", "已下架",4),
     NO_KB("no_kb", "无知识库归属",5),
     ONLY_FANS("only_fans", "仅粉丝",6);
-//    enum ArticleStatus {
-//        ARTICLE_STATUS_UNSPECIFIED = 0;
-//        ARTICLE_STATUS_DRAFT = 1;
-//        ARTICLE_STATUS_PENDING_REVIEW = 2;
-//        ARTICLE_STATUS_PUBLISHED = 3;
-//        ARTICLE_STATUS_OFF_SHELF = 4;
-//    }
 
     companion object
     {

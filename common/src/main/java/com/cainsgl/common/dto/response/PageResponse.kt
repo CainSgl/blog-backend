@@ -5,5 +5,6 @@ data class PageResponse<T>(
     val total: Long,
     val pages: Long,
     val current: Long,
-    val size: Long
+    val size: Long,
+    val hasMore: Boolean?=null
 )

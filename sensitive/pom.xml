@@ -9,17 +9,9 @@
         <version>1.0</version>
     </parent>
 
-    <artifactId>comment</artifactId>
-    <name>评论服务(comment)</name>
-    <description>评论服务模块</description>
-
-
-    <properties>
-        <maven.compiler.source>23</maven.compiler.source>
-        <maven.compiler.target>23</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
-
+    <artifactId>sensitive</artifactId>
+    <name>违禁词模块(sensitive)</name>
+    <description>屏蔽掉违禁词</description>
     <dependencies>
         <dependency>
             <groupId>com.cainsgl</groupId>
@@ -27,38 +19,21 @@
             <version>1.0</version>
         </dependency>
         <dependency>
-            <groupId>com.cainsgl</groupId>
-            <artifactId>sensitive</artifactId>
-            <version>1.0</version>
-        </dependency>
-        <!-- Redis集成 -->
-        <dependency>
-            <groupId>com.cainsgl</groupId>
-            <artifactId>api-article</artifactId>
-            <version>1.0</version>
+            <groupId>com.github.houbb</groupId>
+            <artifactId>sensitive-word</artifactId>
+            <version>0.29.4</version>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-        </dependency>
-        <!-- Redisson 分布式锁 -->
-        <dependency>
-            <groupId>org.redisson</groupId>
-            <artifactId>redisson-spring-boot-starter</artifactId>
-            <version>3.30.0</version>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.14.0</version>
         </dependency>
     </dependencies>
-
+    <properties>
+        <maven.compiler.source>23</maven.compiler.source>
+        <maven.compiler.target>23</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
     <build>
         <plugins>
             <plugin>
@@ -66,7 +41,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <skip>false</skip>
-                    <mainClass>com.cainsgl.user.Application</mainClass>
+                    <mainClass>com.cainsgl.article.Application</mainClass>
                     <classifier>exec</classifier>
                 </configuration>
                 <executions>

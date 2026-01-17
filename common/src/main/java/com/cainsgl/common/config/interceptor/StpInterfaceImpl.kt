@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.stereotype.Component
 import javax.sql.DataSource
 
+
 private val logger = KotlinLogging.logger {}
 
 @Component

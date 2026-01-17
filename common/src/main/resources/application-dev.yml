@@ -2,3 +2,5 @@
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+forbidden:
+  filePath: C:\forbidden\forbidden.txt

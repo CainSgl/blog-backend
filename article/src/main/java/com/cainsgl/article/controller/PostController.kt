@@ -11,11 +11,13 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page
 import com.cainsgl.api.ai.AiService
 import com.cainsgl.api.user.extra.UserExtraInfoService
 import com.cainsgl.api.user.follow.UserFollowService
+import com.cainsgl.article.document.PostDocument
 import com.cainsgl.article.dto.request.*
 import com.cainsgl.article.dto.response.CreatePostResponse
 import com.cainsgl.article.dto.response.GetPostResponse
 import com.cainsgl.article.service.*
 import com.cainsgl.article.util.XssSanitizerUtils
+import com.cainsgl.common.annotation.RateLimitByToken
 import com.cainsgl.common.dto.request.OnlyId
 import com.cainsgl.common.dto.response.PageResponse
 import com.cainsgl.common.dto.response.ResultCode
@@ -24,6 +26,7 @@ import com.cainsgl.common.entity.article.DirectoryEntity
 import com.cainsgl.common.entity.article.PostEntity
 import com.cainsgl.common.entity.article.PostHistoryEntity
 import com.cainsgl.common.exception.BusinessException
+import com.cainsgl.senstitve.config.SensitiveWord
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
 import jakarta.servlet.http.HttpServletRequest
@@ -67,6 +70,9 @@ class PostController
     lateinit var postHistoryService: PostHistoryServiceImpl
     @Resource
     lateinit var postOperationService: PostOperationServiceImpl
+    @Resource
+    lateinit var postDocumentService: PostDocumentService
+
 
 
     //来自其他模块的，只能通过Service来访问
@@ -76,7 +82,8 @@ class PostController
     lateinit var aiService:AiService
     @Resource
     lateinit var userFollowService: UserFollowService
-
+    @Resource
+    lateinit var sensitiveWord: SensitiveWord
     @SaIgnore
     @GetMapping
     fun get(@RequestParam id: Long, @RequestParam simple: Boolean=false, request: HttpServletRequest,response: HttpServletResponse): Any
@@ -205,8 +212,8 @@ class PostController
             return ResultCode.RESOURCE_NOT_FOUND
         val postEntity = PostEntity(
             id = request.id,
-            title = request.title,
-            summary = request.summary,
+            title = sensitiveWord.replace(request.title),
+            summary = sensitiveWord.replace(request.summary),
             img=request.img,
             top = request.isTop
         )
@@ -251,7 +258,7 @@ class PostController
             .select("id","content","version","user_id")
             .eq("post_id", post.id).eq("user_id",userId).orderByDesc("version").last("LIMIT 1")
         val history = postHistoryService.getOne(historyQuery)
-        val sanitizedContent = XssSanitizerUtils.sanitize(history.content!!)
+        val sanitizedContent = sensitiveWord.replace(XssSanitizerUtils.sanitize(history.content!!))
         //检验是否有内容变更
         if(post.content==sanitizedContent)
         {
@@ -263,7 +270,6 @@ class PostController
         //重新写回历史版本，防止有人查看历史版本被攻击
         history.content=sanitizedContent
         history.createdAt=LocalDateTime.now()
-        //剩下的异步去处理就好了
         Thread.ofVirtual().start{
             postHistoryService.updateById(history)
             //注：这里再发布一个最新版本，是为了作者下次编辑文档的时候，返回他就好了
@@ -272,20 +278,23 @@ class PostController
             {
                 return@start
             }
-            val embedding = aiService.getEmbedding(post.content!!)
-            post.vecotr=embedding
-            post.status=ArticleStatus.PUBLISHED
-            post.publishedAt=LocalDateTime.now()
-            post.version=history.version
-            postService.updateById(post)
             //发送消息，这里不需要回调，也不需要保证可靠，不是强一致的需求，毕竟只是一次版本的迭代，问题不大
+            //TODO 后续这里的内容交给mq
             rocketMQClientTemplate.asyncSendNormalMessage("article:publish", request.id, null)
+            postDocumentService.save(PostDocument(id=post.id!!,title=post.title?: "",summary=post.summary,img=post.img,content=post.content, tags = post.tags))
             //延时双删
             //删除缓存
-            postService.removeCache(post.id!!)
             Thread.sleep(1000)
             postService.removeCache(post.id!!)
         }
+        val embedding = aiService.getEmbedding(post.content!!)
+        post.vecotr=embedding
+        post.status=ArticleStatus.PUBLISHED
+        post.publishedAt=LocalDateTime.now()
+        post.version=history.version
+        postService.updateById(post)
+        postService.removeCache(post.id!!)
+        //剩下的异步去处理就好了
         return ResultCode.SUCCESS
     }
 
@@ -299,7 +308,7 @@ class PostController
         wrapper.eq("id",id)
         wrapper.eq("user_id", userId)
         wrapper.set("status", ArticleStatus.OFF_SHELF)
-        return transactionTemplate.execute {
+        val result = transactionTemplate.execute {
             if (!postService.update(wrapper))
             {
                 return@execute ResultCode.RESOURCE_NOT_FOUND
@@ -308,15 +317,20 @@ class PostController
             wrapper2.eq("post_id",id)
             directoryService.remove(wrapper2)
         }?:ResultCode.SUCCESS
-
-        //删除历史版本
-
-    //    rocketMQClientTemplate.asyncSendNormalMessage("article:delete", id, null)
+        
+        // 异步删除 ES 中的文档，这里是简化实现
+        //TODO 后续要保证可靠性
+        Thread.ofVirtual().start {
+            postDocumentService.delete(id)
+        }
+        
+        return result
     }
 
 
     @SaIgnore
     @PostMapping("/search")
+    @RateLimitByToken(interval = 5000,limit = 1, message = "精准语义搜索5秒内仅能搜索一次！")
     fun searchPost(@RequestBody request: SearchPostRequest):Any
     {
         if (request.vectorOffset==null)
@@ -339,7 +353,23 @@ class PostController
         }
         return postChunkVectorService.getPostsByVector(targetVector = embedding, request.vectorOffset!!)
     }
-
+    @SaIgnore
+    @PostMapping("/search/vector")
+    fun searchEsPost(@RequestBody request: SearchPostRequest):Any
+    {
+       val embedding=aiService.getEmbedding(request.query)
+        return postService.getPostBySimilarVector(embedding)
+    }
+    @SaIgnore
+    @PostMapping("/search/es")
+    fun searchEsPost(@RequestBody request: SearchEsPostRequest):Any
+    {
+        if(request.query.length>30)
+        {
+            return ResultCode.PARAM_INVALID
+        }
+        return postDocumentService.search(request.query,request.useTag,request.useContent,request.size,request.searchAfter)
+    }
     @SaIgnore
     @PostMapping("/list")
     fun list(@RequestBody @Valid request: PageUserIdListRequest):Any

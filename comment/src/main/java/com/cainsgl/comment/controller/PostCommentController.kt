@@ -6,6 +6,7 @@ import com.cainsgl.api.article.post.PostService
 import com.cainsgl.comment.dto.request.CommentPostRequest
 import com.cainsgl.comment.entity.PostsCommentEntity
 import com.cainsgl.comment.service.PostsCommentServiceImpl
+import com.cainsgl.senstitve.config.SensitiveWord
 import jakarta.annotation.Resource
 import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.bind.annotation.*
@@ -21,7 +22,10 @@ class PostCommentController
     @Resource
     lateinit var transactionTemplate: TransactionTemplate
 
-    //其他模块的
+    //其他模块的调用
+    @Resource
+    lateinit var sensitiveWord: SensitiveWord
+
     @Resource
     lateinit var postService: PostService
 
@@ -38,11 +42,13 @@ class PostCommentController
     fun create(@RequestBody request: CommentPostRequest): String
     {
         val id = IdWorker.getId()
+        //屏蔽敏感词
+        val content=sensitiveWord.replace(request.content)
         return transactionTemplate.execute {
             postsCommentService.save(
                 PostsCommentEntity(
                     id = id,
-                    content = request.content,
+                    content = content,
                     userId = StpUtil.getLoginIdAsLong(),
                     version = request.version,
                     postId = request.postId

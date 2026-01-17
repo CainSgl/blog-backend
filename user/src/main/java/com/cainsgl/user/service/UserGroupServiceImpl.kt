@@ -1,0 +1,40 @@
+package com.cainsgl.user.service
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
+import com.baomidou.mybatisplus.extension.service.IService
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
+import com.cainsgl.common.entity.user.UserGroupEntity
+import com.cainsgl.common.exception.BSystemException
+import com.cainsgl.user.dto.response.vo.CollectType
+import com.cainsgl.user.repository.UserGroupMapper
+import org.springframework.stereotype.Service
+
+@Service
+class UserGroupServiceImpl : ServiceImpl<UserGroupMapper, UserGroupEntity>(), IService<UserGroupEntity>
+{
+    /**
+     * @param publish 为true代表只获取公开
+     */
+    fun getByUserIdAndType(userId: Long, type: String?,publish:Boolean=false): Map<String, List<UserGroupEntity>> {
+        val queryWrapper= QueryWrapper<UserGroupEntity>()
+        queryWrapper.eq("user_id",userId)
+            .apply {
+                if (type != null) {
+                    eq("type", CollectType.fromStr(type).code)
+                }
+                if (publish) {
+                    eq("publish", true)
+                }
+            }
+        return baseMapper.selectList(queryWrapper).groupBy { CollectType.fromNumber(it.type ?: -1).str }
+    }
+    fun addGroup(userId: Long, type:String,name:String): UserGroupEntity {
+        val fromStr = CollectType.fromStr(type)
+        if(fromStr == CollectType.UNKNOWN) {
+            throw BSystemException("未知的收藏类型")
+        }
+        val group = UserGroupEntity(userId=userId,type=fromStr.code,name=name)
+        baseMapper.insert(group)
+        return group
+    }
+}

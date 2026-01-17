@@ -2,7 +2,6 @@ package com.cainsgl.article.dto.request
 
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
-import jakarta.validation.constraints.NotEmpty
 import java.time.LocalDateTime
 
 data class CreatePostRequest(
@@ -17,11 +16,21 @@ data class CreatePostRequest(
 //    @field:Min(1,  message="公布的文章id非法")
 //    val id: Long
 //)
-
+data class SearchEsPostRequest(
+    var query: String,
+    @field:Max(value = 30, message = "error")
+    var size:Int=20,
+    var useTag: Boolean = false,
+    var useContent: Boolean = false,
+    var searchAfter: List<Any>? = null
+)
 
 data class SearchPostRequest(
     var query: String,
-    var vectorOffset: Double?
+    var vectorOffset: Double?,
+    var page: Int? = 0,
+    @field:Max(value = 100, message = "每页数量不能超过100")
+    var size: Int? = 20
 )
 
 data class UpdatePostRequest(
@@ -38,6 +47,6 @@ data class CursorPostRequest(
     val lastUpdatedAt: LocalDateTime?,
     val lastLikeRatio: Double?,
     val lastId: Long?,
-    @field:Max(value = 100, message = "分页最大不能超过100")
+    @field:Max(value = 100, message = "每页数量不能超过100")
     val pageSize: Int
 )

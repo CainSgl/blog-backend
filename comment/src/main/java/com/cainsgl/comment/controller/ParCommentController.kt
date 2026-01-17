@@ -12,6 +12,7 @@ import com.cainsgl.comment.service.ParagraphServiceImpl
 import com.cainsgl.comment.service.PostsCommentServiceImpl
 import com.cainsgl.comment.service.ReplyServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
+import com.cainsgl.senstitve.config.SensitiveWord
 import jakarta.annotation.Resource
 import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.bind.annotation.*
@@ -32,6 +33,8 @@ class ParCommentController
     lateinit var transactionTemplate: TransactionTemplate
 
     @Resource
+    lateinit var sensitiveWord: SensitiveWord
+    @Resource
     lateinit var replyService: ReplyServiceImpl
     //其他模块的
     @Resource
@@ -40,8 +43,13 @@ class ParCommentController
     lateinit var postsCommentService: PostsCommentServiceImpl
     //创建评论
     @PostMapping
-    fun createComment(@RequestBody request: CreateParagraphRequest): String
+    fun createComment(@RequestBody request: CreateParagraphRequest): Any
     {
+        if(request.content.length > 255)
+        {
+            return ResultCode.PARAM_INVALID
+        }
+
         return transactionTemplate.execute {status->
             val id = IdWorker.getId()
             if (!postService.addCommentCount(id=request.postId,1))
@@ -49,6 +57,7 @@ class ParCommentController
                 status.setRollbackOnly()
                 return@execute null
             }
+            val content=sensitiveWord.replace(request.content)
             paragraphService.incrementCount(postId = request.postId, version = request.version, dataId = request.dataId)
             parCommentService.save(
                 ParCommentEntity(
@@ -57,7 +66,7 @@ class ParCommentController
                     dataId = request.dataId,
                     version = request.version,
                     postId = request.postId,
-                    content = request.content
+                    content =content
                 )
             )
             return@execute id.toString()
@@ -87,6 +96,7 @@ class ParCommentController
         lastId: Long?
     ): List<ReplyEntity>
     {
+
         if (postCommentId != null)
         {
             return replyService.getByPostCommentIdCursor(postCommentId, lastCreatedAt, lastLikeCount,lastId);
@@ -101,15 +111,20 @@ class ParCommentController
     @PostMapping("/reply")
     fun createReply(@RequestBody request: CreateReplyRequest): Any
     {
+        if(request.content.length > 255)
+        {
+            return ResultCode.PARAM_INVALID
+        }
         if (request.parCommentId == null && request.postCommentId == null)
         {
             return ResultCode.MISSING_PARAM
         }
         val id = IdWorker.getId()
+        val content=sensitiveWord.replace(request.content)
         val replyEntity = ReplyEntity(
             id = id,
             userId = StpUtil.getLoginIdAsLong(),
-            content = request.content,
+            content =content,
             replyId = request.replyId,
             postCommentId = request.postCommentId,
             parCommentId = request.parCommentId

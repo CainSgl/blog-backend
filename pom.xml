@@ -27,6 +27,8 @@
         <module>api-article</module>
         <module>api-ai</module>
         <module>api-go</module>
+        <!-- 伪模块 -->
+        <module>sensitive</module>
         <!-- 业务模块 -->
         <module>user</module>
         <module>article</module>
@@ -34,8 +36,10 @@
         <module>consumer</module>
         <module>scheduler</module>
         <module>comment</module>
+
         <!-- 聚合模块 -->
         <module>aggregate</module>
+
 
     </modules>
 

@@ -122,4 +122,15 @@ class UserController
         userService.updateById(userEntity)
         return ResultCode.SUCCESS
     }
+    @GetMapping("/search")
+    fun search(@RequestParam keyword: String): Any
+    {
+        //直接根据id搜索用户
+        val user = userService.getById(keyword.toLongOrNull()?:0)
+        if(user!=null)
+        {
+            return UserGetResponse(user,userExtraInfoService.getBySaveOnNull(user.id!!))
+        }
+        return ResultCode.RESOURCE_NOT_FOUND
+    }
 }

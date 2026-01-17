@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -40,19 +41,21 @@ class BackGroundController : InitializingBean
 
 
     private var backGrounds: List<String>? = null
-    fun getRandom(): String
+    fun getBackground(num: Int): String
     {
-        if (backGrounds == null)
+        if(backGrounds != null)
         {
-            return ""
+
+            return backGrounds!![num%backGrounds!!.size]
         }
-        return backGrounds!!.random()
+        return ""
     }
 
-    @GetMapping("/background")
+    @GetMapping("/background/{num}")
     fun getBackground(
         request: HttpServletRequest,
-        response: HttpServletResponse
+        response: HttpServletResponse,
+        @PathVariable num: Int
     )
     {
         //获取请求头里的etag
@@ -62,7 +65,7 @@ class BackGroundController : InitializingBean
             val count= eTag.toInt()
           if(count>3)
           {
-              val url = getRandom()
+              val url = getBackground(num)
               response.setHeader("ETag", "0");
               fileService.getFile(url, false, response, "welcome.png")
           }else
@@ -73,6 +76,6 @@ class BackGroundController : InitializingBean
           }
         }
         response.setHeader("ETag", "0");
-        fileService.getFile(getRandom(), false, response, "welcome.png")
+        fileService.getFile(getBackground(num), false, response, "welcome.png")
     }
 }

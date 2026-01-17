@@ -1,5 +1,6 @@
 # 生产环境配置
-
+forbidden:
+  filePath: /forbidden/forbidden.txt
 # gRPC 客户端配置
 grpc:
   client:

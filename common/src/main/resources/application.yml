@@ -1,4 +1,24 @@
 spring:
+  ai:
+    chat:
+      client:
+        enabled: false
+    openai:
+      base-url: ${ai.base-url}
+      api-key: ${ai.api-key}
+      chat:
+        options:
+          model: ${ai.chat.model}
+          max-tokens: ${ai.chat.max-tokens}
+        completions-path: /chat/completions
+      embedding:
+        api-key: ${ai.embedding.api-key}
+        base-url: ${ai.embedding.base-url}
+        options:
+          model: ${ai.embedding.model}
+        embeddings-path: /embeddings
+    retry:
+      max-attempts: 1
   servlet:
     multipart:
       enabled: true
@@ -22,7 +42,7 @@ spring:
     password: ${es.password}
     restclient:
       ssl:
-        bundle:
+        bundle: es-ssl-bundle
   profiles:
     active: ${system.profiles-active}
   datasource:
@@ -47,6 +67,13 @@ spring:
         pool:
           max-active: 8
           max-idle: 8
+  ssl:
+    bundle:
+      pem:
+        es-ssl-bundle:
+          truststore:
+            certificate: ${es.ssl-bundle.trust-certificate}
+
 
 mybatis-plus:
   type-handlers-package: com.cainsgl.common.handler
@@ -116,7 +143,7 @@ sa-token:
   token-style: uuid
 dimensions: 1024
 
-
 #服务参数，这里是代表一次性处理多少日志
 userLog:
   batchNumber: 30
+

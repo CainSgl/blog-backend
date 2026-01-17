@@ -4,4 +4,3 @@ spring:
   config:
     import:
       - classpath:env.yaml
-      - classpath:ai-config.yaml

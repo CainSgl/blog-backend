@@ -83,6 +83,13 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
           return@getWithFineLock  baseMapper.selectSimilarPostsByVector(id,10)
         }?: emptyList()
     }
+    fun getPostBySimilarVector(embedding: FloatArray): List<PostEntity>
+    {
+        return baseMapper.selectPostsByVector(embedding,10)
+    }
+
+
+
     override fun getById(id: Long): PostEntity?
     {
         return baseMapper.selectById(id)
@@ -98,6 +105,7 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
         return entity.vecotr
         //    return baseMapper.selectVectorById(id)
     }
+
 
     override fun addViewCount(id: Long, count: Int): Boolean
     {

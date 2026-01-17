@@ -20,6 +20,7 @@ import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.KnowledgeBaseEntity
 import com.cainsgl.common.exception.BusinessException
+import com.cainsgl.senstitve.config.SensitiveWord
 import jakarta.annotation.Resource
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Min
@@ -40,7 +41,8 @@ class KnowledgeBaseController
 
     @Resource
     lateinit var directoryService: DirectoryServiceImpl
-
+    @Resource
+    lateinit var sensitiveWord: SensitiveWord
     @SaIgnore
     @GetMapping
     fun get(@RequestParam @Min(value = 1, message = "知识库id非法") id: Long): Any
@@ -163,7 +165,7 @@ class KnowledgeBaseController
         val userId = StpUtil.getLoginIdAsLong()
         val kbEntity = KnowledgeBaseEntity(
             userId = userId,
-            name = request.name,
+            name = sensitiveWord.replace(request.name),
             index = request.index,
             coverUrl = request.coverUrl
         )
@@ -185,7 +187,7 @@ class KnowledgeBaseController
         val kbEntity = KnowledgeBaseEntity(
             status = request.status,
             name = request.name,
-            index = request.content,
+            index = sensitiveWord.replace(request.content),
             coverUrl = request.coverUrl
         )
         if (knowledgeBaseService.update(kbEntity, updateWrapper))

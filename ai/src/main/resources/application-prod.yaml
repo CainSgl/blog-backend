@@ -1,7 +1,3 @@
 spring:
   application:
     name: ai-prod
-  config:
-    import:
-      - classpath:env.yaml
-      - classpath:ai-config.yaml

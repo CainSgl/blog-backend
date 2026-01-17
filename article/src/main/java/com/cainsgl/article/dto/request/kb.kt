@@ -25,6 +25,6 @@ data class CursorKbRequest(
     val lastCreatedAt: LocalDateTime?,
     val lastLike: Int?,
     val lastId: Long?,
-    @field:Max(value = 100, message = "分页最大不能超过100")
+    @field:Max(value = 100, message = "每页数量不能超过100")
     val pageSize: Int
 )

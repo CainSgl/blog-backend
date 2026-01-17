@@ -6,6 +6,9 @@ import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.ast.TextCollectingVisitor
 import com.vladsch.flexmark.util.data.MutableDataSet
+import org.jsoup.Jsoup
+
+
 
 /**
  * GFM切分工具
@@ -18,8 +21,7 @@ object GfmChunkUtils
     private const val BASE_CHUNK_MAX = 2000
     private const val SENTENCES_PER_CHUNK = 4
 
-    /** HTML标签正则表达式 */
-    private val HTML_TAG_REGEX = Regex("<[^>]*>")
+
 
     private val parser: Parser = Parser.builder(MutableDataSet().apply {
         set(
@@ -36,11 +38,9 @@ object GfmChunkUtils
      */
     fun chunk(gfmContent: String): List<String>
     {
-        if (gfmContent.isBlank()) return emptyList()
-
         // 先去除HTML标签但保留内容
-        val contentWithoutHtml = removeHtmlTags(gfmContent)
-
+        val contentWithoutHtml: String = Jsoup.parse(gfmContent).text()
+        if (gfmContent.isBlank()) return emptyList()
         val document = parser.parse(contentWithoutHtml)
         val plainTexts = mutableListOf<String>()
 
@@ -52,10 +52,8 @@ object GfmChunkUtils
             if (cleanText.isNotEmpty()) plainTexts.add(cleanText)
             child = child.next
         }
-
         // 合并为基础块(500-2000字符)
         val baseChunks = mergeToBaseChunks(plainTexts)
-
         // 拆分为子块(100-200字符)
         return baseChunks.flatMap { splitToSubChunks(it) }
     }
@@ -119,10 +117,7 @@ object GfmChunkUtils
         return chunks
     }
 
-    /** 去除HTML标签但保留内容 */
-    fun removeHtmlTags(text: String): String {
-        return text.replace(HTML_TAG_REGEX, "")
-    }
+
 
     /** 按大小拆分，优先在标点处切断 */
     private fun splitBySize(text: String, maxSize: Int): List<String>

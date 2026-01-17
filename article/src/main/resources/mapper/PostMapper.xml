@@ -69,4 +69,12 @@
         LIMIT #{limit}
     </select>
 
+    <select id="selectPostsByVector" resultMap="PostResultMap">
+        SELECT <include refid="Basic_Column_List"/>,
+        (vector &lt;-&gt; #{targetVector, typeHandler=com.cainsgl.common.handler.VectorTypeHandler}) AS similarity_distance
+        FROM posts
+        WHERE status >= 'published'
+        ORDER BY similarity_distance
+        LIMIT #{limit}
+    </select>
 </mapper>
