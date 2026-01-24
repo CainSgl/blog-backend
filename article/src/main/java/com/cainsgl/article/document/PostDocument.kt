@@ -16,7 +16,7 @@ import org.springframework.data.elasticsearch.annotations.Setting
 @Setting(shards = 3, replicas = 1)
 data class PostDocument(
     @Id
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var id: Long,
 
     @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_smart")

@@ -27,9 +27,7 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
     }
 
     /**
-     * 或许源码看到这里，你会质疑为什么不用分布式锁，这里主要是因为这里只做缓存，多台机子去数据库读问题不大，无非就是多写几次
-     * 而用户额外信息必须拿分布式锁是因为那是强一致性需求，里面的点赞数，被关注数是会动态更新的，如果只是本机加锁会有不一致的问题
-     * 这也是这里的获取方式与那里不太相同的原因，因为不是用hash存储的，而是直接用string序列化存储的，可以直接获取
+     * TODO，后续降级，不是所有都应该缓存到redis里的
      */
     fun getPost(id: Long): PostEntity?
     {
@@ -93,6 +91,12 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
     override fun getById(id: Long): PostEntity?
     {
         return baseMapper.selectById(id)
+    }
+
+    override fun getByIds(ids: List<Long>): List<PostEntity>
+    {
+        if (ids.isEmpty()) return emptyList()
+        return listByIds(ids)
     }
 
     override fun getVectorById(id: Long): FloatArray?

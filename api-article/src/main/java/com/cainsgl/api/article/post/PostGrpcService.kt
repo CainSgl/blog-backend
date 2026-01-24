@@ -4,6 +4,7 @@ import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.PostEntity
 import com.cainsgl.grpc.article.AddViewCountRequest
 import com.cainsgl.grpc.article.GetPostByIdRequest
+import com.cainsgl.grpc.article.GetPostsByIdsRequest
 import com.cainsgl.grpc.article.GetVectorByIdRequest
 import com.cainsgl.grpc.article.PostServiceGrpc
 import net.devh.boot.grpc.client.inject.GrpcClient
@@ -26,6 +27,15 @@ class PostGrpcService : PostService
         val response = postServiceGrpc.getById(request)
         if (!response.exists) return null
         return response.post.toEntity()
+    }
+
+    override fun getByIds(ids: List<Long>): List<PostEntity>
+    {
+        val request = GetPostsByIdsRequest.newBuilder()
+            .addAllIds(ids)
+            .build()
+        val response = postServiceGrpc.getByIds(request)
+        return response.postsList.map { it.toEntity() }
     }
 
     override fun getVectorById(id: Long): FloatArray?

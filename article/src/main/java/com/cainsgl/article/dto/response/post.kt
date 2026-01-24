@@ -10,11 +10,11 @@ import java.time.LocalDateTime
 
 data class CreatePostResponse(
     val post: PostEntity,
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     val dirId: Long
 )
 data class GetPostResponse(
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var id: Long? = null,
     var title: String? = null,
     var content: String ?= null,
@@ -26,9 +26,9 @@ data class GetPostResponse(
     var likeCount: Int? = null,
     var commentCount: Int? = null,
     var tags: List<String>? = null,
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var userId: Long? = null,
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var categoryId: Long? = null,
     var seoKeywords: String? = null,
     var seoDescription: String? = null,
@@ -36,7 +36,7 @@ data class GetPostResponse(
     var createdAt: LocalDateTime?=null,
     var updatedAt: LocalDateTime?=null,
     var publishedAt: LocalDateTime? = null,
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var kbId: Long? = null,
     var operate:Set<OperateType>,
     var version:Int?=null,

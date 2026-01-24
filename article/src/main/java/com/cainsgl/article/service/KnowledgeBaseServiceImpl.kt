@@ -18,6 +18,11 @@ class KnowledgeBaseServiceImpl : ServiceImpl<KnowledgeBaseMapper, KnowledgeBaseE
         baseMapper.update(wrapper)
     }
 
+    override fun getByIds(ids: List<Long>): List<KnowledgeBaseEntity> {
+        if (ids.isEmpty()) return emptyList()
+        return listByIds(ids)
+    }
+
     fun cursor(lastCreatedAt: LocalDateTime?, lastLike: Int?, lastId: Long?, pageSize: Int): List<KnowledgeBaseEntity>
     {
         if (lastCreatedAt == null || lastLike == null || lastId == null)

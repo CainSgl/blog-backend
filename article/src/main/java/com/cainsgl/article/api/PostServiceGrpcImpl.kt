@@ -33,6 +33,16 @@ class PostServiceGrpcImpl : PostServiceGrpc.PostServiceImplBase()
         responseObserver.onCompleted()
     }
 
+    override fun getByIds(request: GetPostsByIdsRequest, responseObserver: StreamObserver<GetPostsByIdsResponse>)
+    {
+        val posts = postService.getByIds(request.idsList)
+        val response = GetPostsByIdsResponse.newBuilder()
+            .addAllPosts(posts.map { it.toProto() })
+            .build()
+        responseObserver.onNext(response)
+        responseObserver.onCompleted()
+    }
+
     override fun getVectorById(request: GetVectorByIdRequest, responseObserver: StreamObserver<GetVectorByIdResponse>)
     {
         val vector: FloatArray? = postService.getVectorById(request.id)

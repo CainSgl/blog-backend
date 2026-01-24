@@ -9,7 +9,7 @@ import java.time.LocalDateTime
 
 //这个是给别人看的，屏蔽一些用户的字段
 data class UserGetResponse(
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var id: Long?,
     var username: String?,
     var nickname: String?,
@@ -47,7 +47,7 @@ data class UserGetResponse(
 }
 
 data class UserCurrentResponse(
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var id: Long? = null,
     var username: String ?=null,
     var email: String? = null,

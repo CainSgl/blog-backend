@@ -21,8 +21,7 @@ import java.time.LocalDateTime
 
 @RestController
 @RequestMapping("/comment")
-class ParCommentController
-{
+class ParCommentController {
     @Resource
     private lateinit var parCommentService: ParCommentServiceImpl
 
@@ -34,30 +33,30 @@ class ParCommentController
 
     @Resource
     lateinit var sensitiveWord: SensitiveWord
+
     @Resource
     lateinit var replyService: ReplyServiceImpl
+
     //其他模块的
     @Resource
     lateinit var postService: PostService
+
     @Resource
     lateinit var postsCommentService: PostsCommentServiceImpl
+
     //创建评论
     @PostMapping
-    fun createComment(@RequestBody request: CreateParagraphRequest): Any
-    {
-        if(request.content.length > 255)
-        {
+    fun createComment(@RequestBody request: CreateParagraphRequest): Any {
+        if (request.content.length > 255) {
             return ResultCode.PARAM_INVALID
         }
-
-        return transactionTemplate.execute {status->
+        return transactionTemplate.execute { status ->
             val id = IdWorker.getId()
-            if (!postService.addCommentCount(id=request.postId,1))
-            {
+            if (!postService.addCommentCount(id = request.postId, 1)) {
                 status.setRollbackOnly()
                 return@execute null
             }
-            val content=sensitiveWord.replace(request.content)
+            val content = sensitiveWord.replace(request.content)
             paragraphService.incrementCount(postId = request.postId, version = request.version, dataId = request.dataId)
             parCommentService.save(
                 ParCommentEntity(
@@ -66,10 +65,13 @@ class ParCommentController
                     dataId = request.dataId,
                     version = request.version,
                     postId = request.postId,
-                    content =content
+                    content = content
                 )
             )
-            return@execute id.toString()
+            val res=HashMap<String,String>();
+            res["id"] = id.toString();
+            res["content"]=content?:"";
+            return@execute res;
         } ?: "error"
     }
 
@@ -81,10 +83,9 @@ class ParCommentController
         @RequestParam dataId: Int,
         @RequestParam lastCreatedAt: LocalDateTime?,
         @RequestParam lastLikeCount: Int?,
-        @RequestParam lastId:Long?
-    ): List<ParCommentEntity>
-    {
-        return parCommentService.getByCursor(postId, version, dataId, lastCreatedAt, lastLikeCount,lastId)
+        @RequestParam lastId: Long?
+    ): List<ParCommentEntity> {
+        return parCommentService.getByCursor(postId, version, dataId, lastCreatedAt, lastLikeCount, lastId)
     }
 
     @GetMapping("/reply")
@@ -94,66 +95,64 @@ class ParCommentController
         lastCreatedAt: LocalDate?,
         lastLikeCount: Int?,
         lastId: Long?
-    ): List<ReplyEntity>
-    {
+    ): List<ReplyEntity> {
 
-        if (postCommentId != null)
-        {
-            return replyService.getByPostCommentIdCursor(postCommentId, lastCreatedAt, lastLikeCount,lastId);
+        if (postCommentId != null) {
+            return replyService.getByPostCommentIdCursor(postCommentId, lastCreatedAt, lastLikeCount, lastId);
         }
-        if (parCommentId != null)
-        {
-            return replyService.getByParCommentIdCursor(parCommentId, lastCreatedAt, lastLikeCount,lastId);
+        if (parCommentId != null) {
+            return replyService.getByParCommentIdCursor(parCommentId, lastCreatedAt, lastLikeCount, lastId);
         }
         return emptyList()
     }
 
     @PostMapping("/reply")
-    fun createReply(@RequestBody request: CreateReplyRequest): Any
-    {
-        if(request.content.length > 255)
-        {
+    fun createReply(@RequestBody request: CreateReplyRequest):Any {
+        if (request.content.length > 255) {
             return ResultCode.PARAM_INVALID
         }
-        if (request.parCommentId == null && request.postCommentId == null)
-        {
+        if (request.parCommentId == null && request.postCommentId == null) {
             return ResultCode.MISSING_PARAM
         }
         val id = IdWorker.getId()
-        val content=sensitiveWord.replace(request.content)
+        val content = sensitiveWord.replace(request.content)
         val replyEntity = ReplyEntity(
             id = id,
             userId = StpUtil.getLoginIdAsLong(),
-            content =content,
+            content = content,
             replyId = request.replyId,
             postCommentId = request.postCommentId,
             parCommentId = request.parCommentId
         )
-        return transactionTemplate.execute { status->
-            if (!postService.addCommentCount(id=request.postId,1))
-            {
+
+        val entityId:String= transactionTemplate.execute { status ->
+            if (!postService.addCommentCount(id = request.postId, 1)) {
                 status.setRollbackOnly()
                 return@execute null
             }
-            if(request.parCommentId!=null)
-            {
-                if(request.dataId==null)
-                {
+            if (request.parCommentId != null) {
+                if (request.dataId == null) {
                     status.setRollbackOnly()
                     return@execute null
                 }
-                if (!parCommentService.addReplyCount(id=request.parCommentId, 1))
-                {
+                if (!parCommentService.addReplyCount(id = request.parCommentId, 1)) {
                     status.setRollbackOnly()
                     return@execute null
                 }
-                paragraphService.incrementCount(postId = request.postId, version = request.version, dataId = request.dataId)
-            }else
-            {
-                postsCommentService.addCommentCount(id=request.postCommentId!!,1)
+                paragraphService.incrementCount(
+                    postId = request.postId,
+                    version = request.version,
+                    dataId = request.dataId
+                )
+            } else {
+                postsCommentService.addCommentCount(id = request.postCommentId!!, 1)
             }
             replyService.save(replyEntity)
-            return@execute id;
-        }?:"error"
+            return@execute id.toString();
+        } ?: "error";
+        val res=HashMap<String,String>();
+        res["id"] = entityId;
+        res["content"]=content?:"";
+        return res;
     }
 }

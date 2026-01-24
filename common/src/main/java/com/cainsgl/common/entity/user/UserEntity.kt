@@ -12,7 +12,7 @@ import kotlin.math.pow
 @TableName("users")
 data class UserEntity(
     @TableId(type = IdType.ASSIGN_ID)
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var id: Long? = null,
 
     @TableField("username")

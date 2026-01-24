@@ -6,12 +6,15 @@ import jakarta.validation.constraints.NotEmpty
 data class PostGroupRequest(
     val type: String,
     val name: String = "未命名分组",
+    val description: String = "",
+    val publish: Boolean = false,
 )
 
 data class PutGroupRequest(
     val id: Long,
-    @field:NotEmpty(message = "分组名称不能为空")
-    val name: String,
+    val name: String?=null,
+    val description: String?=null,
+    val publish: Boolean?=null,
 )
 
 data class PageCollectRequest(
@@ -23,4 +26,5 @@ data class PageCollectRequest(
 data class PostCollectRequest(
     val targetId: Long,
     val groupId: Long,
+
 )

@@ -6,6 +6,7 @@ import com.cainsgl.api.article.post.PostService
 import com.cainsgl.comment.dto.request.CommentPostRequest
 import com.cainsgl.comment.entity.PostsCommentEntity
 import com.cainsgl.comment.service.PostsCommentServiceImpl
+import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.senstitve.config.SensitiveWord
 import jakarta.annotation.Resource
 import org.springframework.transaction.support.TransactionTemplate
@@ -39,7 +40,7 @@ class PostCommentController
     }
 
     @PostMapping
-    fun create(@RequestBody request: CommentPostRequest): String
+    fun create(@RequestBody request: CommentPostRequest): Any
     {
         val id = IdWorker.getId()
         //屏蔽敏感词
@@ -55,7 +56,10 @@ class PostCommentController
                 )
             )
             postService.addCommentCount(request.postId, 1)
-            return@execute id.toString()
-        } ?: "error"
+            val res=HashMap<String,String>();
+            res["id"] = id.toString();
+            res["content"]=content?:"";
+            return@execute res
+        }?:ResultCode.UNKNOWN_ERROR;
     }
 }

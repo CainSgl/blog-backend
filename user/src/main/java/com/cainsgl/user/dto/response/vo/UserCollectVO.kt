@@ -15,7 +15,6 @@ enum class CollectType(
 {
     POST(0, "文章"),
     KB(2, "知识库"),
-    COMMENT(1, "评论"),
     UNKNOWN(-1, "未知");
     companion object
     {
@@ -31,11 +30,11 @@ enum class CollectType(
 class UserCollectGroupVO(userCollect: UserGroupEntity)
 {
 
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var id: Long? = null
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var name: String? = null
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var type: CollectType? = null
     init
     {

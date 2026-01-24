@@ -11,15 +11,15 @@ import java.time.LocalDate
 @TableName(value = "replys")
 data class ReplyEntity(
     @TableId(type = IdType.ASSIGN_ID)
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var id: Long? = null,
 
     @TableField("par_comment_id")
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var parCommentId: Long? = null,
 
     @TableField("user_id")
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var userId: Long? = null,
 
     @TableField("content")
@@ -32,10 +32,10 @@ data class ReplyEntity(
     var createdAt: LocalDate? = null,
 
     @TableField("post_comment_id")
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var postCommentId: Long? = null,
 
     @TableField("reply_id")
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var replyId: Long? = null,
 )

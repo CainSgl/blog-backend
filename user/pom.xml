@@ -21,6 +21,11 @@
             <artifactId>common</artifactId>
             <version>1.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.cainsgl</groupId>
+            <artifactId>api-article</artifactId>
+            <version>1.0</version>
+        </dependency>
         <!-- Redis集成 -->
         <dependency>
             <groupId>com.cainsgl</groupId>
@@ -45,7 +50,7 @@
         <dependency>
             <groupId>org.redisson</groupId>
             <artifactId>redisson-spring-boot-starter</artifactId>
-            <version>3.30.0</version>
+            <version>3.52.0</version>
         </dependency>
 
     </dependencies>

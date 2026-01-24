@@ -13,7 +13,7 @@ import java.time.LocalDateTime
 data class PostArchiveEntity(
 
     @TableId(type = IdType.ASSIGN_ID)
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var id: Long? = null,
 
     @TableField("post_title")
@@ -29,7 +29,7 @@ data class PostArchiveEntity(
     var archiveTime: LocalDateTime? =null,
 
     @TableField("operator_id")
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var operatorId: Long? = null,
 
     @TableField("remark")

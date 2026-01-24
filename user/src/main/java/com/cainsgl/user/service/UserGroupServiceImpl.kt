@@ -28,12 +28,12 @@ class UserGroupServiceImpl : ServiceImpl<UserGroupMapper, UserGroupEntity>(), IS
             }
         return baseMapper.selectList(queryWrapper).groupBy { CollectType.fromNumber(it.type ?: -1).str }
     }
-    fun addGroup(userId: Long, type:String,name:String): UserGroupEntity {
+    fun addGroup(userId: Long, type:String,name:String,description:String,publish: Boolean): UserGroupEntity {
         val fromStr = CollectType.fromStr(type)
         if(fromStr == CollectType.UNKNOWN) {
             throw BSystemException("未知的收藏类型")
         }
-        val group = UserGroupEntity(userId=userId,type=fromStr.code,name=name)
+        val group = UserGroupEntity(userId=userId,type=fromStr.code,name=name, description = description,publish = publish)
         baseMapper.insert(group)
         return group
     }

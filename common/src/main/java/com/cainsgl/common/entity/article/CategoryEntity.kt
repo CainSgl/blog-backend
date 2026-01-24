@@ -11,12 +11,12 @@ import java.time.LocalDateTime
 @TableName("categories")
 class CategoryEntity(
     @TableId(type = IdType.ASSIGN_ID)
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var id: Long? = null,
     @TableField("name")
     var name: String? = null,
     @TableField("parent_id")
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var parentId: Long? = null,
     @TableField("created_at")
     var createdAt: LocalDateTime? = null

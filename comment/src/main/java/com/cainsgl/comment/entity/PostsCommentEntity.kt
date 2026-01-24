@@ -8,21 +8,21 @@ import java.time.LocalDateTime
 @TableName("posts_comment")
 data class PostsCommentEntity(
     @TableId(type = IdType.AUTO)
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var id: Long? = null,
 
     @TableField("content")
     var content: String? = null,
 
     @TableField("post_id")
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var postId: Long? = null,
 
     @TableField("version")
     var version: Int? = null,
 
     @TableField("user_id")
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var userId: Long? = null,
 
     @TableField(value = "created_at", fill = FieldFill.INSERT)

@@ -12,11 +12,11 @@ import java.time.LocalDateTime
 @TableName("knowledge_bases")
 data class KnowledgeBaseEntity(
     @TableId(type = IdType.ASSIGN_ID)
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var id: Long? = null,
 
     @TableField("user_id")
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var userId: Long? = null,
 
     @TableField("name")

@@ -49,10 +49,10 @@ class UserLogServiceImpl : ServiceImpl<UserLogMapper, UserLogEntity>(), UserLogS
             {
                 return@execute 0
             }
-            val ids = list!!.mapNotNull { it.id }
+            val ids = list.mapNotNull { it.id }
             val update= UpdateWrapper<UserLogEntity>().set("processed",true).`in`("id",ids)
             update(update)
-            return@execute list!!.size
+            return@execute list.size
         }
         if (size == null || size < -1)
         {

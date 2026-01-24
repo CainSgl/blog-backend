@@ -13,7 +13,7 @@ import org.springframework.data.redis.core.RedisTemplate
 @TableName(value = "user_extra_infos", autoResultMap = true)
 open class UserExtraInfoEntity(
     @TableId(value = "user_id", type = IdType.INPUT)
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var userId: Long? = null,
 
     @TableField("follower_count")

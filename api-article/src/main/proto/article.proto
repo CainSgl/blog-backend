@@ -45,6 +45,13 @@ message GetPostByIdResponse {
     PostEntity post = 2;
 }
 
+message GetPostsByIdsRequest {
+    repeated int64 ids = 1;
+}
+
+message GetPostsByIdsResponse {
+    repeated PostEntity posts = 1;
+}
 
 //获取文章向量的
 message GetVectorByIdRequest{
@@ -60,6 +67,7 @@ message AddViewCountRequest{
 }
 
 service PostService {
+    rpc getByIds (GetPostsByIdsRequest) returns (GetPostsByIdsResponse);
     rpc getById (GetPostByIdRequest) returns (GetPostByIdResponse);
     rpc getVectorById (GetVectorByIdRequest) returns(GetVectorByIdResponse);
     rpc addViewCount (AddViewCountRequest) returns (RemoveVectorResponse);
@@ -130,8 +138,16 @@ message AddKbLikeCountRequest {
     int32 add_count = 2;
 }
 
+message GetKbsByIdsRequest {
+    repeated int64 ids = 1;
+}
+
+message GetKbsByIdsResponse {
+    repeated KnowledgeBaseEntity kbs = 1;
+}
 
 service KnowledgeBaseService {
     rpc addKbLikeCount(AddKbLikeCountRequest) returns (RemoveVectorResponse);
+    rpc getByIds (GetKbsByIdsRequest) returns (GetKbsByIdsResponse);
 }
 

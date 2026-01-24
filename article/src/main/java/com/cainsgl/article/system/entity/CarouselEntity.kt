@@ -11,7 +11,7 @@ import java.time.LocalDate
 @TableName(value = "carousels")
 data class CarouselEntity(
     @TableId(type = IdType.ASSIGN_ID)
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var id: Long? = null,
     @TableField("date")
     var date: LocalDate? = null,

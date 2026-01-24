@@ -11,13 +11,13 @@ import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
 @TableName("post_operations")
 data class PostOperationEntity(
     @TableId(type = IdType.ASSIGN_ID)
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var id: Long? = null,
     @TableField("user_id")
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var userId: Long? = null,
     @TableField("post_id")
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var postId: Long? = null,
     @TableField("operate_type")
     var operateType: Short? = null,
@@ -29,17 +29,16 @@ data class PostOperationEntity(
     }
 }
 data class PostOperationVO(
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var id: Long? = null,
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var userId: Long? = null,
-    @JsonSerialize(using = ToStringSerializer::class)
+    @field:JsonSerialize(using = ToStringSerializer::class)
     var postId: Long? = null,
     var operateType: OperateType,
 )
 enum class OperateType(val value:Short, private val operate:String) {
     LIKE_TYPE(1,"点赞"),
-    HATE_TYPE(2,"讨厌"),
     STAR(3,"收藏"),
     UNKNOWN(-1,"未知");
     @JsonValue
