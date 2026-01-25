@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cainsgl.article.repository.PostViewHistoryMapper">
+    <resultMap id="BaseResultMap" type="com.cainsgl.article.entity.PostViewHistoryEntity">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="post_id" property="postId" />
+        <result column="browse_time" property="browseTime" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, post_id, browse_time, "count"
+    </sql>
+
+    <insert id="saveOrUpdate">
+        INSERT INTO post_view_history (id, user_id, post_id, browse_time, "count")
+        VALUES (#{id}, #{userId}, #{postId}, #{browseTime}, 1)
+        ON CONFLICT (user_id, post_id)
+        DO UPDATE SET
+        browse_time = #{browseTime},
+        "count" = post_view_history.count + 1
+    </insert>
+
+    <select id="selectHistoryWithPost" resultType="com.cainsgl.article.dto.response.PostViewHistoryDTO">
+        SELECT
+            h.id,
+            h.count,
+            h.user_id,
+            h.post_id,
+            h.browse_time,
+            p.title,
+            p.img,
+            p.like_count,
+            p.star_count,
+            p.status,
+            p.tags,
+            p.published_at,
+            p.summary,
+            p.view_count
+        FROM post_view_history h
+        INNER JOIN posts p ON h.post_id = p.id
+        WHERE h.user_id = #{userId}
+        <if test="after != null">
+            AND h.browse_time &lt; #{after}
+        </if>
+        ORDER BY h.browse_time DESC
+        LIMIT #{limit}
+    </select>
+</mapper>

@@ -68,101 +68,95 @@ class PostController
 
     @Resource
     lateinit var postHistoryService: PostHistoryServiceImpl
+
     @Resource
     lateinit var postOperationService: PostOperationServiceImpl
+
     @Resource
     lateinit var postDocumentService: PostDocumentService
-
-
+    @Resource
+    lateinit var postViewHistoryService: PostViewHistoryServiceImpl
 
     //来自其他模块的，只能通过Service来访问
     @Resource
-    lateinit var userExtraInfoService:UserExtraInfoService
+    lateinit var userExtraInfoService: UserExtraInfoService
+
     @Resource
-    lateinit var aiService:AiService
+    lateinit var aiService: AiService
+
     @Resource
     lateinit var userFollowService: UserFollowService
+
     @Resource
     lateinit var sensitiveWord: SensitiveWord
+
     @SaIgnore
     @GetMapping
-    fun get(@RequestParam id: Long, @RequestParam simple: Boolean=false, request: HttpServletRequest,response: HttpServletResponse): Any
+    fun get(
+        @RequestParam id: Long, @RequestParam simple: Boolean = false, request: HttpServletRequest,
+        response: HttpServletResponse
+    ): Any
     {
-        //TODO，这个接口的功能目前太多了，直接返回了所有信息，不好方便缓存，后续优化，后续为该接口做统一缓存，目前先直接手动的etag，并且分开存储content，减少io
         val post = postService.getPost(id) ?: return ResultCode.RESOURCE_NOT_FOUND
-        //检查用户是否有权访问
-        if (post.status == ArticleStatus.PUBLISHED)
+
+        // 获取当前用户ID（如果已登录）
+        val userId = if (StpUtil.isLogin()) StpUtil.getLoginIdAsLong() else null
+        val isAuthor = userId != null && userId == post.userId
+
+        // 权限检查
+        if (!isAuthor && post.status != ArticleStatus.PUBLISHED)
         {
-            if(simple)
+            if (post.status == ArticleStatus.ONLY_FANS)
             {
-                val eTag = request.getHeader("If-None-Match")
-                if (!eTag.isNullOrEmpty() && (eTag == post.version.toString()))
-                {
-                    //内容相同，不需要写入，直接返回
-                    response.status = HttpServletResponse.SC_NOT_MODIFIED
-                    return ResultCode.SUCCESS;
-                }
-                response.setHeader("ETag", post.version.toString());
-                return post
-            }
-            //获取自己是否点赞的信息，并添加上
-            if (StpUtil.isLogin())
-            {
-                val userId = StpUtil.getLoginIdAsLong()
-                val operate= postOperationService.getOperateByUserIdAndPostId(userId=userId,postId=post.id!!)
-                return GetPostResponse(post,operate)
-            }
-            return GetPostResponse(post, emptySet())
-        }
-        //限制为只允许该用户访问
-        try
-        {
-            val userId = StpUtil.getLoginIdAsLong()
-            if (userId == post.userId)
-            {
-                if(simple)
-                {
-                    val eTag = request.getHeader("If-None-Match")
-                    if (!eTag.isNullOrEmpty() && (eTag == post.version.toString()))
-                    {
-                        //内容相同，不需要写入，直接返回
-                        response.status = HttpServletResponse.SC_NOT_MODIFIED
-                        return ResultCode.SUCCESS;
-                    }
-                    response.setHeader("ETag", post.version.toString());
-                    return post
-                }
-                val operate= postOperationService.getOperateByUserIdAndPostId(userId=userId,postId=post.id!!)
-                return GetPostResponse(post,operate)
-            }
-            if(post.status==ArticleStatus.ONLY_FANS)
-            {
+                if (userId == null) return ResultCode.USER_NOT_LOGIN
                 //去检测是否为粉丝关系
-                if (userFollowService.hasFollow(userId,post.userId!!))
-                {
-                    val operate= postOperationService.getOperateByUserIdAndPostId(userId=userId,postId=post.id!!)
-                    return GetPostResponse(post,operate)
-                }else
+                if (!userFollowService.hasFollow(userId, post.userId!!))
                 {
                     throw BusinessException(post.userId.toString())
                 }
+            } else
+            {
+                // 仅作者可见
+                return ResultCode.PERMISSION_DENIED
             }
-        } catch (e: Exception)
-        {
-            log.info { "未登录的请求访问私密文章$e" }
-            return ResultCode.USER_NOT_LOGIN
         }
-        return ResultCode.PERMISSION_DENIED
+
+        // 处理 ETag 和 Simple 模式
+        if (simple)
+        {
+            val eTag = request.getHeader("If-None-Match")
+            if (!eTag.isNullOrEmpty() && eTag == post.version.toString())
+            {
+                response.status = HttpServletResponse.SC_NOT_MODIFIED
+                return ResultCode.SUCCESS
+            }
+            response.setHeader("ETag", post.version.toString())
+            return post
+        }
+
+        // 获取用户操作信息（点赞、收藏等）
+        val operate = if (userId != null)
+        {
+            Thread.ofVirtual().start {
+                postViewHistoryService.createHistory(post.id!!, userId)
+            }
+            postOperationService.getOperateByUserIdAndPostId(userId, post.id!!)
+        } else
+        {
+            emptySet()
+        }
+
+        return GetPostResponse(post, operate)
     }
 
     @GetMapping("/top")
     fun getTopPostByUserId(@RequestParam id: Long): Any
     {
-        val query= QueryWrapper<PostEntity>()
+        val query = QueryWrapper<PostEntity>()
         query.select(PostEntity.BASIC_COL)
         query.eq("user_id", id)
-        query.eq("is_top",true)
-        query.eq("status",ArticleStatus.PUBLISHED)
+        query.eq("is_top", true)
+        query.eq("status", ArticleStatus.PUBLISHED)
         query.orderByDesc("published_at")
         query.last("limit 10")
         return postService.list(query)
@@ -185,8 +179,10 @@ class PostController
                 status.setRollbackOnly()
                 return@execute ResultCode.DB_ERROR
             }
-            val dirId= directoryService.saveDirectory(request.kbId, userId = userId, request.title, request.parentId, postEntity.id)
-            if (dirId<0)
+            val dirId = directoryService.saveDirectory(
+                request.kbId, userId = userId, request.title, request.parentId, postEntity.id
+            )
+            if (dirId < 0)
             {
                 status.setRollbackOnly()
                 //多半是参数问题
@@ -194,7 +190,7 @@ class PostController
             }
             //发送消息
             rocketMQClientTemplate.asyncSendNormalMessage("article:post", postEntity.id, null)
-            return@execute CreatePostResponse(postEntity,dirId)
+            return@execute CreatePostResponse(postEntity, dirId)
         } ?: ResultCode.UNKNOWN_ERROR
     }
 
@@ -207,36 +203,36 @@ class PostController
         val query = QueryWrapper<PostEntity>()
         query.eq("id", request.id)
         query.eq("user_id", userId)
-        val entity = postService.getOne(query)
-            ?: //没对应的数据
-            return ResultCode.RESOURCE_NOT_FOUND
+        val entity = postService.getOne(query) ?: //没对应的数据
+        return ResultCode.RESOURCE_NOT_FOUND
         val postEntity = PostEntity(
-            id = request.id,
-            title = sensitiveWord.replace(request.title),
-            summary = sensitiveWord.replace(request.summary),
-            img=request.img,
-            top = request.isTop
+            id = request.id, title = sensitiveWord.replace(request.title),
+            summary = sensitiveWord.replace(request.summary), img = request.img, top = request.isTop
         )
-        if(request.content.isNullOrEmpty())
+        if (request.content.isNullOrEmpty())
         {
-            if(postEntity.needUpdate())
-                postService.updateById(postEntity)
+            if (postEntity.needUpdate()) postService.updateById(postEntity)
             return ResultCode.SUCCESS
         }
-        val historyQuery = QueryWrapper<PostHistoryEntity>()
-            .eq("post_id", postEntity.id).eq("user_id",userId) .orderByDesc("version").last("LIMIT 1")
+        val historyQuery =
+            QueryWrapper<PostHistoryEntity>().eq("post_id", postEntity.id).eq("user_id", userId).orderByDesc("version")
+                .last("LIMIT 1")
         val one = postHistoryService.getOne(historyQuery)
-        if(one != null)
+        if (one != null)
         {
-            postHistoryService.updateById(PostHistoryEntity(id=one.id,content = request.content, userId =userId))
-        }else
+            postHistoryService.updateById(PostHistoryEntity(id = one.id, content = request.content, userId = userId))
+        } else
         {
             //这里是为了防止没有最新版本供作者使用
-            postHistoryService.save(PostHistoryEntity(userId=userId,postId = entity.id, content = request.content, createdAt = LocalDateTime.now(), version = 1))
+            postHistoryService.save(
+                PostHistoryEntity(
+                    userId = userId, postId = entity.id, content = request.content, createdAt = LocalDateTime.now(),
+                    version = 1
+                )
+            )
         }
         //获取
-        if(postEntity.needUpdate())
-          postService.updateById(postEntity)
+        if (postEntity.needUpdate()) postService.updateById(postEntity)
         return ResultCode.SUCCESS
     }
 
@@ -250,48 +246,57 @@ class PostController
         query.eq("id", request.id)
         query.eq("user_id", userId)
         //拿到最新历史版本
-        val post = postService.getOne(query)
-            ?: //没对应的数据
-            return ResultCode.RESOURCE_NOT_FOUND
+        val post = postService.getOne(query) ?: //没对应的数据
+        return ResultCode.RESOURCE_NOT_FOUND
         //获取编辑文档的最新版本，用来发布
-        val historyQuery = QueryWrapper<PostHistoryEntity>()
-            .select("id","content","version","user_id")
-            .eq("post_id", post.id).eq("user_id",userId).orderByDesc("version").last("LIMIT 1")
+        val historyQuery =
+            QueryWrapper<PostHistoryEntity>().select("id", "content", "version", "user_id").eq("post_id", post.id)
+                .eq("user_id", userId).orderByDesc("version").last("LIMIT 1")
         val history = postHistoryService.getOne(historyQuery)
         val sanitizedContent = sensitiveWord.replace(XssSanitizerUtils.sanitize(history.content!!))
         //检验是否有内容变更
-        if(post.content==sanitizedContent)
+        if (post.content == sanitizedContent)
         {
             //完全是之前的版本，什么都不用做
             return ResultCode.SUCCESS
         }
-        post.content=sanitizedContent
-        post.version=history.version
+        post.content = sanitizedContent
+        post.version = history.version
         //重新写回历史版本，防止有人查看历史版本被攻击
-        history.content=sanitizedContent
-        history.createdAt=LocalDateTime.now()
-        Thread.ofVirtual().start{
+        history.content = sanitizedContent
+        history.createdAt = LocalDateTime.now()
+        Thread.ofVirtual().start {
             postHistoryService.updateById(history)
             //注：这里再发布一个最新版本，是为了作者下次编辑文档的时候，返回他就好了
-            postHistoryService.save(PostHistoryEntity( userId=history.userId,postId=post.id,version = history.version!!+1, createdAt = LocalDateTime.now(),content=sanitizedContent))
-            if(post.content!!.isEmpty())
+            postHistoryService.save(
+                PostHistoryEntity(
+                    userId = history.userId, postId = post.id, version = history.version!! + 1,
+                    createdAt = LocalDateTime.now(), content = sanitizedContent
+                )
+            )
+            if (post.content!!.isEmpty())
             {
                 return@start
             }
             //发送消息，这里不需要回调，也不需要保证可靠，不是强一致的需求，毕竟只是一次版本的迭代，问题不大
             //TODO 后续这里的内容交给mq
             rocketMQClientTemplate.asyncSendNormalMessage("article:publish", request.id, null)
-            postDocumentService.save(PostDocument(id=post.id!!,title=post.title?: "",summary=post.summary,img=post.img,content=post.content, tags = post.tags))
+            postDocumentService.save(
+                PostDocument(
+                    id = post.id!!, title = post.title ?: "", summary = post.summary, img = post.img,
+                    content = post.content, tags = post.tags
+                )
+            )
             //延时双删
             //删除缓存
             Thread.sleep(1000)
             postService.removeCache(post.id!!)
         }
         val embedding = aiService.getEmbedding(post.content!!)
-        post.vecotr=embedding
-        post.status=ArticleStatus.PUBLISHED
-        post.publishedAt=LocalDateTime.now()
-        post.version=history.version
+        post.vecotr = embedding
+        post.status = ArticleStatus.PUBLISHED
+        post.publishedAt = LocalDateTime.now()
+        post.version = history.version
         postService.updateById(post)
         postService.removeCache(post.id!!)
         //剩下的异步去处理就好了
@@ -300,12 +305,12 @@ class PostController
 
     @SaCheckPermission("article.delete")
     @DeleteMapping
-    fun deletePost(@RequestParam id: Long):Any
+    fun deletePost(@RequestParam id: Long): Any
     {
         //还需要删除目录
         val userId = StpUtil.getLoginIdAsLong()
-        val wrapper= UpdateWrapper<PostEntity>()
-        wrapper.eq("id",id)
+        val wrapper = UpdateWrapper<PostEntity>()
+        wrapper.eq("id", id)
         wrapper.eq("user_id", userId)
         wrapper.set("status", ArticleStatus.OFF_SHELF)
         val result = transactionTemplate.execute {
@@ -313,66 +318,73 @@ class PostController
             {
                 return@execute ResultCode.RESOURCE_NOT_FOUND
             }
-            val wrapper2= QueryWrapper<DirectoryEntity>()
-            wrapper2.eq("post_id",id)
+            val wrapper2 = QueryWrapper<DirectoryEntity>()
+            wrapper2.eq("post_id", id)
             directoryService.remove(wrapper2)
-        }?:ResultCode.SUCCESS
-        
+        } ?: ResultCode.SUCCESS
+
         // 异步删除 ES 中的文档，这里是简化实现
         //TODO 后续要保证可靠性
         Thread.ofVirtual().start {
             postDocumentService.delete(id)
         }
-        
+
         return result
     }
 
 
     @SaIgnore
     @PostMapping("/search")
-    @RateLimitByToken(interval = 5000,limit = 1, message = "精准语义搜索5秒内仅能搜索一次！")
-    fun searchPost(@RequestBody request: SearchPostRequest):Any
+    @RateLimitByToken(interval = 5000, limit = 1, message = "精准语义搜索5秒内仅能搜索一次！")
+    fun searchPost(@RequestBody request: SearchPostRequest): Any
     {
-        if (request.vectorOffset==null)
+        if (request.vectorOffset == null)
         {
-            request.vectorOffset=1.1
+            request.vectorOffset = 1.1
         }
         //向量化，并且尝试加上用户的兴趣度偏向
-        var userOffsetVector:FloatArray?= null
-        try{
-             val userId= StpUtil.getLoginIdAsLong()
-            userOffsetVector= userExtraInfoService.getInterestVector(userId)
+        var userOffsetVector: FloatArray? = null
+        try
+        {
+            val userId = StpUtil.getLoginIdAsLong()
+            userOffsetVector = userExtraInfoService.getInterestVector(userId)
             //从用户额外信息表里获取
-        }catch (e:Exception){
+        } catch (e: Exception)
+        {
             //没有，不管
         }
         var embedding = aiService.getEmbedding(request.query)
-        if(userOffsetVector!=null)
+        if (userOffsetVector != null)
         {
             embedding += userOffsetVector
         }
         return postChunkVectorService.getPostsByVector(targetVector = embedding, request.vectorOffset!!)
     }
+
     @SaIgnore
     @PostMapping("/search/vector")
-    fun searchEsPost(@RequestBody request: SearchPostRequest):Any
+    fun searchEsPost(@RequestBody request: SearchPostRequest): Any
     {
-       val embedding=aiService.getEmbedding(request.query)
+        val embedding = aiService.getEmbedding(request.query)
         return postService.getPostBySimilarVector(embedding)
     }
+
     @SaIgnore
     @PostMapping("/search/es")
-    fun searchEsPost(@RequestBody request: SearchEsPostRequest):Any
+    fun searchEsPost(@RequestBody request: SearchEsPostRequest): Any
     {
-        if(request.query.length>30)
+        if (request.query.length > 30)
         {
             return ResultCode.PARAM_INVALID
         }
-        return postDocumentService.search(request.query,request.useTag,request.useContent,request.size,request.searchAfter)
+        return postDocumentService.search(
+            request.query, request.useTag, request.useContent, request.size, request.searchAfter
+        )
     }
+
     @SaIgnore
     @PostMapping("/list")
-    fun list(@RequestBody @Valid request: PageUserIdListRequest):Any
+    fun list(@RequestBody @Valid request: PageUserIdListRequest): Any
     {
         //这里先用数据库的模糊搜索，因为数据量目前不多
         val pageParam = Page<PostEntity>(request.page, request.size).apply {
@@ -383,21 +395,21 @@ class PostController
         }
         val queryWrapper = QueryWrapper<PostEntity>().apply {
             eq("user_id", request.userId)
-            if(StpUtil.isLogin())
+            if (StpUtil.isLogin())
             {
-                val userId= StpUtil.getLoginIdAsLong()
-                if(userId==request.userId&&request.status!=null)
+                val userId = StpUtil.getLoginIdAsLong()
+                if (userId == request.userId && request.status != null)
                 {
-                    eq("status",request.status)
-                }else if(userId!=request.userId)
+                    eq("status", request.status)
+                } else if (userId != request.userId)
                 {
-                    eq("status", ArticleStatus.PUBLISHED).or().eq("status",ArticleStatus.ONLY_FANS)
+                    eq("status", ArticleStatus.PUBLISHED).or().eq("status", ArticleStatus.ONLY_FANS)
                 }
-            }else
+            } else
             {
-                eq("status", ArticleStatus.PUBLISHED).or().eq("status",ArticleStatus.ONLY_FANS)
+                eq("status", ArticleStatus.PUBLISHED).or().eq("status", ArticleStatus.ONLY_FANS)
             }
-            if(!request.option.isNullOrEmpty())
+            if (!request.option.isNullOrEmpty())
             {
                 if (PageUserIdListRequest.postOptions.contains(request.option))
                 {
@@ -406,17 +418,14 @@ class PostController
                 }
             }
             //TODO 后续可以靠es优化
-            if(!request.keyword.isNullOrEmpty())
+            if (!request.keyword.isNullOrEmpty())
             {
                 like("title", request.keyword.lowercase())
             }
         }
         val result = postService.page(pageParam, queryWrapper)
         return PageResponse(
-            records = result.records,
-            total = result.total,
-            pages = result.pages,
-            current = result.current,
+            records = result.records, total = result.total, pages = result.pages, current = result.current,
             size = result.size
         )
     }
@@ -424,14 +433,14 @@ class PostController
 
     @SaIgnore
     @PostMapping("/cursor")
-    fun cursor(@RequestBody request: CursorPostRequest):Any
+    fun cursor(@RequestBody request: CursorPostRequest): Any
     {
-        return postService.cursor(request.lastUpdatedAt,request.lastLikeRatio,request.lastId,request.pageSize)
+        return postService.cursor(request.lastUpdatedAt, request.lastLikeRatio, request.lastId, request.pageSize)
     }
 
     @SaIgnore
     @GetMapping("/recommend")
-    fun recommend(@RequestParam id:Long):Any
+    fun recommend(@RequestParam id: Long): Any
     {
 
         return postService.similarPost(id)
