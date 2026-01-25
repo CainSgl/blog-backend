@@ -16,7 +16,7 @@ data class PostOperationEntity(
     @TableField("user_id")
     @field:JsonSerialize(using = ToStringSerializer::class)
     var userId: Long? = null,
-    @TableField("post_id")
+    @TableField("target_id")
     @field:JsonSerialize(using = ToStringSerializer::class)
     var postId: Long? = null,
     @TableField("operate_type")
@@ -39,8 +39,10 @@ data class PostOperationVO(
 )
 enum class OperateType(val value:Short, private val operate:String) {
     LIKE_TYPE(1,"点赞"),
-    STAR(3,"收藏"),
-    UNKNOWN(-1,"未知");
+    STAR(3,"收藏文章"),
+    UNKNOWN(-1,"未知"),
+    //这是为了复用之前的表设计，后续可能会移除
+    STAR_KB(4,"收藏知识库");
     @JsonValue
     fun toJSONValue(): Any {
         return operate

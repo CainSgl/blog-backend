@@ -13,16 +13,16 @@ import org.springframework.stereotype.Service
 class UserGroupServiceImpl : ServiceImpl<UserGroupMapper, UserGroupEntity>(), IService<UserGroupEntity>
 {
     /**
-     * @param publish 为true代表只获取公开
+     * @param needPublish 为true代表只获取公开
      */
-    fun getByUserIdAndType(userId: Long, type: String?,publish:Boolean=false): Map<String, List<UserGroupEntity>> {
+    fun getByUserIdAndType(userId: Long, type: String?, needPublish:Boolean=false): Map<String, List<UserGroupEntity>> {
         val queryWrapper= QueryWrapper<UserGroupEntity>()
         queryWrapper.eq("user_id",userId)
             .apply {
                 if (type != null) {
                     eq("type", CollectType.fromStr(type).code)
                 }
-                if (publish) {
+                if (needPublish) {
                     eq("publish", true)
                 }
             }

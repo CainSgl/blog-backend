@@ -37,7 +37,8 @@ data class PostEntity(
 
     @TableField("like_count")
     var likeCount: Int? = null,
-
+    @TableField("star_count")
+    var starCount: Int? = null,
     @TableField("comment_count")
     var commentCount: Int? = null,
 

@@ -1,14 +1,10 @@
 package com.cainsgl.article.controller
 
 import cn.dev33.satoken.stp.StpUtil
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.cainsgl.article.service.PostOperationServiceImpl
+import com.cainsgl.article.service.PostServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
-import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.OperateType
-import com.cainsgl.common.entity.article.PostEntity
-import com.cainsgl.common.entity.article.PostOperationEntity
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
 import org.springframework.web.bind.annotation.GetMapping
@@ -17,49 +13,48 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 private val log = KotlinLogging.logger {}
+
 @RestController
 @RequestMapping("/post/op")
 class PostOperationController
 {
     @Resource
     lateinit var postOperationService: PostOperationServiceImpl
+
+    @Resource
+    lateinit var postService: PostServiceImpl
+
     @GetMapping("/like")
-    fun like(@RequestParam id: Long,@RequestParam add: Boolean=true,@RequestParam op: String): Any
+    fun like(@RequestParam id: Long, @RequestParam add: Boolean = true): Any
     {
-        val userId= StpUtil.getLoginIdAsLong()
-        if(add)
+        val userId = StpUtil.getLoginIdAsLong()
+        postOperationService.addOperate(userId = userId, type = OperateType.LIKE_TYPE, id = id, add = add)
+        if (add)
         {
-           postOperationService.save(PostOperationEntity(userId=userId,postId=id, operateType = OperateType.LIKE_TYPE.value ))
-        }else
+            postService.addLikeCount(id, 1)
+        } else
         {
-            val query= UpdateWrapper<PostOperationEntity>().apply {
-                eq("user_id", userId)
-                eq("post_id", id)
-                eq("operate_type", OperateType.LIKE_TYPE.value)
-            }
-            postOperationService.remove(query)
-
+            postService.addLikeCount(id, -1)
         }
         return ResultCode.SUCCESS
     }
+
     @GetMapping("/star")
-    fun star(@RequestParam id: Long,@RequestParam add: Boolean=true): Any
+    fun star(@RequestParam id: Long, @RequestParam type: String, @RequestParam add: Boolean = true): Any
     {
-        val userId= StpUtil.getLoginIdAsLong()
-        if(add)
+        val userId = StpUtil.getLoginIdAsLong()
+        val opType = OperateType.getByOperate(type)
+        postOperationService.addOperate(userId = userId, type = opType, id = id, add = add)
+        if (opType == OperateType.STAR)
         {
-            postOperationService.save(PostOperationEntity(userId=userId,postId=id, operateType = OperateType.STAR.value ))
-        }else
-        {
-            val query= UpdateWrapper<PostOperationEntity>().apply {
-                eq("user_id", userId)
-                eq("post_id", id)
-                eq("operate_type", OperateType.STAR.value)
+            if (add)
+            {
+                postService.addStarCount(id, 1)
+            } else
+            {
+                postService.addStarCount(id, -1)
             }
-            postOperationService.remove(query)
-
         }
         return ResultCode.SUCCESS
     }
-
 }

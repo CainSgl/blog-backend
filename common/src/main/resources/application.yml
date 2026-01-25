@@ -101,11 +101,7 @@ management:
       enabled: true         # 启用存活状态
     readinessState:
       enabled: true        # 启用就绪状态
-logging:
-  config: classpath:log4j-spring.xml
-  level:
-    com.cainsgl: DEBUG
-    org.springframework.web.client: DEBUG
+
 server:
   jetty:
     threads:

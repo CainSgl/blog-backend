@@ -13,7 +13,6 @@ import com.cainsgl.user.service.UserCollectServiceImpl
 import com.cainsgl.user.service.UserGroupServiceImpl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
-import org.springframework.boot.availability.AvailabilityChangeEvent.publish
 import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.bind.annotation.*
 
@@ -31,8 +30,11 @@ class UserGroupController {
     @GetMapping
     fun get(@RequestParam type: String?,@RequestParam userId: Long?): Any {
         val requestUserId = StpUtil.getLoginIdAsLong()
-        val groupMap = userGroupServiceImpl.getByUserIdAndType(userId?:requestUserId, type,publish=requestUserId==userId)
-        return groupMap
+        return if(userId==null) {
+            userGroupServiceImpl.getByUserIdAndType(requestUserId, type,needPublish= false)
+        }else {
+            userGroupServiceImpl.getByUserIdAndType(userId, type,needPublish=userId!=requestUserId)
+        }
     }
 
 

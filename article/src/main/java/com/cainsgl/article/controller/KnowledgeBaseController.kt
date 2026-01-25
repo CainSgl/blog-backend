@@ -15,10 +15,12 @@ import com.cainsgl.article.dto.request.PageUserIdListRequest
 import com.cainsgl.article.dto.request.UpdateKnowledgeBaseRequest
 import com.cainsgl.article.service.DirectoryServiceImpl
 import com.cainsgl.article.service.KnowledgeBaseServiceImpl
+import com.cainsgl.article.service.PostOperationServiceImpl
 import com.cainsgl.common.dto.response.PageResponse
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.KnowledgeBaseEntity
+import com.cainsgl.common.entity.article.OperateType
 import com.cainsgl.common.exception.BusinessException
 import com.cainsgl.senstitve.config.SensitiveWord
 import jakarta.annotation.Resource
@@ -41,44 +43,59 @@ class KnowledgeBaseController
 
     @Resource
     lateinit var directoryService: DirectoryServiceImpl
+
     @Resource
     lateinit var sensitiveWord: SensitiveWord
+
+    @Resource
+    lateinit var postOperationService: PostOperationServiceImpl
+
     @SaIgnore
     @GetMapping
     fun get(@RequestParam @Min(value = 1, message = "知识库id非法") id: Long): Any
     {
-        val knowledgeBase: KnowledgeBaseEntity = knowledgeBaseService.getById(id)
-            ?: return ResultCode.RESOURCE_NOT_FOUND
+        val knowledgeBase: KnowledgeBaseEntity =
+            knowledgeBaseService.getById(id) ?: return ResultCode.RESOURCE_NOT_FOUND
+        //还需要返回是否收藏没有
+
         if (knowledgeBase.status != ArticleStatus.PUBLISHED)
         {
+            val userId = StpUtil.getLoginIdAsLong()
             if (knowledgeBase.status == ArticleStatus.ONLY_FANS)
             {
-                if (userFollowService.hasFollow(StpUtil.getLoginIdAsLong(), knowledgeBase.userId!!))
+                if (userFollowService.hasFollow(userId, knowledgeBase.userId!!))
                 {
                     val directoryTree: List<DirectoryTreeDTO> = directoryService.getDirectoryTreeByKbId(id)
-                    return Pair(knowledgeBase, directoryTree)
-
-                }else
+                    return Triple(
+                        knowledgeBase, directoryTree, postOperationService.hasOperate(userId, id, OperateType.STAR_KB)
+                    )
+                } else
                 {
                     throw BusinessException(knowledgeBase.userId.toString())
                 }
             }
-            val userId = StpUtil.getLoginIdAsLong()
             if (userId != knowledgeBase.userId)
             {
                 throw BusinessException("由于私密性设置无法访问该知识库")
             }
         }
+        var stared = false;
+        if (StpUtil.isLogin())
+        {
+            val userId = StpUtil.getLoginIdAsLong()
+            //尝试的去获取是否收藏
+            stared = postOperationService.hasOperate(userId, id, OperateType.STAR_KB)
+        }
         val directoryTree: List<DirectoryTreeDTO> = directoryService.getDirectoryTreeByKbId(id)
-        return Pair(knowledgeBase, directoryTree)
+        return Triple(knowledgeBase, directoryTree, stared)
     }
 
     @SaIgnore
     @GetMapping("/basic")
     fun getBasic(@RequestParam @Min(value = 1, message = "知识库id非法") id: Long): Any
     {
-        val knowledgeBase: KnowledgeBaseEntity = knowledgeBaseService.getById(id)
-            ?: return ResultCode.RESOURCE_NOT_FOUND
+        val knowledgeBase: KnowledgeBaseEntity =
+            knowledgeBaseService.getById(id) ?: return ResultCode.RESOURCE_NOT_FOUND
         if (knowledgeBase.status != ArticleStatus.PUBLISHED)
         {
             if (knowledgeBase.status == ArticleStatus.ONLY_FANS)
@@ -119,11 +136,11 @@ class KnowledgeBaseController
                 } else if (userId != request.userId)
                 {
                     //登录，但是不是本人
-                    eq("status", ArticleStatus.PUBLISHED).or().eq("status",ArticleStatus.ONLY_FANS)
+                    eq("status", ArticleStatus.PUBLISHED).or().eq("status", ArticleStatus.ONLY_FANS)
                 }
             } else
             {
-                eq("status", ArticleStatus.PUBLISHED).or().eq("status",ArticleStatus.ONLY_FANS)
+                eq("status", ArticleStatus.PUBLISHED).or().eq("status", ArticleStatus.ONLY_FANS)
             }
             if (!request.option.isNullOrEmpty())
             {
@@ -140,10 +157,7 @@ class KnowledgeBaseController
         }
         val result = knowledgeBaseService.page(pageParam, queryWrapper)
         return PageResponse(
-            records = result.records,
-            total = result.total,
-            pages = result.pages,
-            current = result.current,
+            records = result.records, total = result.total, pages = result.pages, current = result.current,
             size = result.size
         )
     }
@@ -164,9 +178,7 @@ class KnowledgeBaseController
     {
         val userId = StpUtil.getLoginIdAsLong()
         val kbEntity = KnowledgeBaseEntity(
-            userId = userId,
-            name = sensitiveWord.replace(request.name),
-            index = request.index,
+            userId = userId, name = sensitiveWord.replace(request.name), index = request.index,
             coverUrl = request.coverUrl
         )
         if (knowledgeBaseService.save(kbEntity))
@@ -185,9 +197,7 @@ class KnowledgeBaseController
         updateWrapper.eq("id", request.id)
         updateWrapper.eq("user_id", userId)
         val kbEntity = KnowledgeBaseEntity(
-            status = request.status,
-            name = request.name,
-            index = sensitiveWord.replace(request.content),
+            status = request.status, name = request.name, index = sensitiveWord.replace(request.content),
             coverUrl = request.coverUrl
         )
         if (knowledgeBaseService.update(kbEntity, updateWrapper))
@@ -207,8 +217,8 @@ class KnowledgeBaseController
 
     @SaIgnore
     @PostMapping("/cursor")
-    fun cursor(@RequestBody request: CursorKbRequest):Any
+    fun cursor(@RequestBody request: CursorKbRequest): Any
     {
-        return knowledgeBaseService.cursor(request.lastCreatedAt,request.lastLike,request.lastId,request.pageSize)
+        return knowledgeBaseService.cursor(request.lastCreatedAt, request.lastLike, request.lastId, request.pageSize)
     }
 }

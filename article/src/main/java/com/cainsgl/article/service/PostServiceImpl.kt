@@ -126,5 +126,18 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
         wrapper.setSql("comment_count = comment_count + $count")
         return baseMapper.update(wrapper) > 0
     }
-
+    fun addLikeCount(id: Long, count: Int): Boolean
+    {
+        val wrapper = UpdateWrapper<PostEntity>()
+        wrapper.eq("id", id)
+        wrapper.setSql("like_count = like_count + $count")
+        return baseMapper.update(wrapper) > 0
+    }
+    fun addStarCount(id: Long, count: Int): Boolean
+    {
+        val wrapper = UpdateWrapper<PostEntity>()
+        wrapper.eq("id", id)
+        wrapper.setSql("star_count = star_count + $count")
+        return baseMapper.update(wrapper) > 0
+    }
 }

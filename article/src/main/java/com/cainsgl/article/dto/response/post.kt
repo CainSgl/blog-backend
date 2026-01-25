@@ -40,6 +40,7 @@ data class GetPostResponse(
     var kbId: Long? = null,
     var operate:Set<OperateType>,
     var version:Int?=null,
+    var starCount:Int?=null,
 ){
     constructor(post: PostEntity,operate:Set<OperateType>):this(operate=operate)
     {

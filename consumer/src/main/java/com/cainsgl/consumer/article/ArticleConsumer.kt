@@ -64,17 +64,6 @@ class ArticleContentConsumer : BaseConsumer<Long>(Long::class.java) {
     lateinit var postChunkVectorService: PostChunkVectorService
     override fun doConsume(message: Long, messageView: MessageView): ConsumeResult {
         log.info { "消费者监听到id为$message 的文章变动，但不是发布的文章" }
-//        val postId=message
-//        val postEntity = postService.getById(postId) ?: throw NonRetryableException("文章不存在", postId)
-//        //发布中的文章，更新向量
-//        if (postEntity.status == ArticleStatus.PUBLISHED) {
-//            val oldData = postCloneGrpcService.getPostById(postId)
-//            if(postEntity.content!=oldData?.content){
-//                postCloneGrpcService.upsertPost(postId,postEntity.title?:"",postEntity.content?:"",postEntity.status?: ArticleStatus.PUBLISHED)
-//                postChunkVectorService.reloadVector(postId,oldData?.content)
-//                log.info("消费者成功让文档：$postId,向量化")
-//            }
-//        }
         return ConsumeResult.SUCCESS
     }
 }

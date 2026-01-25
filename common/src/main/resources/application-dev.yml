@@ -4,3 +4,8 @@ mybatis-plus:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 forbidden:
   filePath: C:\forbidden\forbidden.txt
+logging:
+  config: classpath:log4j-spring.xml
+  level:
+    com.cainsgl: DEBUG
+    org.springframework.web.client: DEBUG

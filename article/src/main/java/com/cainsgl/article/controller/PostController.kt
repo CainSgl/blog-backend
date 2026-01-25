@@ -88,7 +88,7 @@ class PostController
     @GetMapping
     fun get(@RequestParam id: Long, @RequestParam simple: Boolean=false, request: HttpServletRequest,response: HttpServletResponse): Any
     {
-        //TODO，这个接口的功能目前太多了，直接返回了所有信息，不好方便缓存，后续优化，后续为该接口做统一缓存，目前先直接手动的etag
+        //TODO，这个接口的功能目前太多了，直接返回了所有信息，不好方便缓存，后续优化，后续为该接口做统一缓存，目前先直接手动的etag，并且分开存储content，减少io
         val post = postService.getPost(id) ?: return ResultCode.RESOURCE_NOT_FOUND
         //检查用户是否有权访问
         if (post.status == ArticleStatus.PUBLISHED)
