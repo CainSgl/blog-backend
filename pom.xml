@@ -116,6 +116,7 @@
                     <protocArtifact>com.google.protobuf:protoc:3.25.1:exe:${os.detected.classifier}</protocArtifact>
                     <pluginId>grpc-java</pluginId>
                     <pluginArtifact>io.grpc:protoc-gen-grpc-java:1.60.0:exe:${os.detected.classifier}</pluginArtifact>
+
                 </configuration>
                 <executions>
                     <execution>
@@ -131,6 +132,7 @@
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
                 <version>${kotlin.version}</version>
+
                 <executions>
                     <execution>
                         <id>compile</id>
@@ -148,6 +150,10 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <sourceDirs>
+                        <source>src/main/java</source>
+                        <source>target/generated-sources/annotations</source>
+                    </sourceDirs>
                     <jvmTarget>1.8</jvmTarget>
                     <compilerPlugins>
                         <plugin>spring</plugin>
@@ -177,7 +183,7 @@
                         </excludes>
                     </configuration>
                 </plugin>
-                  <!-- 打包编译的时候去处理下注解-->
+                <!-- 打包编译的时候去处理下注解-->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -205,18 +211,18 @@
                             </goals>
                         </execution>
                     </executions>
-<!--                    <configuration>-->
-<!--                        <source>${java.version}</source>-->
-<!--                        <target>${java.version}</target>-->
-<!--                        <encoding>UTF-8</encoding>-->
-<!--                        <annotationProcessorPaths>-->
-<!--                            <path>-->
-<!--                                <groupId>org.projectlombok</groupId>-->
-<!--                                <artifactId>lombok</artifactId>-->
-<!--                                <version>${lombok.version}</version>-->
-<!--                            </path>-->
-<!--                        </annotationProcessorPaths>-->
-<!--                    </configuration>-->
+                    <!--                    <configuration>-->
+                    <!--                        <source>${java.version}</source>-->
+                    <!--                        <target>${java.version}</target>-->
+                    <!--                        <encoding>UTF-8</encoding>-->
+                    <!--                        <annotationProcessorPaths>-->
+                    <!--                            <path>-->
+                    <!--                                <groupId>org.projectlombok</groupId>-->
+                    <!--                                <artifactId>lombok</artifactId>-->
+                    <!--                                <version>${lombok.version}</version>-->
+                    <!--                            </path>-->
+                    <!--                        </annotationProcessorPaths>-->
+                    <!--                    </configuration>-->
                 </plugin>
             </plugins>
         </pluginManagement>
