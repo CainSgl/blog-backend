@@ -165,7 +165,6 @@ class DirectoryController
             val postIds = dirLists.mapNotNull { it.postId }.distinct()
             directoryService.removeBatchByIds(dirLists)
             updatePost(postIds)
-            directoryService.removeCache(kbId)
             return@execute postIds
         }
         if(res.isNullOrEmpty())

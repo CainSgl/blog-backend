@@ -207,7 +207,7 @@ class PostController
         return ResultCode.RESOURCE_NOT_FOUND
         val postEntity = PostEntity(
             id = request.id, title = sensitiveWord.replace(request.title),
-            summary = sensitiveWord.replace(request.summary), img = request.img, top = request.isTop
+            summary = sensitiveWord.replace(request.summary), img = request.img, top = request.isTop,tags=request.tags
         )
         if (request.content.isNullOrEmpty())
         {
@@ -245,14 +245,29 @@ class PostController
         val query = QueryWrapper<PostEntity>()
         query.eq("id", request.id)
         query.eq("user_id", userId)
-        //拿到最新历史版本
+        //拿到最新发布版本
         val post = postService.getOne(query) ?: //没对应的数据
         return ResultCode.RESOURCE_NOT_FOUND
+
         //获取编辑文档的最新版本，用来发布
         val historyQuery =
             QueryWrapper<PostHistoryEntity>().select("id", "content", "version", "user_id").eq("post_id", post.id)
                 .eq("user_id", userId).orderByDesc("version").last("LIMIT 1")
         val history = postHistoryService.getOne(historyQuery)
+        if(post.kbId==1L||post.kbId==2L)
+        {
+            //特殊处理，兼容公告，关于页面
+            post.content=history.content
+            if(post.version!=null)
+            {
+                post.version = post.version!! + 1
+            }else
+            {
+                post.version = 1
+            }
+            postService.updateById(post)
+            return ResultCode.SUCCESS;
+        }
         val sanitizedContent = sensitiveWord.replace(XssSanitizerUtils.sanitize(history.content!!))
         //检验是否有内容变更
         if (post.content == sanitizedContent)
@@ -266,6 +281,7 @@ class PostController
         history.content = sanitizedContent
         history.createdAt = LocalDateTime.now()
         Thread.ofVirtual().start {
+            //TODO 后续这里的内容交给mq
             postHistoryService.updateById(history)
             //注：这里再发布一个最新版本，是为了作者下次编辑文档的时候，返回他就好了
             postHistoryService.save(
@@ -279,7 +295,6 @@ class PostController
                 return@start
             }
             //发送消息，这里不需要回调，也不需要保证可靠，不是强一致的需求，毕竟只是一次版本的迭代，问题不大
-            //TODO 后续这里的内容交给mq
             rocketMQClientTemplate.asyncSendNormalMessage("article:publish", request.id, null)
             postDocumentService.save(
                 PostDocument(

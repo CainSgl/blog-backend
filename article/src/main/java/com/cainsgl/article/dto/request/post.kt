@@ -41,6 +41,7 @@ data class UpdatePostRequest(
     val summary: String? = null,
     val img: String? = null,
     val isTop: Boolean? = null,
+    val tags: List<String>? = null,
 )
 
 data class CursorPostRequest(

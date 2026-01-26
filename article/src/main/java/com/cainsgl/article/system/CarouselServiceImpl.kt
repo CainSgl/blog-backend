@@ -26,18 +26,23 @@ class CarouselServiceImpl : ServiceImpl<CarouselMapper, CarouselEntity>(), IServ
 
     fun getCarousels(): List<CarouselEntity>
     {
-       return redisTemplate.getWithFineLock(CAROUSEL_REDIS_PREFIX_KEY, { t ->
+        return redisTemplate.getWithFineLock(CAROUSEL_REDIS_PREFIX_KEY, { t ->
             val zoneId = ZoneId.of("Asia/Shanghai")
             val now = LocalDateTime.now(zoneId)
-            val tomorrow6Am = now.plusDays(1)
-                .withHour(6)
-                .withMinute(0)
-                .withSecond(0)
-                .withNano(0)
+            val tomorrow6Am = now.plusDays(1).withHour(6).withMinute(0).withSecond(0).withNano(0)
             return@getWithFineLock Duration.between(now, tomorrow6Am)
         }, {
-            val query=QueryWrapper<CarouselEntity>().orderByDesc("date").last("limit 9")
+            val query = QueryWrapper<CarouselEntity>().orderByDesc("date").last("limit 9")
             return@getWithFineLock baseMapper.selectList(query)
-        })?: emptyList()
+        }) ?: emptyList()
+    }
+
+    fun resetCarousels()
+    {
+        redisTemplate.delete(CAROUSEL_REDIS_PREFIX_KEY)
+        Thread.ofVirtual().start {
+            Thread.sleep(Duration.ofSeconds(3))
+            redisTemplate.delete(CAROUSEL_REDIS_PREFIX_KEY)
+        }
     }
 }
