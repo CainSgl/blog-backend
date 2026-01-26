@@ -27,7 +27,7 @@ class PostHistoryController
     @GetMapping("/last")
     fun getByLast(@RequestParam id: Long): Any
     {
-        val post = postService.getPost(id) ?: return ResultCode.RESOURCE_NOT_FOUND
+        val post = postService.getPostBaseInfo(id) ?: return ResultCode.RESOURCE_NOT_FOUND
         val userId = StpUtil.getLoginIdAsLong()
         if (post.userId != userId)
         {

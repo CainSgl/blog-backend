@@ -26,6 +26,8 @@ import com.cainsgl.common.entity.article.DirectoryEntity
 import com.cainsgl.common.entity.article.PostEntity
 import com.cainsgl.common.entity.article.PostHistoryEntity
 import com.cainsgl.common.exception.BusinessException
+import com.cainsgl.common.util.UserHotInfoUtils.Companion.changePostCount
+import com.cainsgl.common.util.UserHotInfoUtils.Companion.changeViewCount
 import com.cainsgl.senstitve.config.SensitiveWord
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
@@ -33,6 +35,7 @@ import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import org.apache.rocketmq.client.core.RocketMQClientTemplate
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.bind.annotation.*
 import java.time.LocalDateTime
@@ -76,7 +79,8 @@ class PostController
     lateinit var postDocumentService: PostDocumentService
     @Resource
     lateinit var postViewHistoryService: PostViewHistoryServiceImpl
-
+    @Resource
+    lateinit var redisTemplate: RedisTemplate<Any,Any>
     //来自其他模块的，只能通过Service来访问
     @Resource
     lateinit var userExtraInfoService: UserExtraInfoService
@@ -90,6 +94,8 @@ class PostController
     @Resource
     lateinit var sensitiveWord: SensitiveWord
 
+
+
     @SaIgnore
     @GetMapping
     fun get(
@@ -97,7 +103,7 @@ class PostController
         response: HttpServletResponse
     ): Any
     {
-        val post = postService.getPost(id) ?: return ResultCode.RESOURCE_NOT_FOUND
+        val post = postService.getPostBaseInfo(id) ?: return ResultCode.RESOURCE_NOT_FOUND
 
         // 获取当前用户ID（如果已登录）
         val userId = if (StpUtil.isLogin()) StpUtil.getLoginIdAsLong() else null
@@ -131,14 +137,18 @@ class PostController
                 return ResultCode.SUCCESS
             }
             response.setHeader("ETag", post.version.toString())
-            return post
+            return postService.getContentByEntity(post)
         }
 
         // 获取用户操作信息（点赞、收藏等）
         val operate = if (userId != null)
         {
             Thread.ofVirtual().start {
-                postViewHistoryService.createHistory(post.id!!, userId)
+                if(post.kbId!=1L&&post.kbId!=2L)
+                {
+                    redisTemplate.changeViewCount(1L,userId)
+                    postViewHistoryService.createHistory(post.id!!, userId)
+                }
             }
             postOperationService.getOperateByUserIdAndPostId(userId, post.id!!)
         } else
@@ -146,7 +156,7 @@ class PostController
             emptySet()
         }
 
-        return GetPostResponse(post, operate)
+        return GetPostResponse(postService.getContentByEntity(post), operate)
     }
 
     @GetMapping("/top")
@@ -188,6 +198,7 @@ class PostController
                 //多半是参数问题
                 return@execute ResultCode.PARAM_INVALID
             }
+            redisTemplate.changePostCount(1,userId)
             //发送消息
             rocketMQClientTemplate.asyncSendNormalMessage("article:post", postEntity.id, null)
             return@execute CreatePostResponse(postEntity, dirId)
@@ -341,6 +352,7 @@ class PostController
         // 异步删除 ES 中的文档，这里是简化实现
         //TODO 后续要保证可靠性
         Thread.ofVirtual().start {
+            redisTemplate.changePostCount(-1,userId)
             postDocumentService.delete(id)
         }
 
@@ -432,10 +444,13 @@ class PostController
                     orderByDesc(request.option)
                 }
             }
-            //TODO 后续可以靠es优化
             if (!request.keyword.isNullOrEmpty())
             {
                 like("title", request.keyword.lowercase())
+            }
+            if(request.onlyTitle)
+            {
+                select("title")
             }
         }
         val result = postService.page(pageParam, queryWrapper)

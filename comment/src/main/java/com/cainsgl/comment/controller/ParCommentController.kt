@@ -12,8 +12,10 @@ import com.cainsgl.comment.service.ParagraphServiceImpl
 import com.cainsgl.comment.service.PostsCommentServiceImpl
 import com.cainsgl.comment.service.ReplyServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
+import com.cainsgl.common.util.UserHotInfoUtils.Companion.changeCommentCount
 import com.cainsgl.senstitve.config.SensitiveWord
 import jakarta.annotation.Resource
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.bind.annotation.*
 import java.time.LocalDate
@@ -43,7 +45,8 @@ class ParCommentController {
 
     @Resource
     lateinit var postsCommentService: PostsCommentServiceImpl
-
+    @Resource
+    lateinit var redisTemplate: RedisTemplate<Any,Any>
     //创建评论
     @PostMapping
     fun createComment(@RequestBody request: CreateParagraphRequest): Any {
@@ -58,16 +61,18 @@ class ParCommentController {
             }
             val content = sensitiveWord.replace(request.content)
             paragraphService.incrementCount(postId = request.postId, version = request.version, dataId = request.dataId)
+            val userId=StpUtil.getLoginIdAsLong()
             parCommentService.save(
                 ParCommentEntity(
                     id = id,
-                    userId = StpUtil.getLoginIdAsLong(),
+                    userId = userId,
                     dataId = request.dataId,
                     version = request.version,
                     postId = request.postId,
                     content = content
                 )
             )
+            redisTemplate.changeCommentCount(1,userId)
             val res=HashMap<String,String>();
             res["id"] = id.toString();
             res["content"]=content?:"";
@@ -116,9 +121,10 @@ class ParCommentController {
         }
         val id = IdWorker.getId()
         val content = sensitiveWord.replace(request.content)
+        val userId=StpUtil.getLoginIdAsLong()
         val replyEntity = ReplyEntity(
             id = id,
-            userId = StpUtil.getLoginIdAsLong(),
+            userId = userId,
             content = content,
             replyId = request.replyId,
             postCommentId = request.postCommentId,
@@ -148,6 +154,7 @@ class ParCommentController {
                 postsCommentService.addCommentCount(id = request.postCommentId!!, 1)
             }
             replyService.save(replyEntity)
+            redisTemplate.changeCommentCount(1,userId)
             return@execute id.toString();
         } ?: "error";
         val res=HashMap<String,String>();

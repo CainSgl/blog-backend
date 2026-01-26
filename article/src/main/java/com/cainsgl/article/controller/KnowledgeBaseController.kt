@@ -154,6 +154,10 @@ class KnowledgeBaseController
             {
                 like("name", request.keyword.lowercase())
             }
+            if(request.onlyTitle)
+            {
+                select("name")
+            }
         }
         val result = knowledgeBaseService.page(pageParam, queryWrapper)
         return PageResponse(

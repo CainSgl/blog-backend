@@ -62,11 +62,7 @@ class LogPipelineManager(handlers: List<LogHandler>)
     }
     @Value("\${userLog.batchNumber}")
     var batchNumber:Int=20
-//    companion object
-//    {
-//        //TODO ，目前设置为20条
-//        const val MAX_PIPELINE_SIZE = 20
-//    }
+
 
     private val backlogLogs: MutableList<UserLogEntity> = mutableListOf()
     private val lock = ReentrantLock()

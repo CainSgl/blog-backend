@@ -11,6 +11,7 @@ import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.DirectoryEntity
 import com.cainsgl.common.entity.article.KnowledgeBaseEntity
 import com.cainsgl.common.util.FineLockCacheUtils.getWithFineLock
+import com.cainsgl.common.util.HotKeyValidator
 import jakarta.annotation.Resource
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
@@ -29,10 +30,14 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
     @Resource
     lateinit var redisTemplate: RedisTemplate<String, List<DirectoryTreeDTO>>
 
+    @Resource
+    lateinit var hotKeyValidator: HotKeyValidator
+
     companion object
     {
         const val DIR_REDIS_PRE_FIX = "dir:"
     }
+
     /**
      * 递归查询知识库的完整目录树结构
      * @param kbId 知识库ID
@@ -45,16 +50,18 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
         {
             return emptyList();
         }
-        return redisTemplate.getWithFineLock("$DIR_REDIS_PRE_FIX$kbId",Duration.ofMinutes(10)
-        ,{
+        val key = "$DIR_REDIS_PRE_FIX$kbId"
+        fun dataLoader(): List<DirectoryTreeDTO>
+        {
             val list = baseMapper.getDirectoryTreeByKbId(kbId)
             if (list.isNullOrEmpty())
             {
-                return@getWithFineLock emptyList()
+                return emptyList()
             }
 
             // 创建ID到节点的映射
             val nodeMap = list.associateBy { it.id }
+
             // 递归排序节点
             fun sortChildren(nodes: List<DirectoryTreeDTO>)
             {
@@ -75,18 +82,30 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
             // 对所有层级进行排序
             sortChildren(rootNodes)
 
-            return@getWithFineLock rootNodes
+            return rootNodes
         }
-        )?: emptyList()
+        //这里是因为dir去数据库搜索的代价太大了，所以积极缓存
+        return if (hotKeyValidator.isHotKey(key,count=HotKeyValidator.HOT_KEY_COUNT_THRESHOLD/2+1,time=45L))
+        {
+            redisTemplate.getWithFineLock(
+                key, Duration.ofMinutes(10)
+            ) { dataLoader() } ?: emptyList()
+        }else
+        {
+            dataLoader()
+        }
+
     }
+
     fun removeCache(kbId: Long)
     {
         redisTemplate.delete("$DIR_REDIS_PRE_FIX$kbId")
-        Thread.ofVirtual().start{
+        Thread.ofVirtual().start {
             Thread.sleep(1000)
             redisTemplate.delete("$DIR_REDIS_PRE_FIX$kbId")
         }
     }
+
     fun getDirectoryWithPermissionCheck(directoryId: Long, kbId: Long, userId: Long): DirectoryEntity?
     {
         return baseMapper.selectDirectoryWithPermissionCheck(directoryId, kbId, userId)
@@ -112,6 +131,7 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
             return false
         }
     }
+
     @Transactional(propagation = Propagation.REQUIRED)
     fun saveDirectory(kbId: Long, userId: Long, name: String, parentId: Long? = null, postId: Long? = null): Long
     {
@@ -123,9 +143,9 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
                 directoryId, kbId = kbId, userId = userId, parentId = parentId, name = name, postId = postId
             ) > 0
             //去增加kb的post_count
-            if(postId!=null)
+            if (postId != null)
             {
-                val query= UpdateWrapper <KnowledgeBaseEntity>().eq("id",kbId).setSql("post_count = post_count + 1");
+                val query = UpdateWrapper<KnowledgeBaseEntity>().eq("id", kbId).setSql("post_count = post_count + 1");
                 knowledgeBaseService.update(query)
             }
             return if (success)

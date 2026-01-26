@@ -5,32 +5,45 @@ import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.api.user.extra.UserExtraInfoService
 import com.cainsgl.common.entity.user.UserExtraInfoEntity
-import com.cainsgl.user.misc.IncrSessionCallback
+import com.cainsgl.common.util.FineLockCacheUtils.withFineLockByDoubleChecked
+import com.cainsgl.common.util.HotKeyValidator
+import com.cainsgl.common.util.HotKeyValidator.Companion.HOT_KEY_COUNT_THRESHOLD
+import com.cainsgl.common.util.UserHotInfoUtils.Companion.USER_HOT_INFO_COUNT
 import com.cainsgl.user.repository.UserExtraInfoMapper
+import com.cainsgl.user.service.UserServiceImpl.Companion.USER_REDIS_PREFIX
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
-import org.redisson.api.RedissonClient
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import java.io.Serializable
+import java.time.Duration
 
 private val logger = KotlinLogging.logger {}
-
 @Service
-class UserExtraInfoServiceImpl : ServiceImpl<UserExtraInfoMapper, UserExtraInfoEntity>(), UserExtraInfoService,
-    IService<UserExtraInfoEntity>
+class UserExtraInfoServiceImpl : ServiceImpl<UserExtraInfoMapper, UserExtraInfoEntity>(), UserExtraInfoService, IService<UserExtraInfoEntity>
 {
     @Resource
-    lateinit var redissonClient: RedissonClient
+    lateinit var redisTemplate: RedisTemplate<String, Any>
+
+    /**
+     * fixBug
+     *  No qualifying bean of type 'RedisTemplate<String, UserExtraInfoEntity>' available at least 1 bean which qualifies as autowire candidate.
+     *  这个bug很奇怪，不知道为什么这里无法注入
+     */
+//    @Resource
+//    lateinit var redisTemplateEntity: RedisTemplate<String, UserExtraInfoEntity>
 
     @Resource
-    lateinit var redisTemplate: RedisTemplate<String, Int>
+    lateinit var hotKeyValidator: HotKeyValidator
 
     companion object
     {
-        const val USER_EXTRA_PREFIX_KEY="user:extra"
+        const val USER_EXTRA_PREFIX_KEY = "user:extra"
+
+
+
     }
 
     override fun getInterestVector(userId: Long): FloatArray?
@@ -54,39 +67,24 @@ class UserExtraInfoServiceImpl : ServiceImpl<UserExtraInfoMapper, UserExtraInfoE
         {
             return null
         }
+
         if (id is Long)
         {
-            //优先从redis里读取
-            val ueInfo = UserExtraInfoEntity(userId = id)
-            if (ueInfo.fillFieldByRedis(redisTemplate))
+            val key = "${USER_EXTRA_PREFIX_KEY}${id}"
+            val value = redisTemplate.opsForValue().get(key) as UserExtraInfoEntity?
+            if (value != null)
             {
-                return ueInfo
+                return value
             }
-            //说明填充失败，尝试从数据库里获取
-            val lock = redissonClient.getLock("lock:"+USER_EXTRA_PREFIX_KEY + id)
-            val isLockAcquired = lock.tryLock(15, java.util.concurrent.TimeUnit.SECONDS)
-            if (!isLockAcquired)
+            //这里和user去公用一个key即可
+            if (hotKeyValidator.isHotKey("${USER_REDIS_PREFIX}${id}", count = HOT_KEY_COUNT_THRESHOLD * 2))
             {
-                //时间太长了，采用备用方案
-                //   throw BSystemException("获取热点数据失败，缓存问题")
+                return redisTemplate.withFineLockByDoubleChecked(key, { Duration.ofMinutes(20) }) {
+                    return@withFineLockByDoubleChecked super<ServiceImpl>.getById(id) as Any?
+                } as UserExtraInfoEntity?
+            } else
+            {
                 return super<ServiceImpl>.getById(id)
-            }
-            try
-            {
-                if (ueInfo.fillFieldByRedis(redisTemplate))
-                {
-                    return ueInfo
-                }
-                val ueInfo2 = super<ServiceImpl>.getById(id) ?: return null
-                ueInfo2.saveFieldByRedis(redisTemplate)
-                return ueInfo2
-            } catch (ex: Exception)
-            {
-                logger.error { "获取用户信息失败$ex" }
-                return null
-            } finally
-            {
-                lock.unlock()
             }
         }
         return null
@@ -101,32 +99,57 @@ class UserExtraInfoServiceImpl : ServiceImpl<UserExtraInfoMapper, UserExtraInfoE
             return byId
         }
         val userExtraInfoEntity = UserExtraInfoEntity(userId = id)
+        //TODO，目前将Vector不会起任何作用
         userExtraInfoEntity.interestVector = FloatArray(1024)
         userExtraInfoEntity.interestVector!!.fill(1e-8f)
         save(userExtraInfoEntity)
-        userExtraInfoEntity.saveFieldByRedis(redisTemplate)
         return userExtraInfoEntity
     }
 
-    fun incrFlowCount(followerId: Long, followeeId: Long)
+    fun incrFlowCount(followerId: Long, followeeId: Long): Boolean
     {
-        redisTemplate.execute(
-            IncrSessionCallback(
-                "${UserExtraInfoEntity.USER_EXTRA_INFO_REDIS_PREFIX}$followerId",
-                "${UserExtraInfoEntity.USER_EXTRA_INFO_REDIS_PREFIX}$followeeId",
-                1
-            )
-        )
+        return changeFlowCount(followerId, followeeId, 1)
+
     }
 
-    fun decrFlowCount(followerId: Long, followeeId: Long)
+    fun changeFlowCount(followerId: Long, followeeId: Long, count: Long): Boolean
     {
-        redisTemplate.execute(
-            IncrSessionCallback(
-                "${UserExtraInfoEntity.USER_EXTRA_INFO_REDIS_PREFIX}$followerId",
-                "${UserExtraInfoEntity.USER_EXTRA_INFO_REDIS_PREFIX}$followeeId",
-                -1
-            )
-        )
+        //followerId是粉丝，另外一个是关注的
+        val followerKey = "${USER_HOT_INFO_COUNT}${followerId}"
+        val opsForHash = redisTemplate.opsForHash<String, Long>()
+
+        //增加关注数
+        opsForHash.increment(followerKey, "followingCount", count)
+        val followeeKey = "${USER_HOT_INFO_COUNT}${followeeId}"
+        //增加粉丝数
+        opsForHash.increment(followeeKey, "followerCount", count)
+        return true
+    }
+
+    fun decrFlowCount(followerId: Long, followeeId: Long): Boolean
+    {
+        return changeFlowCount(followerId, followeeId, -1)
+    }
+
+    override fun saveCount(userExtraInfo: UserExtraInfoEntity): Boolean
+    {
+        val userId = userExtraInfo.userId ?: return false
+        val key = "${USER_HOT_INFO_COUNT}${userId}"
+        val opsForHash = redisTemplate.opsForHash<String, Int>()
+        
+        val updates = mutableMapOf<String, Int>()
+        userExtraInfo.likeCount?.let { updates["likeCount"] = it }
+        userExtraInfo.commentCount?.let { updates["commentCount"] = it }
+        userExtraInfo.postCount?.let { updates["postCount"] = it }
+        userExtraInfo.articleViewCount?.let { updates["articleViewCount"] = it }
+        userExtraInfo.followingCount?.let { updates["followingCount"] = it }
+        userExtraInfo.followerCount?.let { updates["followerCount"] = it }
+        
+        if (updates.isNotEmpty())
+        {
+            opsForHash.putAll(key, updates)
+            return true
+        }
+        return false
     }
 }

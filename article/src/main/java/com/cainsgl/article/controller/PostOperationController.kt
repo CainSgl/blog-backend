@@ -5,8 +5,10 @@ import com.cainsgl.article.service.PostOperationServiceImpl
 import com.cainsgl.article.service.PostServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.OperateType
+import com.cainsgl.common.util.UserHotInfoUtils.Companion.changeLikeCount
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -23,7 +25,8 @@ class PostOperationController
 
     @Resource
     lateinit var postService: PostServiceImpl
-
+    @Resource
+    lateinit var redisTemplate: RedisTemplate<Any,Any>
     @GetMapping("/like")
     fun like(@RequestParam id: Long, @RequestParam add: Boolean = true): Any
     {
@@ -31,9 +34,11 @@ class PostOperationController
         postOperationService.addOperate(userId = userId, type = OperateType.LIKE_TYPE, id = id, add = add)
         if (add)
         {
+            redisTemplate.changeLikeCount(1,userId)
             postService.addLikeCount(id, 1)
         } else
         {
+            redisTemplate.changeLikeCount(1,userId)
             postService.addLikeCount(id, -1)
         }
         return ResultCode.SUCCESS

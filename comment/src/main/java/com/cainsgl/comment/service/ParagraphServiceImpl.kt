@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.comment.entity.ParagraphEntity
 import com.cainsgl.comment.repository.ParagraphMapper
+import com.cainsgl.common.util.HotKeyValidator
 import jakarta.annotation.Resource
 import org.redisson.api.RedissonClient
 import org.springframework.data.redis.core.RedisTemplate
@@ -16,15 +17,23 @@ class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
 {
     @Resource
     lateinit var redisTemplate: RedisTemplate<String, Any>
+
     @Resource
     lateinit var redissonClient: RedissonClient
+
+    @Resource
+    lateinit var hotKeyValidator: HotKeyValidator
+
     companion object
     {
         //TODO，后续需要扫描key，然后写回count
         const val PARAGRAPH_REDIS_PREFIX_KEY = "paragraph:"
+        const val PARAGRAPH_COUNT_INFO = "cursor:paragraph_count:"
     }
 
-
+    /**
+     * 只有hotkey才会加载到redis里去
+     */
     fun getCountByPost(id: Long, version: Int): List<ParagraphEntity>?
     {
         val redisKey = "$PARAGRAPH_REDIS_PREFIX_KEY$id:$version"
@@ -46,6 +55,7 @@ class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
             }
             return null
         }
+
         fun getDataByDB(): List<ParagraphEntity>
         {
             val query =
@@ -53,48 +63,54 @@ class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
             val entities = baseMapper.selectList(query)
             return entities
         }
+
         val data = getDataByRedis()
         if (data != null)
         {
             return data
         }
-        val lock = redissonClient.getLock("lock:"+redisKey)
-        val isLockAcquired = lock.tryLock(5, java.util.concurrent.TimeUnit.SECONDS)
-        if (isLockAcquired)
+        if (hotKeyValidator.isHotKey(redisKey))
         {
-           try{
-               val data2 = getDataByRedis()
-               if (data2 != null)
-               {
-                   return data2
-               }
-               // 将数据按 data_id 分组并存储到 Redis Hash
-               val hashOps = redisTemplate.opsForHash<String, Int>()
-               val entities= getDataByDB()
-               if (entities.isNotEmpty())
-               {
-                   val hashData = mutableMapOf<String, Int>()
-                   entities.forEach { entity ->
-                       entity.dataId?.let { dataId ->
-                           hashData[dataId.toString()] = entity.count ?: -1
-                       }
-                   }
-                   hashOps.putAll(redisKey, hashData)
-               } else
-               {
-                   //防止缓存穿透
-                   hashOps.put(redisKey, "-1", 0)
-               }
-               return entities
-           }finally
-           {
-               lock.unlock()
-           }
-        }else
+            val lock = redissonClient.getLock("lock:$redisKey")
+            val isLockAcquired = lock.tryLock(5, java.util.concurrent.TimeUnit.SECONDS)
+            if (isLockAcquired)
+            {
+                try
+                {
+                    val data2 = getDataByRedis()
+                    if (data2 != null)
+                    {
+                        return data2
+                    }
+                    // 将数据按 data_id 分组并存储到 Redis Hash
+                    val hashOps = redisTemplate.opsForHash<String, Int>()
+                    val entities = getDataByDB()
+                    if (entities.isNotEmpty())
+                    {
+                        val hashData = mutableMapOf<String, Int>()
+                        entities.forEach { entity ->
+                            entity.dataId?.let { dataId ->
+                                hashData[dataId.toString()] = entity.count ?: -1
+                            }
+                        }
+                        hashOps.putAll(redisKey, hashData)
+                    }
+                    redisTemplate.expire(redisKey, java.time.Duration.ofMinutes(20))
+                    return entities
+                } finally
+                {
+                    lock.unlock()
+                }
+            } else
+            {
+                //备用方案，直接读数据库
+                return getDataByDB()
+            }
+        } else
         {
-            //备用方案，直接读数据库
             return getDataByDB()
         }
+
 
     }
 
@@ -105,49 +121,38 @@ class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
     @Transactional
     fun incrementCount(postId: Long, version: Int, dataId: Int): Boolean
     {
-        val redisKey = "$PARAGRAPH_REDIS_PREFIX_KEY$postId:$version"
-        val hashKey = dataId.toString()
 
-        // 检查 Redis Hash 中是否存在指定的 field
-        val hashOps = redisTemplate.opsForHash<String, Int>()
-        val hasField = hashOps.hasKey(redisKey, hashKey)
-        if (!hasField)
+        val hashKey = dataId.toString()
+        try
         {
-            //该情况比较极端，发生在用户阅读文章十分钟后，并且这期间没有其他用户阅读，数据已经过期
-            //去数据库里，单独的把他加载进来放入内存
-            //存在更极端的情况，就是放进redis的时候，有其他用户来加载数据了，所以仍然需要双重检查锁，并且由于数据是会变更的，不能用本地锁，需要使用分布式锁
-            val lock = redissonClient.getLock("lock:"+redisKey)
-            val isLockAcquired = lock.tryLock(8, java.util.concurrent.TimeUnit.SECONDS)
-            try{
-                if (isLockAcquired)
-                {
-                    val query =
-                        QueryWrapper<ParagraphEntity>().select("data_id", "count").eq("post_id", postId).eq("data_id", dataId)
-                            .eq("version", version)
-                    val paragraphEntity = this.baseMapper.selectOne(query)
-                    val value = paragraphEntity.count!! + 1;
-                    hashOps.put(redisKey, hashKey, value)
-                }else
-                {
-                    //极端情况，直接自增数据库的
-                    val update= UpdateWrapper<ParagraphEntity>().eq("post_id", postId).eq("data_id", dataId)
-                        .eq("version", version).setSql("count = count+1")
-                    this.update(update)
-                }
-            }finally
-            {
-                lock.unlock()
+            val redisKey = "$PARAGRAPH_COUNT_INFO$postId:$version"
+            val hashOps = redisTemplate.opsForHash<String, Int>()
+            hashOps.increment(redisKey, hashKey, 1L)
+        } catch (e: Exception)
+        {
+            log.error("似乎是无法连接到redis，采用兜底方案", e)
+            val update =
+                UpdateWrapper<ParagraphEntity>().eq("post_id", postId).eq("data_id", dataId).eq("version", version)
+                    .setSql("count = count+1")
+            this.update(update)
+        } finally
+        {
+            //这里是去临时的增加显示给用户的信息，上面的是用来给定时任务刷回数据库的。
+            val redisKey = "$PARAGRAPH_REDIS_PREFIX_KEY$postId:$version"
+            val hasKey = redisTemplate.hasKey(redisKey)
+            if(hasKey!=null&&hasKey){
+                //这里，只有在redis里的时候，才会去自增redis里的数据
+                val hashOps = redisTemplate.opsForHash<String, Int>()
+                hashOps.increment(redisKey, hashKey, 1)
             }
-            return false
         }
-        hashOps.increment(redisKey, hashKey, 1)
         return true
     }
 
     /**
      * 设置指定 postId、version、dataId 的计数值
      */
-    fun setCount(postId: Long, version: Int, dataId: Int, value: Int)
+    fun addCount(postId: Long, version: Int, dataId: Int, value: Int)
     {
         val redisKey = "$PARAGRAPH_REDIS_PREFIX_KEY$postId:$version"
         val hashKey = dataId.toString()
@@ -155,7 +160,6 @@ class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
         val hashOps = redisTemplate.opsForHash<String, Int>()
         hashOps.put(redisKey, hashKey, value)
     }
-
 
 
 }

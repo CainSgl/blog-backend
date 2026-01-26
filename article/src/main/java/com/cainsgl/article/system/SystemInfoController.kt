@@ -92,7 +92,7 @@ class SystemInfoController
                 return@getWithFineLock knowledgeBaseService.getOne(query).index
             } ?: ResultCode.UNKNOWN_ERROR
         }
-        val post = postService.getPost(id)
+        val post = postService.getPostBaseInfo(id)
         if (post?.kbId != 2L)
         {
             return ResultCode.RESOURCE_NOT_FOUND
@@ -112,7 +112,7 @@ class SystemInfoController
         @RequestParam id: Long, request: HttpServletRequest, response: HttpServletResponse
     ): Any
     {
-        val post = postService.getPost(id)
+        val post = postService.getPostBaseInfo(id)
         if (post?.kbId != 1L)
         {
             return ResultCode.RESOURCE_NOT_FOUND

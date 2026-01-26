@@ -7,9 +7,11 @@ import com.cainsgl.comment.entity.ParagraphEntity
 import com.cainsgl.comment.service.ParCommentServiceImpl
 import com.cainsgl.comment.service.ParagraphServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
+import com.cainsgl.common.util.UserHotInfoUtils.Companion.changeCommentCount
 import com.cainsgl.senstitve.config.SensitiveWord
 import jakarta.annotation.Resource
 import org.springframework.dao.DuplicateKeyException
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.bind.annotation.*
 
@@ -25,6 +27,8 @@ class ParagraphController {
      lateinit var transactionTemplate: TransactionTemplate
     @Resource
     lateinit var sensitiveWord: SensitiveWord
+    @Resource
+    lateinit var redisTemplate: RedisTemplate<Any,Any>
     @GetMapping("/comment")
     fun getCountByPost(@RequestParam id:Long,@RequestParam version: Int):List<ParagraphEntity>
     {
@@ -48,7 +52,8 @@ class ParagraphController {
             }
             // 说明确实是第一次创建的
             commentService.save(comment)
-            paragraphService.setCount(postId = request.postId, version = request.version,dataId = request.dataId,1)
+            paragraphService.addCount(postId = request.postId, version = request.version,dataId = request.dataId,1)
+            redisTemplate.changeCommentCount(1,userId)
             return@execute ResultCode.SUCCESS
         }?: ResultCode.UNKNOWN_ERROR
     }

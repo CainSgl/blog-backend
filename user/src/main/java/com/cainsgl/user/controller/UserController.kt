@@ -93,10 +93,11 @@ class UserController
     @GetMapping("/current")
     fun getCurrentUser(): UserCurrentResponse
     {
-        val userInfo = userService.getById(StpUtil.getLoginIdAsLong())
+        val userId=StpUtil.getLoginIdAsLong()
+        val userInfo = userService.getById(userId)
         //获取自己的热信息
-        val hotInfo = userExtraInfoService.getBySaveOnNull(userInfo.id!!)
-        return  UserCurrentResponse(userInfo.calculateLevelInfo().sanitizeSystemSensitiveData(),hotInfo)
+        val hotInfo = userExtraInfoService.getBySaveOnNull(userId)
+        return  UserCurrentResponse(userInfo!!.calculateLevelInfo().sanitizeSystemSensitiveData(),hotInfo)
     }
 
     @SaIgnore

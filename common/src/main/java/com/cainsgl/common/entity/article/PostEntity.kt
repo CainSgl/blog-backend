@@ -17,7 +17,7 @@ data class PostEntity(
     @TableField("title")
     var title: String? = null,
 
-    @TableField("content")
+    @TableField("content", select = false)
     var content: String ?= null,
 
     @TableField("summary")

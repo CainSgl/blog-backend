@@ -1,6 +1,5 @@
 package com.cainsgl.scheduler.job
 
-import com.cainsgl.api.user.extra.UserExtraInfoService
 import com.cainsgl.api.user.log.UserLogService
 import com.cainsgl.common.entity.user.UserExtraInfoEntity
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -28,9 +27,6 @@ class UserLogJob
 
     @Resource
     lateinit var rocketMQClientTemplate: RocketMQClientTemplate
-
-    @Resource
-    lateinit var userExtraInfoService: UserExtraInfoService
 
     @Resource
     lateinit var redisTemplate: RedisTemplate<String, Int>
@@ -70,7 +66,7 @@ class UserLogJob
                 val key = cursor.next()
                 val entries = opsForHash.entries(key)
                 val id = key.substringAfter(UserExtraInfoEntity.USER_EXTRA_INFO_REDIS_PREFIX).toLong()
-                val entity = UserExtraInfoEntity(userId = id).apply { fillFieldByMap(entries) }
+             //   val entity = UserExtraInfoEntity(userId = id).apply { fillFieldByMap(entries) }
             }
         }
     }

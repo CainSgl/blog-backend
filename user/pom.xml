@@ -32,6 +32,7 @@
             <artifactId>api-user</artifactId>
             <version>1.0</version>
         </dependency>
+        <!-- 排除他引入的boot stater是为了排除slf4j的引入-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>

@@ -52,7 +52,7 @@ class PostChunkVectorServiceImpl : ServiceImpl<PostChunkVectorMapper, PostChunkV
             loadVector(postId)
             return true
         }
-        val post = postService.getPost(postId) ?: return false
+        val post = postService.getPostBaseInfo(postId) ?: return false
         if (originContent == post.content)
         {
             //内容无变更，不需要管
@@ -107,7 +107,7 @@ class PostChunkVectorServiceImpl : ServiceImpl<PostChunkVectorMapper, PostChunkV
 
     fun loadVector(postId: Long): Boolean
     {
-        val post = postService.getPost(postId) ?: return false
+        val post = postService.getPostBaseInfo(postId) ?: return false
         val chunks: List<String> = GfmChunkUtils.chunk(post.content!!)
         val embeddings = aiService.getEmbedding(chunks)
         val willInsert = mutableListOf<PostChunkVectorEntity>()

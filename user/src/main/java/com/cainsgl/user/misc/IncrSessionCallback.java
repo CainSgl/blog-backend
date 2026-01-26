@@ -3,9 +3,7 @@ package com.cainsgl.user.misc;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.SessionCallback;
-
-import java.util.List;
-
+@Deprecated()
 public class IncrSessionCallback implements SessionCallback<Boolean> {
 
     String followerRedisKey;

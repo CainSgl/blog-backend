@@ -49,4 +49,3 @@ TODO LIST
 1.写回评论的数量，在paragraphServiceImpl里可以查看
 2.写回用户的粉丝和关注数量，在userServiceImpl里可以查看
 3.写回文字信息
-4. 只缓存热点数据

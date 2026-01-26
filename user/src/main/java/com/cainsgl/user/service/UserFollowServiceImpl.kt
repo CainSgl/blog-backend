@@ -49,7 +49,7 @@ class UserFollowServiceImpl : ServiceImpl<UsersFollowMapper, UsersFollowEntity>(
     @Transactional(propagation = Propagation.SUPPORTS)
     fun checkFollowing(followerId: Long, followeeId: Long): Boolean
     {
-        return this.baseMapper.checkFollowing(followerId, followeeId)
+        return baseMapper.checkFollowing(followerId, followeeId)
     }
     
     /**
@@ -58,7 +58,7 @@ class UserFollowServiceImpl : ServiceImpl<UsersFollowMapper, UsersFollowEntity>(
     @Transactional(propagation = Propagation.SUPPORTS)
     fun getFollowerUsers(userId: Long, lastId: Long): List<FollowUserResponse>
     {
-        return this.baseMapper.getFollowerUsers(userId, lastId)
+        return baseMapper.getFollowerUsers(userId, lastId)
     }
     
     /**
@@ -67,12 +67,12 @@ class UserFollowServiceImpl : ServiceImpl<UsersFollowMapper, UsersFollowEntity>(
     @Transactional(propagation = Propagation.SUPPORTS)
     fun getFolloweeUsers(userId: Long, lastId: Long): List<FollowUserResponse>
     {
-        return this.baseMapper.getFolloweeUsers(userId, lastId)
+        return baseMapper.getFolloweeUsers(userId, lastId)
     }
-
+    //高频api，但无需缓存，因为一般都是查看自己是不是某用户的粉丝，缓存后的命中概率太差。
     override fun hasFollow(followerId: Long, followeeId: Long): Boolean
     {
-        //忽略自身调用的aop失效，这里无需
-        return  this.baseMapper.checkFollowing(followerId, followeeId)
+
+        return  baseMapper.checkFollowing(followerId, followeeId)
     }
 }

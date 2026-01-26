@@ -50,9 +50,25 @@ service UserService {
     rpc mallocMemory (MallocMemoryRequest) returns (MallocMemoryResponse);
 }
 
+// SaveCount Service
+message SaveCountRequest {
+    int64 user_id = 1;
+    optional int32 like_count = 2;
+    optional int32 comment_count = 3;
+    optional int32 post_count = 4;
+    optional int32 article_view_count = 5;
+    optional int32 following_count = 6;
+    optional int32 follower_count = 7;
+}
+
+message SaveCountResponse {
+    bool success = 1;
+}
+
 service UserExtraInfoService {
     rpc getInterestVector (GetInterestVectorRequest) returns (GetInterestVectorResponse);
     rpc setInterestVector (SetInterestVectorRequest) returns (SetInterestVectorResponse);
+    rpc saveCount (SaveCountRequest) returns (SaveCountResponse);
 }
 
 // UserFollow Service

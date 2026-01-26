@@ -17,6 +17,7 @@ data class PageUserIdListRequest(
     val option:String?=null,
     //下面是只允许是当前用户才生效，方便用户看自己的文档哪些未发布
     var status: ArticleStatus?=null,
+    var onlyTitle:Boolean=false,
 ){
     companion object{
         val kbOptions:List<String> = listOf("created_at","like_count")
