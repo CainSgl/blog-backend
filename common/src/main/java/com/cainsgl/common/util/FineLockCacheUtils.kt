@@ -43,12 +43,12 @@ object FineLockCacheUtils
         val cacheData = this.opsForValue().get(cacheKey)
         if (cacheData != null)
         {
-            // 重置缓存过期时间
-            val expireTime = expireTimeGetter(cacheData)
-            if (expireTime != null)
-            {
-                this.expire(cacheKey, expireTime)
-            }
+//            // 重置缓存过期时间
+//            val expireTime = expireTimeGetter(cacheData)
+//            if (expireTime != null)
+//            {
+//                this.expire(cacheKey, expireTime)
+//            }
             return cacheData
         }
         return this.withFineLockByDoubleChecked(cacheKey,expireTimeGetter, loader)
@@ -65,10 +65,8 @@ object FineLockCacheUtils
         return withFineLock(cacheKey) {
             // 双重检查
             val doubleCheckData = this.opsForValue().get(cacheKey)
-            val loadDataTime = expireTimeGetter(doubleCheckData)
             if (doubleCheckData != null)
             {
-                if (loadDataTime != null) this.expire(cacheKey, loadDataTime)
                 return@withFineLock doubleCheckData
             }
             // 缓存未命中

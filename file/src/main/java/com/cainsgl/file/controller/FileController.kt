@@ -71,154 +71,156 @@ class FileController
         return fileUrlService.list(query)
     }
 
+    /**
+     * 公开访问文件 - 通过重定向到预签名URL
+     * 支持ETag缓存优化
+     */
     @SaIgnore
     @GetMapping
     fun getFile(
-        @RequestParam("f") shorUrl: Long,
+        @RequestParam("f") shortUrl: Long,
         @RequestParam("width", required = false) width: String?,
         request: HttpServletRequest,
         response: HttpServletResponse
-    ): Any?
+    ):Any
     {
-        if (width != null)
-        {
-            response.setHeader("X-Image-Render-Width", width)
-        }
-        val byId = fileUrlService.getById(shorUrl) ?: return null
+        val fileEntity = fileUrlService.getById(shortUrl) 
+            ?: return ResultCode.RESOURCE_NOT_FOUND
 
-        response.setHeader("ETag", byId.url);
-        //获取请求头里的etag
+        // ETag缓存检查
         val eTag = request.getHeader("If-None-Match")
-        if (!eTag.isNullOrEmpty() && eTag == byId.url)
+        if (!eTag.isNullOrEmpty() && eTag == fileEntity.url)
         {
-            //内容相同，不需要写入，直接返回
             response.status = HttpServletResponse.SC_NOT_MODIFIED
-            return null;
+            response.setHeader("ETag", fileEntity.url)
+            return ResultCode.SUCCESS
         }
-        if (StpUtil.isLogin())
-        {
-            val roleList = StpUtil.getRoleList()
-            if (roleList.contains("admin") || roleList.contains("vip"))
-            {
-                fileService.getFile(byId.url!!, false, response, byId.name!!)
-            } else
-            {
-                fileService.getFileRateLimit(byId.url!!, false, response, 5, byId.name!!)
-            }
-            return null
-        } else
-        {
-            fileService.getFileRateLimit(byId.url!!, false, response, 5, byId.name!!)
-            return null
-        }
-    }
 
-    @SaCheckRole("user")
-    @GetMapping("/download")
-    fun downLoadFile(@RequestParam("f") shorUrl: Long, response: HttpServletResponse): Any?
-    {
-        val byId = fileUrlService.getById(shorUrl)
-        if (byId == null)
-        {
-            //文件被移除和删除
-            return ResultCode.RESOURCE_NOT_FOUND
-        } else
-        {
-            val roleList = StpUtil.getRoleList()
-            if (roleList.contains("admin") || roleList.contains("vip"))
-            {
-                fileService.getFile(byId.url!!, true, response, byId.name!!)
-            } else
-            {
-                fileService.getFileRateLimit(byId.url!!, true, response, 1, byId.name!!)
-            }
-            return null
-        }
-    }
+        // 设置响应头
+        response.setHeader("ETag", fileEntity.url)
+//        if (width != null)
+//        {
+//            response.setHeader("X-Image-Render-Width", width)
+//        }
 
-    @SaCheckRole("user")
-    @GetMapping("/free")
-    fun free(@RequestParam("f") shorUrl: Long?): Any
-    {
-        if (shorUrl == null)
-        {
-            return ResultCode.NO_DATA
-        }
-        val query = QueryWrapper<FileUrlEntity>()
-        val userId = StpUtil.getLoginIdAsLong()
-        query.eq("short_url", shorUrl)
-        query.eq("user_id", userId)
-        val byId = fileUrlService.getById(shorUrl)
-            ?: //文件被移除和删除
-            throw BusinessException("释放的文件不存在，可能是已经被删除了，请忽略此消息")
-
-        //删除他
-        transactionTemplate.execute {
-            val query2 = QueryWrapper<FileUrlEntity>().eq("url", byId.url)
-            val count = fileUrlService.count(query2)
-            fileUrlService.removeById(byId)
-            userService.mallocMemory(userId, -byId.fileSize!!)
-            if (count <= 1)
-            {
-                //需要删除
-                fileService.delete(byId.url!!)
-            }
-        }
+        // 重定向到预签名URL
+        val downloadUrl = fileService.getDownloadUrl(fileEntity.url!!, expiresInSeconds = 300)
+        response.sendRedirect(downloadUrl)
         return ResultCode.SUCCESS
-
     }
 
-    @SaCheckRole("user")
-    @GetMapping("/batchFree")
-    fun batchFree(@RequestParam("f") shorUrls: List<Long>): Any
+   // @SaCheckRole("user")
+    @GetMapping("/download")
+    fun downloadFile(@RequestParam("f") shortUrl: Long, response: HttpServletResponse):Any
     {
-        if (shorUrls.isEmpty())
-        {
-            return ResultCode.NO_DATA
-        }
+        val fileEntity = fileUrlService.getById(shortUrl)
+            ?: return ResultCode.RESOURCE_NOT_FOUND
+        val downloadUrl = fileService.getDownloadUrl(
+            objectKey = fileEntity.url!!,
+            expiresInSeconds = 30,
+            isDownload = true,
+            filename = fileEntity.name
+        )
+        response.sendRedirect(downloadUrl)
+        return ResultCode.SUCCESS
+    }
+
+
+    /**
+     * 删除单个文件
+     */
+    @SaCheckRole("user")
+    @DeleteMapping
+    fun deleteFile(@RequestParam("f") shortUrl: Long): Any
+    {
         val userId = StpUtil.getLoginIdAsLong()
-        val query = QueryWrapper<FileUrlEntity>().eq("user_id", userId)
-        query.`in`("short_url", shorUrls)
-        val files = fileUrlService.list(query)
+        val fileEntity = fileUrlService.getById(shortUrl)
+            ?: throw BusinessException("文件不存在或已被删除")
+
+        // 验证文件所有权
+        if (fileEntity.userId != userId)
+        {
+            return ResultCode.PERMISSION_DENIED
+        }
+
+        deleteFileInternal(listOf(fileEntity), userId)
+        return ResultCode.SUCCESS
+    }
+
+    /**
+     * 批量删除文件
+     */
+    @SaCheckRole("user")
+    @DeleteMapping("/batch")
+    fun batchDeleteFiles(@RequestParam("f") shortUrls: List<Long>): Any
+    {
+        if (shortUrls.isEmpty())
+        {
+           return ResultCode.MISSING_PARAM
+        }
+
+        val userId = StpUtil.getLoginIdAsLong()
+        val files = fileUrlService.list(
+            QueryWrapper<FileUrlEntity>()
+                .eq("user_id", userId)
+                .`in`("short_url", shortUrls)
+        )
+
         if (files.isNullOrEmpty())
         {
-            return ResultCode.RESOURCE_NOT_FOUND
+          return ResultCode.RESOURCE_NOT_FOUND
         }
-        val urlToFilesMap: Map<String?, List<FileUrlEntity>> = files.groupBy { it.url }
-        var allSize: Int = 0;
-        files.forEach { file -> allSize += file.fileSize!! }
+
+        deleteFileInternal(files, userId)
+        return ResultCode.SUCCESS
+    }
+
+    /**
+     * 删除文件的内部实现
+     * 处理引用计数和实际文件删除
+     */
+    private fun deleteFileInternal(files: List<FileUrlEntity>, userId: Long)
+    {
+        val urlToFilesMap = files.groupBy { it.url }
+        val totalSize = files.sumOf { it.fileSize ?: 0 }
 
         transactionTemplate.execute {
-            //看哪些需要删除文件的
             urlToFilesMap.forEach { (fileUrl, groupFiles) ->
-                if (fileUrl.isNullOrBlank())
-                {
-                    return@forEach
-                }
+                if (fileUrl.isNullOrBlank()) return@forEach
+
                 val currentDeleteCount = groupFiles.size
-                val totalBeforeDelete = fileUrlService.count(QueryWrapper<FileUrlEntity>().eq("url", fileUrl))
-                groupFiles.forEach { file ->
-                    fileUrlService.removeById(file)
-                }
-                if (totalBeforeDelete <= currentDeleteCount)
+                val totalReferences = fileUrlService.count(
+                    QueryWrapper<FileUrlEntity>().eq("url", fileUrl)
+                )
+
+                // 删除数据库记录
+                groupFiles.forEach { file -> fileUrlService.removeById(file) }
+
+                // 如果没有其他引用，删除实际文件
+                if (totalReferences <= currentDeleteCount)
                 {
                     fileService.delete(fileUrl)
                 }
             }
-            userService.mallocMemory(userId, -allSize)
+            
+            // 释放用户存储空间
+            userService.mallocMemory(userId, -totalSize)
         }
-        return ResultCode.SUCCESS
     }
 
-
+    /**
+     * 获取用户的文件列表
+     */
     @SaCheckRole("user")
     @GetMapping("/list")
-    fun list(): Any
+    fun listUserFiles(): List<FileUrlEntity>
     {
         val userId = StpUtil.getLoginIdAsLong()
-        val query = QueryWrapper<FileUrlEntity>().select(FileUrlEntity.BASIC_COL)
-        query.eq("user_id", userId)
-        return fileUrlService.list(query)
+        return fileUrlService.list(
+            QueryWrapper<FileUrlEntity>()
+                .select(FileUrlEntity.BASIC_COL)
+                .eq("user_id", userId)
+        )
     }
 
 }

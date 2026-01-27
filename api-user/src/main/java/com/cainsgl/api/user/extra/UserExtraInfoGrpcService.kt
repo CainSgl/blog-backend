@@ -2,7 +2,6 @@ package com.cainsgl.api.user.extra
 
 import com.cainsgl.common.entity.user.UserExtraInfoEntity
 import com.cainsgl.grpc.user.GetInterestVectorRequest
-import com.cainsgl.grpc.user.SaveCountRequest
 import com.cainsgl.grpc.user.SetInterestVectorRequest
 import com.cainsgl.grpc.user.UserExtraInfoServiceGrpc
 import net.devh.boot.grpc.client.inject.GrpcClient
@@ -34,20 +33,29 @@ class UserExtraInfoGrpcService : UserExtraInfoService
         val response = userExtraInfoServiceGrpc.setInterestVector(request)
         return response.success
     }
-
-    override fun saveCount(userExtraInfo: UserExtraInfoEntity): Boolean
+    @Deprecated("目前无需定时任务模块调度，直接让该服务直接完成，无需引入其他依赖。性能更高")
+    override fun saveCount(userExtraInfoList: List<UserExtraInfoEntity>): Boolean
     {
-        val requestBuilder = SaveCountRequest.newBuilder()
-            .setUserId(userExtraInfo.userId!!)
-        
-        userExtraInfo.likeCount?.let { requestBuilder.setLikeCount(it) }
-        userExtraInfo.commentCount?.let { requestBuilder.setCommentCount(it) }
-        userExtraInfo.postCount?.let { requestBuilder.setPostCount(it) }
-        userExtraInfo.articleViewCount?.let { requestBuilder.setArticleViewCount(it) }
-        userExtraInfo.followingCount?.let { requestBuilder.setFollowingCount(it) }
-        userExtraInfo.followerCount?.let { requestBuilder.setFollowerCount(it) }
-        
-        val response = userExtraInfoServiceGrpc.saveCount(requestBuilder.build())
-        return response.success
+        throw IllegalArgumentException("该api废弃，不允许调用")
+//        val requests = userExtraInfoList.map { userExtraInfo ->
+//            val requestBuilder = SaveCountRequest.newBuilder()
+//                .setUserId(userExtraInfo.userId!!)
+//
+//            userExtraInfo.likeCount?.let { requestBuilder.setLikeCount(it) }
+//            userExtraInfo.commentCount?.let { requestBuilder.setCommentCount(it) }
+//            userExtraInfo.postCount?.let { requestBuilder.setPostCount(it) }
+//            userExtraInfo.articleViewCount?.let { requestBuilder.setArticleViewCount(it) }
+//            userExtraInfo.followingCount?.let { requestBuilder.setFollowingCount(it) }
+//            userExtraInfo.followerCount?.let { requestBuilder.setFollowerCount(it) }
+//
+//            requestBuilder.build()
+//        }
+//
+//        val batchRequest = BatchSaveCountRequest.newBuilder()
+//            .addAllRequests(requests)
+//            .build()
+//
+//        val response = userExtraInfoServiceGrpc.saveCount(batchRequest)
+//        return response.success
     }
 }

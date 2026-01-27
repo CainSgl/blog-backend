@@ -61,6 +61,10 @@ message SaveCountRequest {
     optional int32 follower_count = 7;
 }
 
+message BatchSaveCountRequest {
+    repeated SaveCountRequest requests = 1;
+}
+
 message SaveCountResponse {
     bool success = 1;
 }
@@ -68,7 +72,7 @@ message SaveCountResponse {
 service UserExtraInfoService {
     rpc getInterestVector (GetInterestVectorRequest) returns (GetInterestVectorResponse);
     rpc setInterestVector (SetInterestVectorRequest) returns (SetInterestVectorResponse);
-    rpc saveCount (SaveCountRequest) returns (SaveCountResponse);
+    rpc saveCount (BatchSaveCountRequest) returns (SaveCountResponse);
 }
 
 // UserFollow Service

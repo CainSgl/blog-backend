@@ -95,7 +95,7 @@ class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
                         }
                         hashOps.putAll(redisKey, hashData)
                     }
-                    redisTemplate.expire(redisKey, java.time.Duration.ofMinutes(20))
+                    redisTemplate.expire(redisKey, java.time.Duration.ofMinutes(10))
                     return entities
                 } finally
                 {

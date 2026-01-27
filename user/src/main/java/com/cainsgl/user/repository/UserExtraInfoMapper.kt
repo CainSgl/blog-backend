@@ -22,4 +22,17 @@ interface UserExtraInfoMapper : BaseMapper<UserExtraInfoEntity>
     @Update("UPDATE user_extra_infos SET interest_vector = #{interestVector, typeHandler=com.cainsgl.common.handler.VectorTypeHandler} WHERE user_id = #{userId}")
     fun updateInterestVector(@Param("userId") userId: Long, @Param("interestVector") interestVector: FloatArray): Int
 
+    /**
+     * 批量增量更新用户额外信息
+     * 使用 CASE WHEN 实现一次SQL更新多条记录
+     */
+    fun batchIncrementUserExtraInfo(
+        @Param("userIds") userIds: List<Long>,
+        @Param("likeCountMap") likeCountMap: Map<Long, Long>,
+        @Param("commentCountMap") commentCountMap: Map<Long, Long>,
+        @Param("postCountMap") postCountMap: Map<Long, Long>,
+        @Param("articleViewCountMap") articleViewCountMap: Map<Long, Long>,
+        @Param("followerCountMap") followerCountMap: Map<Long, Long>,
+        @Param("followingCountMap") followingCountMap: Map<Long, Long>
+    ): Int
 }

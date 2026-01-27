@@ -49,7 +49,6 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
         val postEntity = redisTemplate.opsForValue().get(key)
         if (postEntity != null)
         {
-            redisTemplate.expire(key, Duration.ofMinutes(20))
             return postEntity
         }
         if (hotKeyValidator.isHotKey(key))
@@ -94,13 +93,12 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
         val content = redisTemplateStr.opsForValue().get(key)
         if (content != null)
         {
-            redisTemplate.expire(key, Duration.ofMinutes(20))
             entity.content = content
             return entity
         }
         if (hotKeyValidator.isHotKey(key, count = 9))
         {
-            entity.content = redisTemplateStr.withFineLockByDoubleChecked(key, { Duration.ofMinutes(20) }) {
+            entity.content = redisTemplateStr.withFineLockByDoubleChecked(key, { Duration.ofMinutes(10) }) {
                 getPostContent(entity.id!!)
             }
             return entity

@@ -130,26 +130,9 @@ class UserExtraInfoServiceImpl : ServiceImpl<UserExtraInfoMapper, UserExtraInfoE
     {
         return changeFlowCount(followerId, followeeId, -1)
     }
-
-    override fun saveCount(userExtraInfo: UserExtraInfoEntity): Boolean
+    @Deprecated("现在微服务完全自洽")
+    override fun saveCount(userExtraInfoList: List<UserExtraInfoEntity>): Boolean
     {
-        val userId = userExtraInfo.userId ?: return false
-        val key = "${USER_HOT_INFO_COUNT}${userId}"
-        val opsForHash = redisTemplate.opsForHash<String, Int>()
-        
-        val updates = mutableMapOf<String, Int>()
-        userExtraInfo.likeCount?.let { updates["likeCount"] = it }
-        userExtraInfo.commentCount?.let { updates["commentCount"] = it }
-        userExtraInfo.postCount?.let { updates["postCount"] = it }
-        userExtraInfo.articleViewCount?.let { updates["articleViewCount"] = it }
-        userExtraInfo.followingCount?.let { updates["followingCount"] = it }
-        userExtraInfo.followerCount?.let { updates["followerCount"] = it }
-        
-        if (updates.isNotEmpty())
-        {
-            opsForHash.putAll(key, updates)
-            return true
-        }
-        return false
+        throw IllegalArgumentException("废弃的api")
     }
 }

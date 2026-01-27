@@ -3,6 +3,7 @@ package com.cainsgl.file
 import com.cainsgl.common.exception.BSystemException
 import com.volcengine.tos.*
 import com.volcengine.tos.auth.StaticCredentials
+import com.volcengine.tos.comm.HttpMethod
 import com.volcengine.tos.model.`object`.*
 import com.volcengine.tos.transport.TransportConfig
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -14,16 +15,11 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
 import org.springframework.web.multipart.MultipartFile
-import java.io.*
+import java.io.IOException
 
 
 @Configuration
-class OOSConfig(
-    @Value("\${oos.secretId}")
-    var accessKey: String,
-    @Value("\${oos.secretKey}")
-    var secretKey: String
-)
+class OOSConfig(@Value("\${oos.secretId}") var accessKey: String, @Value("\${oos.secretKey}") var secretKey: String)
 {
     @Bean
     fun oosClient(): TOSV2
@@ -31,15 +27,9 @@ class OOSConfig(
         val endpoint = "tos-cn-hongkong.volces.com"
         val region = "hongkong"
         val connectTimeoutMills = 20000
-        val config = TransportConfig.builder()
-            .connectTimeoutMills(connectTimeoutMills)
-            .build()
-        val configuration = TOSClientConfiguration.builder()
-            .transportConfig(config)
-            .region(region)
-            .endpoint(endpoint)
-            .credentials(StaticCredentials(accessKey, secretKey))
-            .build()
+        val config = TransportConfig.builder().connectTimeoutMills(connectTimeoutMills).build()
+        val configuration = TOSClientConfiguration.builder().transportConfig(config).region(region).endpoint(endpoint)
+            .credentials(StaticCredentials(accessKey, secretKey)).build()
         val tos = TOSV2ClientBuilder().build(configuration)
         return tos
     }
@@ -77,16 +67,16 @@ class FileService
             return objectKey
         }
         file.inputStream.use { stream ->
-                val putObjectInput = PutObjectInput().setBucket(bucketName)
-                    .setKey(objectKey).setContent(stream).setContentLength(file.size);
-                val output: PutObjectOutput = tos.putObject(putObjectInput)
-                log.info { "putObject succeed, object's etag is " + output.etag };
-                log.info { "putObject succeed, object's crc64 is " + output.hashCrc64ecma };
-                return objectKey
+            val putObjectInput =
+                PutObjectInput().setBucket(bucketName).setKey(objectKey).setContent(stream).setContentLength(file.size);
+            val output: PutObjectOutput = tos.putObject(putObjectInput)
+            log.info { "putObject succeed, object's etag is " + output.etag };
+            log.info { "putObject succeed, object's crc64 is " + output.hashCrc64ecma };
+            return objectKey
         }
     }
 
-    fun delete(objectKey:String):DeleteObjectOutput
+    fun delete(objectKey: String): DeleteObjectOutput
     {
         val input = DeleteObjectInput().setBucket(bucketName).setKey(objectKey)
         return tos.deleteObject(input)
@@ -100,19 +90,51 @@ class FileService
         }
     }
 
+    /**
+     * 生成预签名下载URL
+     * @param objectKey 对象存储的key
+     * @param expiresInSeconds URL有效期（秒）
+     * @param isDownload 是否作为附件下载（true）或内联显示（false）
+     * @param filename 下载时的文件名（仅在isDownload=true时使用）
+     * @return 预签名URL
+     */
+    fun getDownloadUrl(
+        objectKey: String, expiresInSeconds: Long = 300, isDownload: Boolean = false, filename: String? = null
+    ): String
+    {
+        val input = PreSignedURLInput().setBucket(bucketName).setKey(objectKey).setHttpMethod(HttpMethod.GET)
+            .setExpires(expiresInSeconds)
 
-    fun getFile(objectKey: String, isDownload: Boolean, response: HttpServletResponse,name:String)
+        // 设置Content-Disposition响应头
+        if (isDownload && !filename.isNullOrBlank())
+        {
+            val map = mapOf("response-content-disposition" to "attachment; filename=\"$filename\"",
+                "Content-Type" to "application/octet-stream"
+            )
+            input.header = map
+        }
+
+        val output = tos.preSignedURL(input)
+        return output.signedUrl
+    }
+
+    /**
+     * @deprecated 已废弃，建议使用getDownloadUrl生成预签名URL后重定向，减轻服务器压力
+     * 直接通过服务器流式传输文件
+     */
+    @Deprecated("使用getDownloadUrl替代", ReplaceWith("getDownloadUrl(objectKey, 300, isDownload, name)"))
+    fun getFile(objectKey: String, isDownload: Boolean, response: HttpServletResponse, name: String)
     {
         if (!isFileExistInCos(objectKey))
         {
             throw BSystemException("文件不存在：$objectKey")
         }
-        this.setResponseHeader(response, objectKey, isDownload,name)
+        this.setResponseHeader(response, objectKey, isDownload, name)
         val obj = GetObjectV2Input().setBucket(bucketName).setKey(objectKey)
         writeStream(obj, response)
     }
 
-    private fun writeStream( obj: GetObjectV2Input, response: HttpServletResponse)
+    private fun writeStream(obj: GetObjectV2Input, response: HttpServletResponse)
     {
         tos.getObject(obj).use { output: GetObjectV2Output ->
             val buffer = ByteArray(8192)
@@ -126,10 +148,14 @@ class FileService
         }
     }
 
-    /*
-     *  limit单位是MB
+    /**
+     * @deprecated 已废弃，建议使用getDownloadUrl生成预签名URL后重定向
+     * 带限速的文件流式传输（limit单位是MB）
      */
-    fun getFileRateLimit(objectKey: String, isDownload: Boolean, response: HttpServletResponse,limit:Long,name:String)
+    @Deprecated("使用getDownloadUrl替代", ReplaceWith("getDownloadUrl(objectKey, 300, isDownload, name)"))
+    fun getFileRateLimit(
+        objectKey: String, isDownload: Boolean, response: HttpServletResponse, limit: Long, name: String
+    )
     {
         if (!isFileExistInCos(objectKey))
         {
@@ -138,14 +164,16 @@ class FileService
         val trafficLimit = (limit * 8 * 1024 * 1024)
         val options = ObjectMetaRequestOptions()
         options.setTrafficLimit(trafficLimit)
-        this.setResponseHeader(response, objectKey, isDownload,name)
+        this.setResponseHeader(response, objectKey, isDownload, name)
         val obj = GetObjectV2Input().setBucket(bucketName).setKey(objectKey).setOptions(options);
         writeStream(obj, response)
     }
 
-    private fun getContentTypeByFilename(filename: String): String {
+    private fun getContentTypeByFilename(filename: String): String
+    {
         val suffix = filename.lowercase().substringAfterLast(".", "")
-        return when (suffix) {
+        return when (suffix)
+        {
             "png" -> "image/png"
             "jpg", "jpeg" -> "image/jpeg"
             "gif" -> "image/gif"
@@ -162,8 +190,9 @@ class FileService
             else -> "application/octet-stream"
         }
     }
+
     @Throws(IOException::class)
-    private fun setResponseHeader(response: HttpServletResponse, objectKey: String, isDownload: Boolean,name:String)
+    private fun setResponseHeader(response: HttpServletResponse, objectKey: String, isDownload: Boolean, name: String)
     {
         val contentType = getContentTypeByFilename(objectKey)
         response.contentType = contentType
@@ -173,8 +202,7 @@ class FileService
             val input = HeadObjectV2Input().setBucket(bucketName).setKey(objectKey)
             val output = tos.headObject(input)
             val fileSize = output.contentLength.toInt() // 直接获取文件字节数
-            if(fileSize>0)
-              response.setContentLength(fileSize)
+            if (fileSize > 0) response.setContentLength(fileSize)
             response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate")
             response.setHeader("Pragma", "no-cache")
             response.setHeader("Expires", "0")
@@ -193,22 +221,27 @@ class FileService
     private fun isFileExistInCos(objectKey: String): Boolean
     {
         // 入参校验（避免空key导致无效请求）
-        if (objectKey.isBlank()) {
+        if (objectKey.isBlank())
+        {
             log.warn { "校验TOS文件存在性失败：key为空" }
             return false
         }
-        try{
+        try
+        {
             val input = HeadObjectV2Input().setBucket(bucketName).setKey(objectKey)
             val output = tos.headObject(input)
             return true
-        }catch (e:TosServerException )
+        } catch (e: TosServerException)
         {
-            if (e.getStatusCode() == 404) {
+            if (e.getStatusCode() == 404)
+            {
                 return false
-            } else {
+            } else
+            {
                 log.error { e }
             }
-        } catch ( e:TosClientException) {
+        } catch (e: TosClientException)
+        {
             log.error { "Client error: " + e.message };
         }
         return false

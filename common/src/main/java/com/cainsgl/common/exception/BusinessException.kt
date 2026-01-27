@@ -6,8 +6,4 @@ class BusinessException(message: String) : RuntimeException(message)
 {
     var resultCode:ResultCode?=null
     constructor(resultCode: ResultCode) : this(resultCode.message)
-    init
-    {
-        this.resultCode=resultCode
-    }
 }

@@ -7,4 +7,56 @@
         user_id, follower_count, following_count, like_count, comment_count, post_count, interest_vector
     </sql>
 
+    <update id="batchIncrementUserExtraInfo">
+        UPDATE user_extra_infos
+        <set>
+            <if test="likeCountMap != null and !likeCountMap.isEmpty()">
+                like_count = like_count + CASE
+                <foreach collection="likeCountMap" index="key" item="value" separator=" ">
+                    WHEN user_id = #{key} THEN #{value}
+                </foreach>
+                ELSE 0 END,
+            </if>
+            <if test="commentCountMap != null and !commentCountMap.isEmpty()">
+                comment_count = comment_count + CASE
+                <foreach collection="commentCountMap" index="key" item="value" separator=" ">
+                    WHEN user_id = #{key} THEN #{value}
+                </foreach>
+                ELSE 0 END,
+            </if>
+            <if test="postCountMap != null and !postCountMap.isEmpty()">
+                post_count = post_count + CASE
+                <foreach collection="postCountMap" index="key" item="value" separator=" ">
+                    WHEN user_id = #{key} THEN #{value}
+                </foreach>
+                ELSE 0 END,
+            </if>
+            <if test="articleViewCountMap != null and !articleViewCountMap.isEmpty()">
+                article_view_count = article_view_count + CASE
+                <foreach collection="articleViewCountMap" index="key" item="value" separator=" ">
+                    WHEN user_id = #{key} THEN #{value}
+                </foreach>
+                ELSE 0 END,
+            </if>
+            <if test="followerCountMap != null and !followerCountMap.isEmpty()">
+                follower_count = follower_count + CASE
+                <foreach collection="followerCountMap" index="key" item="value" separator=" ">
+                    WHEN user_id = #{key} THEN #{value}
+                </foreach>
+                ELSE 0 END,
+            </if>
+            <if test="followingCountMap != null and !followingCountMap.isEmpty()">
+                following_count = following_count + CASE
+                <foreach collection="followingCountMap" index="key" item="value" separator=" ">
+                    WHEN user_id = #{key} THEN #{value}
+                </foreach>
+                ELSE 0 END,
+            </if>
+        </set>
+        WHERE user_id IN
+        <foreach collection="userIds" item="userId" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+    </update>
+
 </mapper>

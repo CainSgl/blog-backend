@@ -34,19 +34,21 @@ class UserExtraInfoServiceGrpcImpl : UserExtraInfoServiceGrpc.UserExtraInfoServi
         responseObserver.onCompleted()
     }
 
-    override fun saveCount(request: SaveCountRequest, responseObserver: StreamObserver<SaveCountResponse>)
+    override fun saveCount(request: BatchSaveCountRequest, responseObserver: StreamObserver<SaveCountResponse>)
     {
-        val userExtraInfo = UserExtraInfoEntity(
-            userId = request.userId,
-            likeCount = if (request.hasLikeCount()) request.likeCount else null,
-            commentCount = if (request.hasCommentCount()) request.commentCount else null,
-            postCount = if (request.hasPostCount()) request.postCount else null,
-            articleViewCount = if (request.hasArticleViewCount()) request.articleViewCount else null,
-            followingCount = if (request.hasFollowingCount()) request.followingCount else null,
-            followerCount = if (request.hasFollowerCount()) request.followerCount else null
-        )
+        val userExtraInfoList = request.requestsList.map { req ->
+            UserExtraInfoEntity(
+                userId = req.userId,
+                likeCount = if (req.hasLikeCount()) req.likeCount else null,
+                commentCount = if (req.hasCommentCount()) req.commentCount else null,
+                postCount = if (req.hasPostCount()) req.postCount else null,
+                articleViewCount = if (req.hasArticleViewCount()) req.articleViewCount else null,
+                followingCount = if (req.hasFollowingCount()) req.followingCount else null,
+                followerCount = if (req.hasFollowerCount()) req.followerCount else null
+            )
+        }
         
-        val success = userExtraInfoService.saveCount(userExtraInfo)
+        val success = userExtraInfoService.saveCount(userExtraInfoList)
         val response = SaveCountResponse.newBuilder()
             .setSuccess(success)
             .build()

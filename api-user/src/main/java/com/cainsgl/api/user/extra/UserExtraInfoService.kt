@@ -5,5 +5,6 @@ import com.cainsgl.common.entity.user.UserExtraInfoEntity
 interface UserExtraInfoService {
     fun getInterestVector(userId: Long): FloatArray?
     fun setInterestVector(userId: Long, values: FloatArray):Boolean
-    fun saveCount(userExtraInfo: UserExtraInfoEntity): Boolean
+
+    fun saveCount(userExtraInfoList: List<UserExtraInfoEntity>): Boolean
 }

@@ -1,5 +1,6 @@
 package com.cainsgl.scheduler.job
 
+import com.cainsgl.api.user.extra.UserExtraInfoService
 import com.cainsgl.api.user.log.UserLogService
 import com.cainsgl.common.entity.user.UserExtraInfoEntity
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -31,25 +32,28 @@ class UserLogJob
     @Resource
     lateinit var redisTemplate: RedisTemplate<String, Int>
 
-    @Scheduled(cron = "0/20 * * * * ?")
-    @SchedulerLock(name = "UserLogJob_execute", lockAtMostFor = "PT1M", lockAtLeastFor = "PT20S")
-    fun execute()
-    {
-        //发送消息，调用user的api
-        while (true)
-        {
-         //   logger.info { "定时任务触发，将同步$batchNumber 条日志" }
-            val key = userLogService.loadLogsToRedis(batchNumber)
-            if (key.isEmpty())
-            {
-                //说明无消息，直接执行成功,所有日志都被读取了
-                return
-            }
-            rocketMQClientTemplate.asyncSendNormalMessage("userLog:dispatch", key, null)
-         //   logger.info { "UserLogJob executed" }
-            Thread.sleep(100)
-        }
-    }
+    @Resource
+    lateinit var userExtraInfoService: UserExtraInfoService
+
+//    @Scheduled(cron = "0/20 * * * * ?")
+//    @SchedulerLock(name = "UserLogJob_execute", lockAtMostFor = "PT1M", lockAtLeastFor = "PT20S")
+//    fun execute()
+//    {
+//        //发送消息，调用user的api
+//        while (true)
+//        {
+//         //   logger.info { "定时任务触发，将同步$batchNumber 条日志" }
+//            val key = userLogService.loadLogsToRedis(batchNumber)
+//            if (key.isEmpty())
+//            {
+//                //说明无消息，直接执行成功,所有日志都被读取了
+//                return
+//            }
+//            rocketMQClientTemplate.asyncSendNormalMessage("userLog:dispatch", key, null)
+//         //   logger.info { "UserLogJob executed" }
+//            Thread.sleep(100)
+//        }
+//    }
 
     @Scheduled(cron = "0/30 * * * * ?") // 每5分钟执行一次
     @SchedulerLock(name = "UserExtraInfoSyncJob_syncFromRedisToDb", lockAtMostFor = "PT2M", lockAtLeastFor = "PT30S")

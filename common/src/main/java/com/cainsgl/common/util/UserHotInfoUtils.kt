@@ -6,8 +6,7 @@ class UserHotInfoUtils
 {
     companion object
     {
-        //TODO 需要定时任务扫描后写回数据库
-        const val USER_HOT_INFO_COUNT = "cursor:user:extra"
+        const val USER_HOT_INFO_COUNT = "cursor:user:extra:"
         private fun RedisTemplate<Any, Any>.addCount(count: Long, userId: Long, filed: String)
         {
             val key = "${USER_HOT_INFO_COUNT}${userId}"
