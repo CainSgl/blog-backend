@@ -3,6 +3,7 @@ package com.cainsgl.article.repository
 import com.baomidou.mybatisplus.core.mapper.BaseMapper
 import com.cainsgl.common.entity.article.PostEntity
 import org.apache.ibatis.annotations.Mapper
+import org.apache.ibatis.annotations.Param
 import java.time.LocalDateTime
 
 @Mapper
@@ -31,4 +32,16 @@ interface PostMapper : BaseMapper<PostEntity> {
      */
     fun selectSimilarPostsByVector(postId: Long, limit: Int): List<PostEntity>
     fun selectPostsByVector(targetVector: FloatArray, limit: Int): List<PostEntity>
+
+    /**
+     * 批量增量更新文章计数
+     * 使用 CASE WHEN 实现一次SQL更新多条记录
+     */
+    fun batchIncrementPostCount(
+        @Param("postIds") postIds: List<Long>,
+        @Param("viewCountMap") viewCountMap: Map<Long, Long>,
+        @Param("commentCountMap") commentCountMap: Map<Long, Long>,
+        @Param("likeCountMap") likeCountMap: Map<Long, Long>,
+        @Param("starCountMap") starCountMap: Map<Long, Long>
+    ): Int
 }

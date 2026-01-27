@@ -2,4 +2,18 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.cainsgl.comment.repository.ParagraphMapper">
 
+    <update id="batchIncrementParagraphCount">
+        UPDATE paragraphs
+        SET count = count + CASE
+        <foreach collection="updates" item="item" separator=" ">
+            WHEN post_id = #{item.postId} AND version = #{item.version} AND data_id = #{item.dataId}
+            THEN #{item.incrementValue}
+        </foreach>
+        ELSE 0 END
+        WHERE (post_id, version, data_id) IN
+        <foreach collection="updates" item="item" open="(" separator="," close=")">
+            (#{item.postId}, #{item.version}, #{item.dataId})
+        </foreach>
+    </update>
+
 </mapper>

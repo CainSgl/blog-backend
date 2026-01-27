@@ -10,7 +10,6 @@ import jakarta.annotation.Resource
 import org.redisson.api.RedissonClient
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 
 @Service
 class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
@@ -94,8 +93,8 @@ class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
                             }
                         }
                         hashOps.putAll(redisKey, hashData)
+                        redisTemplate.expire(redisKey, java.time.Duration.ofMinutes(10))
                     }
-                    redisTemplate.expire(redisKey, java.time.Duration.ofMinutes(10))
                     return entities
                 } finally
                 {
@@ -116,10 +115,8 @@ class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
 
     /**
      * 自增指定 postId、version、dataId 的计数
-     * 验证 key 和 field 存在，否则抛出异常
      */
-    @Transactional
-    fun incrementCount(postId: Long, version: Int, dataId: Int): Boolean
+    fun incrementCount(postId: Long, version: Int, dataId: Int,value:Long=1): Boolean
     {
 
         val hashKey = dataId.toString()
@@ -141,24 +138,27 @@ class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
             val redisKey = "$PARAGRAPH_REDIS_PREFIX_KEY$postId:$version"
             val hasKey = redisTemplate.hasKey(redisKey)
             if(hasKey!=null&&hasKey){
-                //这里，只有在redis里的时候，才会去自增redis里的数据
+                //这里，只有在redis里的时候，才会去自增redis里的数据，因为他可能不是热点数据
                 val hashOps = redisTemplate.opsForHash<String, Int>()
-                hashOps.increment(redisKey, hashKey, 1)
+                hashOps.increment(redisKey, hashKey, value)
             }
         }
         return true
     }
 
     /**
-     * 设置指定 postId、version、dataId 的计数值
+     * 设置指定 postId、version、dataId 的计数值，只有首个创建段落评论才会调用
      */
-    fun addCount(postId: Long, version: Int, dataId: Int, value: Int)
+    fun addCount(postId: Long, version: Int, dataId: Int, value: Long)
     {
+        //需要注意在不在redis里存在！存在才去自增，不然说明不是热点数据，直接去增加数据库的（controller层保存的时候完成）
         val redisKey = "$PARAGRAPH_REDIS_PREFIX_KEY$postId:$version"
-        val hashKey = dataId.toString()
-        // 直接设置 Redis Hash 中的字段值
-        val hashOps = redisTemplate.opsForHash<String, Int>()
-        hashOps.put(redisKey, hashKey, value)
+        val hasKey = redisTemplate.hasKey(redisKey)
+        if(hasKey!=null&&hasKey){
+            val hashOps = redisTemplate.opsForHash<String, Int>()
+            hashOps.increment(redisKey,  dataId.toString(), value)
+        }
+
     }
 
 

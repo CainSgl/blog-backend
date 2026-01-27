@@ -1,7 +1,7 @@
-package com.cainsgl.user.task
+package com.cainsgl.comment.task
 
-import com.cainsgl.common.util.UserHotInfoUtils.Companion.USER_HOT_INFO_COUNT
-import com.cainsgl.user.service.UserExtraInfoServiceImpl
+import com.cainsgl.comment.service.ParagraphServiceImpl
+import com.cainsgl.comment.service.ParagraphServiceImpl.Companion.PARAGRAPH_COUNT_INFO
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
 import org.springframework.beans.factory.annotation.Value
@@ -15,8 +15,9 @@ import oshi.hardware.CentralProcessor
 
 
 private val logger = KotlinLogging.logger {}
+
 @Component
-class IdleTriggeredTask
+class CommentIdleTriggeredTask
 {
     private val systemInfo = SystemInfo()
     private val processor: CentralProcessor = systemInfo.hardware.processor
@@ -26,7 +27,7 @@ class IdleTriggeredTask
     lateinit var redisTemplate: RedisTemplate<String, Any>
 
     @Resource
-    lateinit var userExtraInfoService: UserExtraInfoServiceImpl
+    lateinit var paragraphService: ParagraphServiceImpl
 
     @Value("\${idle.task.cpu-threshold:40.0}")
     private val cpuThreshold = 0.0 // CPU空闲阈值：使用率低于此值时执行任务
@@ -37,8 +38,8 @@ class IdleTriggeredTask
     @Value("\${idle.task.batch-size:300}")
     private val batchSize: Int = 300 // 每次扫描的key数量
 
-    @Value("\${idle.task.db-batch-size:10}")
-    private val dbBatchSize: Int = 10 // 数据库批量更新大小
+    @Value("\${idle.task.db-batch-size:30}")
+    private val dbBatchSize: Int = 30 // 数据库批量更新大小
 
     private val getAndDeleteScript = """
         local data = redis.call('HGETALL', KEYS[1])
@@ -47,12 +48,13 @@ class IdleTriggeredTask
         end
         return data
     """.trimIndent()
+
     @Scheduled(fixedRateString = "\${idle.task.check-interval:5000}")
     fun checkIdleAndExecute()
     {
         val cpuUsage = getCpuUsage()
         if (cpuUsage < cpuThreshold) {
-            logger.info { "User服务，低负载：doTask 将redis的数据同步到数据库里去" }
+            logger.debug { "Comment服务，低负载：doTask 将redis的段落计数数据同步到数据库" }
             doTask()
         }
     }
@@ -65,18 +67,18 @@ class IdleTriggeredTask
     }
 
     private fun doTask() {
-        syncUserHotInfoToDatabase()
+        syncParagraphCountToDatabase()
     }
 
-    // 扫描Redis中的用户热点信息并同步到数据库
-    private fun syncUserHotInfoToDatabase() {
+    // 扫描Redis中的段落计数信息并同步到数据库
+    private fun syncParagraphCountToDatabase() {
         try {
             val cursor = redisTemplate.scan(
-                ScanOptions.scanOptions().match("${USER_HOT_INFO_COUNT}*").count(batchSize.toLong()).build()
+                ScanOptions.scanOptions().match("${PARAGRAPH_COUNT_INFO}*").count(batchSize.toLong()).build()
             )
             
             // 创建批量更新器
-            val batchUpdater = BatchUserExtraInfoUpdater(userExtraInfoService.baseMapper, dbBatchSize)
+            val batchUpdater = BatchParagraphCountUpdater(paragraphService.baseMapper, dbBatchSize)
             
             cursor.use {
                 var processedCount = 0
@@ -88,10 +90,17 @@ class IdleTriggeredTask
                         // 使用Lua脚本原子性地获取并删除key
                         val entries = getAndDeleteHash(key)
                         if (entries.isEmpty()) continue
-                        // 提取userId
-                        val userId = key.substringAfter(USER_HOT_INFO_COUNT).toLongOrNull() ?: continue
+                        
+                        // 提取postId和version
+                        // key格式: cursor:paragraph_count:postId:version
+                        val parts = key.substringAfter(PARAGRAPH_COUNT_INFO).split(":")
+                        if (parts.size != 2) continue
+                        
+                        val postId = parts[0].toLongOrNull() ?: continue
+                        val version = parts[1].toIntOrNull() ?: continue
+                        
                         // 使用批量更新器累积更新
-                        batchUpdater.update(userId, entries)
+                        batchUpdater.update(postId, version, entries)
                         processedCount++
                     } catch (e: Exception) {
                         logger.error(e) { "处理key失败: $key" }
@@ -103,18 +112,14 @@ class IdleTriggeredTask
                 
                 // 只在处理了数据时才打印日志
                 if (processedCount > 0) {
-                    logger.info { "同步用户热点信息完成，共处理 $processedCount 个key" }
+                    logger.info { "同步段落计数信息完成，共处理 $processedCount 个key" }
                 }
             }
         } catch (e: Exception) {
-            logger.error(e) { "同步用户热点信息失败" }
+            logger.error(e) { "同步段落计数信息失败" }
         }
     }
 
-    /**
-     * 使用Lua脚本原子性地获取并删除Hash
-     * 避免微服务并发场景下的数据不一致问题
-     */
     private fun getAndDeleteHash(key: String): Map<String, Long> {
         return try {
             // 使用 RedisCallback 直接操作底层连接，绕过序列化器

@@ -194,8 +194,9 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
     {
         try
         {
-            val key = "${POST_COUNT_INFO_REDIS_PREFIX}${type}:${id}"
-            redisTemplateStr.opsForValue().increment(key, count)
+            val key="${POST_COUNT_INFO_REDIS_PREFIX}${id}"
+            val opsForHash = redisTemplateStr.opsForHash<String,Long>()
+            opsForHash.increment(key,type, count)
             return true;
         } catch (e: Exception)
         {

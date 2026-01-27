@@ -77,4 +77,43 @@
         ORDER BY similarity_distance
         LIMIT #{limit}
     </select>
+
+    <!-- 批量增量更新文章计数 -->
+    <update id="batchIncrementPostCount">
+        UPDATE posts
+        <set>
+            <if test="viewCountMap != null and !viewCountMap.isEmpty()">
+                view_count = view_count + CASE
+                <foreach collection="viewCountMap" index="key" item="value" separator=" ">
+                    WHEN id = #{key} THEN #{value}
+                </foreach>
+                ELSE 0 END,
+            </if>
+            <if test="commentCountMap != null and !commentCountMap.isEmpty()">
+                comment_count = comment_count + CASE
+                <foreach collection="commentCountMap" index="key" item="value" separator=" ">
+                    WHEN id = #{key} THEN #{value}
+                </foreach>
+                ELSE 0 END,
+            </if>
+            <if test="likeCountMap != null and !likeCountMap.isEmpty()">
+                like_count = like_count + CASE
+                <foreach collection="likeCountMap" index="key" item="value" separator=" ">
+                    WHEN id = #{key} THEN #{value}
+                </foreach>
+                ELSE 0 END,
+            </if>
+            <if test="starCountMap != null and !starCountMap.isEmpty()">
+                star_count = star_count + CASE
+                <foreach collection="starCountMap" index="key" item="value" separator=" ">
+                    WHEN id = #{key} THEN #{value}
+                </foreach>
+                ELSE 0 END,
+            </if>
+        </set>
+        WHERE id IN
+        <foreach collection="postIds" item="postId" open="(" separator="," close=")">
+            #{postId}
+        </foreach>
+    </update>
 </mapper>
