@@ -33,6 +33,7 @@ interface UserExtraInfoMapper : BaseMapper<UserExtraInfoEntity>
         @Param("postCountMap") postCountMap: Map<Long, Long>,
         @Param("articleViewCountMap") articleViewCountMap: Map<Long, Long>,
         @Param("followerCountMap") followerCountMap: Map<Long, Long>,
-        @Param("followingCountMap") followingCountMap: Map<Long, Long>
+        @Param("followingCountMap") followingCountMap: Map<Long, Long>,
+        @Param("msgCountMap") msgCountMap: Map<Long, Long>
     ): Int
 }

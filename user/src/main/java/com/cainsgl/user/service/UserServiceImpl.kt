@@ -78,7 +78,7 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
         val user = redisTemplate.opsForValue().get(key)
         if(user != null)
         {
-            return user;
+            return user
         }
         if(hotKeyValidator.isHotKey(key,count=HOT_KEY_COUNT_THRESHOLD*2))
         {

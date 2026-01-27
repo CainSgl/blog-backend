@@ -12,7 +12,7 @@ import com.cainsgl.comment.service.ParagraphServiceImpl
 import com.cainsgl.comment.service.PostsCommentServiceImpl
 import com.cainsgl.comment.service.ReplyServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
-import com.cainsgl.common.util.UserHotInfoUtils.Companion.changeCommentCount
+import com.cainsgl.common.util.user.UserHotInfoUtils.Companion.changeCommentCount
 import com.cainsgl.senstitve.config.SensitiveWord
 import jakarta.annotation.Resource
 import org.springframework.data.redis.core.RedisTemplate
@@ -73,10 +73,10 @@ class ParCommentController {
                 )
             )
             redisTemplate.changeCommentCount(1,userId)
-            val res=HashMap<String,String>();
-            res["id"] = id.toString();
-            res["content"]=content?:"";
-            return@execute res;
+            val res=HashMap<String,String>()
+            res["id"] = id.toString()
+            res["content"]=content?:""
+            return@execute res
         } ?: "error"
     }
 
@@ -103,10 +103,10 @@ class ParCommentController {
     ): List<ReplyEntity> {
 
         if (postCommentId != null) {
-            return replyService.getByPostCommentIdCursor(postCommentId, lastCreatedAt, lastLikeCount, lastId);
+            return replyService.getByPostCommentIdCursor(postCommentId, lastCreatedAt, lastLikeCount, lastId)
         }
         if (parCommentId != null) {
-            return replyService.getByParCommentIdCursor(parCommentId, lastCreatedAt, lastLikeCount, lastId);
+            return replyService.getByParCommentIdCursor(parCommentId, lastCreatedAt, lastLikeCount, lastId)
         }
         return emptyList()
     }
@@ -155,11 +155,14 @@ class ParCommentController {
             }
             replyService.save(replyEntity)
             redisTemplate.changeCommentCount(1,userId)
-            return@execute id.toString();
-        } ?: "error";
-        val res=HashMap<String,String>();
-        res["id"] = entityId;
-        res["content"]=content?:"";
-        return res;
+            //去提醒被回复的用户
+           // redisTemplate.changeMsgCount(1,userId)
+            //TODO 创建msg，告诉用户，调用grpc
+            return@execute id.toString()
+        } ?: "error"
+        val res=HashMap<String,String>()
+        res["id"] = entityId
+        res["content"]=content?:""
+        return res
     }
 }

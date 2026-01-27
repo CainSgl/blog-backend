@@ -25,7 +25,6 @@ class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
 
     companion object
     {
-        //TODO，后续需要扫描key，然后写回count
         const val PARAGRAPH_REDIS_PREFIX_KEY = "paragraph:"
         const val PARAGRAPH_COUNT_INFO = "cursor:paragraph_count:"
     }

@@ -68,8 +68,8 @@ class UserLogJob
             {
                 //使用分布式锁，这里需要，在往数据库写回的时候先删除数据再删除锁
                 val key = cursor.next()
-                val entries = opsForHash.entries(key)
-                val id = key.substringAfter(UserExtraInfoEntity.USER_EXTRA_INFO_REDIS_PREFIX).toLong()
+                opsForHash.entries(key)
+                key.substringAfter(UserExtraInfoEntity.USER_EXTRA_INFO_REDIS_PREFIX).toLong()
              //   val entity = UserExtraInfoEntity(userId = id).apply { fillFieldByMap(entries) }
             }
         }

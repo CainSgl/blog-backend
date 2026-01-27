@@ -26,8 +26,8 @@ import com.cainsgl.common.entity.article.DirectoryEntity
 import com.cainsgl.common.entity.article.PostEntity
 import com.cainsgl.common.entity.article.PostHistoryEntity
 import com.cainsgl.common.exception.BusinessException
-import com.cainsgl.common.util.UserHotInfoUtils.Companion.changePostCount
-import com.cainsgl.common.util.UserHotInfoUtils.Companion.changeViewCount
+import com.cainsgl.common.util.user.UserHotInfoUtils.Companion.changePostCount
+import com.cainsgl.common.util.user.UserHotInfoUtils.Companion.changeViewCount
 import com.cainsgl.senstitve.config.SensitiveWord
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
@@ -277,7 +277,7 @@ class PostController
                 post.version = 1
             }
             postService.updateById(post)
-            return ResultCode.SUCCESS;
+            return ResultCode.SUCCESS
         }
         val sanitizedContent = sensitiveWord.replace(XssSanitizerUtils.sanitize(history.content!!))
         //检验是否有内容变更

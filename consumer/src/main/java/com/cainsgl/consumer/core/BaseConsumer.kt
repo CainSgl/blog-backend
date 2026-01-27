@@ -81,7 +81,7 @@ abstract class BaseConsumer<T : Any>(private val messageType: Class<T>) : Rocket
         {
             String::class.java                             -> @Suppress("UNCHECKED_CAST") (bodyString as T)
             Long::class.java, java.lang.Long::class.java   -> @Suppress("UNCHECKED_CAST") (bodyString.toLong() as T)
-            Int::class.java, java.lang.Integer::class.java -> @Suppress("UNCHECKED_CAST") (bodyString.toInt() as T)
+            Int::class.java, Integer::class.java -> @Suppress("UNCHECKED_CAST") (bodyString.toInt() as T)
             else                                           -> JSON.parseObject(bodyString, messageType)
         }
     }

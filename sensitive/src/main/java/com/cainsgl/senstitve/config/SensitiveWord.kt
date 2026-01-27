@@ -105,6 +105,6 @@ class SensitiveWord
             .charIgnore(SensitiveWordCharIgnores.defaults())
             .wordResultCondition(WordResultConditions.alwaysTrue())
             .wordDeny{ words }
-            .init();
+            .init()
     }
 }

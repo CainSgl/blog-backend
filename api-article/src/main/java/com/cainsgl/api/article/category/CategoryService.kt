@@ -1,5 +1,3 @@
 package com.cainsgl.api.article.category
 
-interface CategoryService {
-
-}
+interface CategoryService

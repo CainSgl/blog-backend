@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 class LockInt
 {
-    private var num: Int = 0;
+    private var num: Int = 0
     fun tryRemove(): Boolean
     {
         return --num == 0
@@ -14,7 +14,7 @@ class LockInt
 
     fun lock()
     {
-        num++;
+        num++
     }
 }
 

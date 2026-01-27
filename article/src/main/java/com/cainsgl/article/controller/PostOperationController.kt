@@ -5,7 +5,7 @@ import com.cainsgl.article.service.PostOperationServiceImpl
 import com.cainsgl.article.service.PostServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.OperateType
-import com.cainsgl.common.util.UserHotInfoUtils.Companion.changeLikeCount
+import com.cainsgl.common.util.user.UserHotInfoUtils.Companion.changeLikeCount
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
 import org.springframework.data.redis.core.RedisTemplate

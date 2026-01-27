@@ -7,7 +7,7 @@ import com.cainsgl.common.config.interceptor.StpInterfaceImpl
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.user.UserEntity
 import com.cainsgl.common.exception.BusinessException
-import com.cainsgl.common.util.DeviceUtils
+import com.cainsgl.common.util.user.DeviceUtils
 import com.cainsgl.user.dto.request.UpdateUserRequest
 import com.cainsgl.user.dto.request.UserLoginRequest
 import com.cainsgl.user.dto.response.LoginResponse
@@ -46,7 +46,7 @@ class UserController
         // 检查用户状态
         if (!user.isActive())
         {
-            val extra: UserEntity.Extra? = userService.getExtra(user.id!!);
+            val extra: UserEntity.Extra? = userService.getExtra(user.id!!)
             val message = if (extra?.bannedTime == null)
             {
                 "账户已被禁用"

@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration
 
 
 @Configuration
-@ConditionalOnClass(org.redisson.api.RedissonClient::class)
+@ConditionalOnClass(RedissonClient::class)
 class RedissonClientConfig
 {
     @Bean
@@ -19,7 +19,7 @@ class RedissonClientConfig
         val config = Config()
         redisProperties.timeout.toMillis().toInt()
         val maxActive = redisProperties.jedis?.pool?.maxActive ?: 10
-        val maxWait = redisProperties.jedis?.pool?.maxWait?.toMillis()?.toInt() ?: 1000
+        redisProperties.jedis?.pool?.maxWait?.toMillis()?.toInt() ?: 1000
         config.useSingleServer()
             .setAddress("redis://${redisProperties.host}:${redisProperties.port}")
             .setPassword(redisProperties.password ?: "")
@@ -29,7 +29,7 @@ class RedissonClientConfig
             .setIdleConnectionTimeout(redisProperties.connectTimeout?.toMillis()?.toInt() ?: 5000)
             .setConnectTimeout(redisProperties.connectTimeout?.toMillis()?.toInt()?:5000)
             .setTimeout(redisProperties.timeout?.toMillis()?.toInt() ?: 5000).retryAttempts = 3
-        config.nettyThreads = (Runtime.getRuntime().availableProcessors() / 4).coerceAtLeast(1);
+        config.nettyThreads = (Runtime.getRuntime().availableProcessors() / 4).coerceAtLeast(1)
         return Redisson.create(config)
     }
 }

@@ -26,6 +26,3 @@ class UserGroupEntity(
     @TableField("count")
     var count: Int? = null,
 )
-{
-
-}

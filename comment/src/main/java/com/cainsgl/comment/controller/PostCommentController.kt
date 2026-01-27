@@ -56,10 +56,10 @@ class PostCommentController
                 )
             )
             postService.addCommentCount(request.postId, 1)
-            val res=HashMap<String,String>();
-            res["id"] = id.toString();
-            res["content"]=content?:"";
+            val res=HashMap<String,String>()
+            res["id"] = id.toString()
+            res["content"]=content?:""
             return@execute res
-        }?:ResultCode.UNKNOWN_ERROR;
+        }?:ResultCode.UNKNOWN_ERROR
     }
 }

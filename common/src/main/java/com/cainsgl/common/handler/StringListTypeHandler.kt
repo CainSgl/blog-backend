@@ -29,17 +29,17 @@ class StringListTypeHandler : BaseTypeHandler<List<String>>()
         ps.setArray(i, pgArray)
     }
 
-    override fun getNullableResult(rs: ResultSet, columnName: String): List<String>?
+    override fun getNullableResult(rs: ResultSet, columnName: String): List<String>
     {
         return convertToArrayList(rs.getArray(columnName))
     }
 
-    override fun getNullableResult(rs: ResultSet, columnIndex: Int): List<String>?
+    override fun getNullableResult(rs: ResultSet, columnIndex: Int): List<String>
     {
         return convertToArrayList(rs.getArray(columnIndex))
     }
 
-    override fun getNullableResult(cs: CallableStatement, columnIndex: Int): List<String>?
+    override fun getNullableResult(cs: CallableStatement, columnIndex: Int): List<String>
     {
         return convertToArrayList(cs.getArray(columnIndex))
     }

@@ -141,7 +141,7 @@ class DirectoryController
             //设置知识库的数量扣减
             if(ids.isNotEmpty())
             {
-                val updateWrapper2= UpdateWrapper<KnowledgeBaseEntity>().eq("id",kbId).setSql("post_count = post_count - ${ids.size}");
+                val updateWrapper2= UpdateWrapper<KnowledgeBaseEntity>().eq("id",kbId).setSql("post_count = post_count - ${ids.size}")
                 knowledgeBaseService.update(updateWrapper2)
             }
 

@@ -5,6 +5,4 @@ import com.cainsgl.common.entity.article.CategoryEntity
 import org.apache.ibatis.annotations.Mapper
 
 @Mapper
-interface CategoryMapper : BaseMapper<CategoryEntity> {
-
-}
+interface CategoryMapper : BaseMapper<CategoryEntity>

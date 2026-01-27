@@ -25,7 +25,7 @@ class AdminController
     fun loadAll(): Any
     {
         var lastId: Long = 0
-        var hasMore = true;
+        var hasMore = true
         while (hasMore)
         {
             // 从数据库中获取一批文章数据

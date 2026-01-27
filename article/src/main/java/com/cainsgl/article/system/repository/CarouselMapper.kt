@@ -6,6 +6,3 @@ import org.apache.ibatis.annotations.Mapper
 
 @Mapper
 interface CarouselMapper : BaseMapper<CarouselEntity>
-{
-
-}

@@ -48,7 +48,7 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
         //根据id去缓存
         if (kbId < 0)
         {
-            return emptyList();
+            return emptyList()
         }
         val key = "$DIR_REDIS_PRE_FIX$kbId"
         fun dataLoader(): List<DirectoryTreeDTO>
@@ -145,7 +145,7 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
             //去增加kb的post_count
             if (postId != null)
             {
-                val query = UpdateWrapper<KnowledgeBaseEntity>().eq("id", kbId).setSql("post_count = post_count + 1");
+                val query = UpdateWrapper<KnowledgeBaseEntity>().eq("id", kbId).setSql("post_count = post_count + 1")
                 knowledgeBaseService.update(query)
             }
             return if (success)

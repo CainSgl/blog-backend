@@ -197,7 +197,7 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
             val key="${POST_COUNT_INFO_REDIS_PREFIX}${id}"
             val opsForHash = redisTemplateStr.opsForHash<String,Long>()
             opsForHash.increment(key,type, count)
-            return true;
+            return true
         } catch (e: Exception)
         {
             log.error("无法连接到redis", e)

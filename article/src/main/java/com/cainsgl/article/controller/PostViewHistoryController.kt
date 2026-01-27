@@ -27,7 +27,7 @@ class PostViewHistoryController
         if (pageLimit > 50)
         {
             //目前限制成50吧
-            pageLimit = 50;
+            pageLimit = 50
         }
         val userId = StpUtil.getLoginIdAsLong()
         return postViewHistoryService.getHistory(userId, after, pageLimit)

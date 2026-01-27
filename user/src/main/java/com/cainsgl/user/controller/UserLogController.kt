@@ -4,7 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.stp.StpUtil
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.user.UserLogEntity
-import com.cainsgl.common.util.DeviceUtils
+import com.cainsgl.common.util.user.DeviceUtils
 import com.cainsgl.user.dto.request.UserLogPostRequest
 import com.cainsgl.user.service.UserLogServiceImpl
 import io.github.oshai.kotlinlogging.KotlinLogging

@@ -1,4 +1,4 @@
-package com.cainsgl.common.util
+package com.cainsgl.common.util.user
 
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes

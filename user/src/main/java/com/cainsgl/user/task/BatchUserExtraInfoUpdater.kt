@@ -60,7 +60,7 @@ class BatchUserExtraInfoUpdater(
         val articleViewCountMap = mutableMapOf<Long, Long>()
         val followerCountMap = mutableMapOf<Long, Long>()
         val followingCountMap = mutableMapOf<Long, Long>()
-
+        val msgCountMap = mutableMapOf<Long, Long>()
         batch.forEach { (userId, data) ->
             data.forEach { (field, value) ->
                 when (field) {
@@ -70,6 +70,7 @@ class BatchUserExtraInfoUpdater(
                     "articleViewCount" -> articleViewCountMap[userId] = value
                     "followerCount" -> followerCountMap[userId] = value
                     "followingCount" -> followingCountMap[userId] = value
+                    "msgCount"->msgCountMap[userId] = value
                 }
             }
         }
@@ -82,7 +83,8 @@ class BatchUserExtraInfoUpdater(
             postCountMap,
             articleViewCountMap,
             followerCountMap,
-            followingCountMap
+            followingCountMap,
+            msgCountMap
         )
     }
 }

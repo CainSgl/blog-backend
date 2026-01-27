@@ -68,10 +68,10 @@ class FileService
         }
         file.inputStream.use { stream ->
             val putObjectInput =
-                PutObjectInput().setBucket(bucketName).setKey(objectKey).setContent(stream).setContentLength(file.size);
+                PutObjectInput().setBucket(bucketName).setKey(objectKey).setContent(stream).setContentLength(file.size)
             val output: PutObjectOutput = tos.putObject(putObjectInput)
-            log.info { "putObject succeed, object's etag is " + output.etag };
-            log.info { "putObject succeed, object's crc64 is " + output.hashCrc64ecma };
+            log.info { "putObject succeed, object's etag is " + output.etag }
+            log.info { "putObject succeed, object's crc64 is " + output.hashCrc64ecma }
             return objectKey
         }
     }
@@ -163,9 +163,9 @@ class FileService
         }
         val trafficLimit = (limit * 8 * 1024 * 1024)
         val options = ObjectMetaRequestOptions()
-        options.setTrafficLimit(trafficLimit)
+        options.trafficLimit = trafficLimit
         this.setResponseHeader(response, objectKey, isDownload, name)
-        val obj = GetObjectV2Input().setBucket(bucketName).setKey(objectKey).setOptions(options);
+        val obj = GetObjectV2Input().setBucket(bucketName).setKey(objectKey).setOptions(options)
         writeStream(obj, response)
     }
 
@@ -207,7 +207,7 @@ class FileService
             response.setHeader("Pragma", "no-cache")
             response.setHeader("Expires", "0")
         }
-        response.setHeader("Cache-Control", "public, max-age=3600");
+        response.setHeader("Cache-Control", "public, max-age=3600")
         if (isDownload)
         {
             response.setHeader("Content-Disposition", "attachment; filename=\"$name\"")
@@ -229,11 +229,11 @@ class FileService
         try
         {
             val input = HeadObjectV2Input().setBucket(bucketName).setKey(objectKey)
-            val output = tos.headObject(input)
+            tos.headObject(input)
             return true
         } catch (e: TosServerException)
         {
-            if (e.getStatusCode() == 404)
+            if (e.statusCode == 404)
             {
                 return false
             } else
@@ -242,7 +242,7 @@ class FileService
             }
         } catch (e: TosClientException)
         {
-            log.error { "Client error: " + e.message };
+            log.error { "Client error: " + e.message }
         }
         return false
     }

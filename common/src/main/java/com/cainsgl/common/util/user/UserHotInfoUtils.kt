@@ -1,4 +1,4 @@
-package com.cainsgl.common.util
+package com.cainsgl.common.util.user
 
 import org.springframework.data.redis.core.RedisTemplate
 
@@ -30,6 +30,10 @@ class UserHotInfoUtils
         fun RedisTemplate<Any, Any>.changeViewCount(count: Long, userId: Long)
         {
             addCount(count, userId, "articleViewCount")
+        }
+        fun RedisTemplate<Any, Any>.changeMsgCount(count: Long, userId: Long)
+        {
+            addCount(count, userId, "msgCount")
         }
     }
 

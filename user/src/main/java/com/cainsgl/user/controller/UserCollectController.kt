@@ -57,7 +57,7 @@ class UserCollectController {
         transactionTemplate.execute {
             val update= UpdateWrapper<UserGroupEntity>().apply {
                 eq("id",userGroupEntity.id)
-                setSql("count = count + 1");
+                setSql("count = count + 1")
             }
             userGroupServiceImpl.update(update)
             val collect = UserCollectEntity(userId = userId, targetId = request.targetId, groupId = request.groupId)
@@ -110,7 +110,7 @@ class UserCollectController {
                 res["target"] = idToEntityMap[it.targetId]
                 res["collect"]=it
                 res["type"]=CollectType.KB.str
-                return@map res;
+                return@map res
             }
         }
         if (CollectType.fromNumber(userGroupEntity.type!!) == CollectType.POST) {
@@ -122,7 +122,7 @@ class UserCollectController {
                 res["target"] = idToEntityMap[it.targetId]
                 res["collect"]=it
                 res["type"]=CollectType.POST.str
-                return@map res;
+                return@map res
             }
         }
         return PageResponse(

@@ -52,6 +52,13 @@
                 </foreach>
                 ELSE 0 END,
             </if>
+            <if test="msgCountMap != null and !msgCountMap.isEmpty()">
+                msg_count = msg_count + CASE
+                <foreach collection="msgCountMap" index="key" item="value" separator=" ">
+                    WHEN user_id = #{key} THEN #{value}
+                </foreach>
+                ELSE 0 END,
+            </if>
         </set>
         WHERE user_id IN
         <foreach collection="userIds" item="userId" open="(" separator="," close=")">

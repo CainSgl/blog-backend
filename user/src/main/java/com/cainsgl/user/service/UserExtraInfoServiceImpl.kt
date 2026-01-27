@@ -8,7 +8,7 @@ import com.cainsgl.common.entity.user.UserExtraInfoEntity
 import com.cainsgl.common.util.FineLockCacheUtils.withFineLockByDoubleChecked
 import com.cainsgl.common.util.HotKeyValidator
 import com.cainsgl.common.util.HotKeyValidator.Companion.HOT_KEY_COUNT_THRESHOLD
-import com.cainsgl.common.util.UserHotInfoUtils.Companion.USER_HOT_INFO_COUNT
+import com.cainsgl.common.util.user.UserHotInfoUtils.Companion.USER_HOT_INFO_COUNT
 import com.cainsgl.user.repository.UserExtraInfoMapper
 import com.cainsgl.user.service.UserServiceImpl.Companion.USER_REDIS_PREFIX
 import io.github.oshai.kotlinlogging.KotlinLogging

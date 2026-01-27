@@ -1,6 +1,6 @@
 package com.cainsgl.user.task
 
-import com.cainsgl.common.util.UserHotInfoUtils.Companion.USER_HOT_INFO_COUNT
+import com.cainsgl.common.util.user.UserHotInfoUtils.Companion.USER_HOT_INFO_COUNT
 import com.cainsgl.user.service.UserExtraInfoServiceImpl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource

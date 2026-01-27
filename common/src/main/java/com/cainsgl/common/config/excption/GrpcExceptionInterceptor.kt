@@ -46,7 +46,7 @@ class GrpcExceptionInterceptor : ServerInterceptor
     /**
      * 包装 ServerCall，用于处理响应阶段的异常
      */
-    private inner class ExceptionHandlingServerCall<ReqT, RespT>(
+    private class ExceptionHandlingServerCall<ReqT, RespT>(
         delegate: ServerCall<ReqT, RespT>
     ) : ForwardingServerCall.SimpleForwardingServerCall<ReqT, RespT>(delegate)
     {
@@ -145,7 +145,7 @@ class GrpcExceptionInterceptor : ServerInterceptor
         methodName: String
     )
     {
-        val (status, logLevel) = when (e)
+        val (status, _) = when (e)
         {
             is BusinessException ->
             {

@@ -5,6 +5,4 @@ import com.cainsgl.common.entity.file.FileUrlEntity
 import org.apache.ibatis.annotations.Mapper
 
 @Mapper
-interface FileUrlMapper : BaseMapper<FileUrlEntity> {
-
-}
+interface FileUrlMapper : BaseMapper<FileUrlEntity>

@@ -22,6 +22,3 @@ class UserCollectEntity(
     @field:JsonSerialize(using = ToStringSerializer::class)
     var groupId: Long? = null,
 )
-{
-
-}

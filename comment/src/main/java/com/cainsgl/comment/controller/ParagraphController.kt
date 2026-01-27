@@ -7,7 +7,7 @@ import com.cainsgl.comment.entity.ParagraphEntity
 import com.cainsgl.comment.service.ParCommentServiceImpl
 import com.cainsgl.comment.service.ParagraphServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
-import com.cainsgl.common.util.UserHotInfoUtils.Companion.changeCommentCount
+import com.cainsgl.common.util.user.UserHotInfoUtils.Companion.changeCommentCount
 import com.cainsgl.senstitve.config.SensitiveWord
 import jakarta.annotation.Resource
 import org.springframework.dao.DuplicateKeyException

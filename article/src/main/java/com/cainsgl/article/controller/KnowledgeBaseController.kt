@@ -79,7 +79,7 @@ class KnowledgeBaseController
                 throw BusinessException("由于私密性设置无法访问该知识库")
             }
         }
-        var stared = false;
+        var stared = false
         if (StpUtil.isLogin())
         {
             val userId = StpUtil.getLoginIdAsLong()
