@@ -18,14 +18,14 @@ data class PostOperationEntity(
     var userId: Long? = null,
     @TableField("target_id")
     @field:JsonSerialize(using = ToStringSerializer::class)
-    var postId: Long? = null,
+    var targetId: Long? = null,
     @TableField("operate_type")
     var operateType: Short? = null,
 ){
 
     fun toVO():PostOperationVO
     {
-      return  PostOperationVO(this.id,this.userId,this.postId,OperateType.getByValue(operateType))
+      return  PostOperationVO(this.id,this.userId,this.targetId,OperateType.getByValue(operateType))
     }
 }
 data class PostOperationVO(

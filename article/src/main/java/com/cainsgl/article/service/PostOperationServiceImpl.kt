@@ -1,7 +1,7 @@
 package com.cainsgl.article.service
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.api.article.post.operation.PostOperationService
@@ -25,16 +25,16 @@ class PostOperationServiceImpl : ServiceImpl<PostOperationMapper, PostOperationE
 
     fun getListByUserIdAndPostId(userId: Long, postId: Long): List<PostOperationEntity>
     {
-        val query = QueryWrapper<PostOperationEntity>()
-        query.eq("user_id", userId).eq("target_id", postId)
+        val query = KtQueryWrapper(PostOperationEntity::class.java)
+        query.eq(PostOperationEntity::userId, userId).eq(PostOperationEntity::targetId, postId)
         return baseMapper.selectList(query)
     }
 
     fun hasOperate(userId: Long, targetId: Long, type: OperateType): Boolean
     {
-        val query = QueryWrapper<PostOperationEntity>().apply {
-            eq("user_id", userId).eq("target_id", targetId).eq("operate_type", type.value)
-        }
+        val query =KtQueryWrapper(PostOperationEntity::class.java)
+            .eq(PostOperationEntity::userId, userId).eq(PostOperationEntity::targetId, targetId).eq(PostOperationEntity::operateType, type.value)
+
         return baseMapper.selectCount(query) > 0
     }
 
@@ -42,14 +42,14 @@ class PostOperationServiceImpl : ServiceImpl<PostOperationMapper, PostOperationE
     {
         if (add)
         {
-            this.save(PostOperationEntity(userId = userId, postId = id, operateType = type.value))
+            this.save(PostOperationEntity(userId = userId, targetId = id, operateType = type.value))
         } else
         {
-            val query = UpdateWrapper<PostOperationEntity>().apply {
-                eq("user_id", userId)
-                eq("target_id", id)
-                eq("operate_type", type.value)
-            }
+            val query = KtUpdateWrapper(PostOperationEntity::class.java)
+                .eq(PostOperationEntity::userId, userId)
+                .eq(PostOperationEntity::targetId, id)
+                .eq(PostOperationEntity::operateType, type.value)
+
             this.remove(query)
         }
     }

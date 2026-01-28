@@ -1,7 +1,7 @@
 package com.cainsgl.user.service
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.api.user.log.UserLogService
@@ -40,8 +40,8 @@ class UserLogServiceImpl : ServiceImpl<UserLogMapper, UserLogEntity>(), UserLogS
     override fun loadLogsToRedis(value: Int): String
     {
         //直接从userLog里获取，统计完成后再往旧数据里放
-        val queryWrapper = QueryWrapper<UserLogEntity>()
-        queryWrapper.last("limit $value").eq("processed",false)
+        val queryWrapper = KtQueryWrapper(UserLogEntity::class.java)
+        queryWrapper.last("limit $value").eq(UserLogEntity::processed, false)
         var list: List<UserLogEntity>? = null
         val size = transactionTemplate.execute { status ->
             list = list(queryWrapper)
@@ -50,7 +50,7 @@ class UserLogServiceImpl : ServiceImpl<UserLogMapper, UserLogEntity>(), UserLogS
                 return@execute 0
             }
             val ids = list.mapNotNull { it.id }
-            val update= UpdateWrapper<UserLogEntity>().set("processed",true).`in`("id",ids)
+            val update= KtUpdateWrapper(UserLogEntity::class.java).set(UserLogEntity::processed,true).`in`(UserLogEntity::id,ids)
             update(update)
             return@execute list.size
         }

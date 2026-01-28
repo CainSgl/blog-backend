@@ -1,6 +1,6 @@
 package com.cainsgl.user.service
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.api.user.follow.UserFollowService
 import com.cainsgl.common.entity.user.UsersFollowEntity
@@ -38,8 +38,8 @@ class UserFollowServiceImpl : ServiceImpl<UsersFollowMapper, UsersFollowEntity>(
     @Transactional(propagation = Propagation.SUPPORTS)
     fun unfollow(followerId: Long, followeeId: Long): Boolean
     {
-        val query = QueryWrapper<UsersFollowEntity>()
-        query.eq("follower_id", followerId).eq("followee_id", followeeId)
+        val query = KtQueryWrapper(UsersFollowEntity::class.java)
+        query.eq(UsersFollowEntity::followerId, followerId).eq(UsersFollowEntity::followeeId, followeeId)
         return remove(query)
     }
 

@@ -2,7 +2,7 @@ package com.cainsgl.article.controller
 
 import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.stp.StpUtil
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
 import com.cainsgl.article.service.PostHistoryServiceImpl
 import com.cainsgl.article.service.PostServiceImpl
 import com.cainsgl.common.dto.request.OnlyId
@@ -34,9 +34,9 @@ class PostHistoryController
             //不是他的，这个是历史版本的缓存版本
             return ResultCode.PERMISSION_DENIED
         }
-        val historyQuery = QueryWrapper<PostHistoryEntity>()
-            .select("content")
-            .eq("post_id", post.id).eq("user_id", userId).orderByDesc("version").last("LIMIT 1")
+        val historyQuery = KtQueryWrapper(PostHistoryEntity::class.java)
+            .select(PostHistoryEntity::content)
+            .eq(PostHistoryEntity::postId, post.id).eq(PostHistoryEntity::userId, userId).orderByDesc(PostHistoryEntity::version).last("LIMIT 1")
         val one = postHistoryService.getOne(historyQuery)
         //检查用户是否有权访问
         post.content = one?.content
@@ -60,8 +60,8 @@ class PostHistoryController
     @PostMapping("/history/self")
     fun historySelf(@RequestBody @Valid request: OnlyId): List<PostHistoryEntity>
     {
-        val historyQuery = QueryWrapper<PostHistoryEntity>()
-            .eq("post_id", request.id).eq("user_id", StpUtil.getLoginIdAsLong()).orderByDesc("version")
+        val historyQuery = KtQueryWrapper(PostHistoryEntity::class.java)
+            .eq(PostHistoryEntity::postId, request.id).eq(PostHistoryEntity::userId, StpUtil.getLoginIdAsLong()).orderByDesc(PostHistoryEntity::version)
         return postHistoryService.list(historyQuery)
     }
 }

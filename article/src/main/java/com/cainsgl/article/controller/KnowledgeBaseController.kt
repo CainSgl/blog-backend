@@ -5,7 +5,8 @@ import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.annotation.SaIgnore
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page
 import com.cainsgl.api.user.follow.UserFollowService
 import com.cainsgl.article.dto.DirectoryTreeDTO
@@ -171,7 +172,7 @@ class KnowledgeBaseController
     @GetMapping("/index")
     fun getIndex(@RequestParam @Min(value = 1, message = "知识库id非法") id: Long): Any
     {
-        val query = QueryWrapper<KnowledgeBaseEntity>().select("index", "id").eq("id", id)
+        val query = KtQueryWrapper(KnowledgeBaseEntity::class.java).select(KnowledgeBaseEntity::index, KnowledgeBaseEntity::id).eq(KnowledgeBaseEntity::id, id)
         return knowledgeBaseService.getOne(query) ?: ResultCode.RESOURCE_NOT_FOUND
     }
 
@@ -197,9 +198,9 @@ class KnowledgeBaseController
     fun updateKnowledgeBase(@RequestBody @Valid request: UpdateKnowledgeBaseRequest): ResultCode
     {
         val userId = StpUtil.getLoginIdAsLong()
-        val updateWrapper = UpdateWrapper<KnowledgeBaseEntity>()
-        updateWrapper.eq("id", request.id)
-        updateWrapper.eq("user_id", userId)
+        val updateWrapper = KtUpdateWrapper(KnowledgeBaseEntity::class.java)
+        updateWrapper.eq(KnowledgeBaseEntity::id, request.id)
+        updateWrapper.eq(KnowledgeBaseEntity::userId, userId)
         val kbEntity = KnowledgeBaseEntity(
             status = request.status, name = request.name, index = sensitiveWord.replace(request.content),
             coverUrl = request.coverUrl

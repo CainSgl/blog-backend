@@ -1,7 +1,7 @@
 package com.cainsgl.article.service
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.api.article.post.PostService
@@ -76,8 +76,8 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
     fun getPostContent(id: Long): String?
     {
 
-        val queryWrapper = QueryWrapper<PostEntity>().select("content")
-        queryWrapper.eq("id", id)
+        val queryWrapper = KtQueryWrapper(PostEntity::class.java).select(PostEntity::content)
+        queryWrapper.eq(PostEntity::id, id)
         return super<ServiceImpl>.getOne(queryWrapper).content
     }
 
@@ -153,9 +153,9 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
     override fun getVectorById(id: Long): FloatArray?
     {
         //去数据库查
-        val queryWrapper = QueryWrapper<PostEntity>()
-        queryWrapper.select("vector")
-        queryWrapper.eq("id", id)
+        val queryWrapper = KtQueryWrapper(PostEntity::class.java)
+        queryWrapper.select(PostEntity::vecotr)
+        queryWrapper.eq(PostEntity::id, id)
         val entity = baseMapper.selectOne(queryWrapper)
         return entity.vecotr
         //    return baseMapper.selectVectorById(id)
@@ -202,8 +202,8 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
         {
             log.error("无法连接到redis", e)
             //兜底
-            val wrapper = UpdateWrapper<PostEntity>()
-            wrapper.eq("id", id)
+            val wrapper = KtUpdateWrapper(PostEntity::class.java)
+            wrapper.eq(PostEntity::id, id)
             val field="${type}_count"
             wrapper.setSql("$field = $field + $count")
             return baseMapper.update(wrapper) > 0

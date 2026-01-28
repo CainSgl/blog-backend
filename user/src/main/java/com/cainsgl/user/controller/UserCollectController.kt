@@ -1,14 +1,13 @@
 package com.cainsgl.user.controller
 
 import cn.dev33.satoken.stp.StpUtil
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page
 import com.cainsgl.api.article.kb.KnowledgeBaseService
 import com.cainsgl.api.article.post.PostService
 import com.cainsgl.common.dto.response.PageResponse
 import com.cainsgl.common.dto.response.ResultCode
-import com.cainsgl.common.entity.article.KnowledgeBaseEntity
 import com.cainsgl.common.entity.user.UserCollectEntity
 import com.cainsgl.common.entity.user.UserGroupEntity
 import com.cainsgl.user.dto.request.PageCollectRequest
@@ -55,8 +54,8 @@ class UserCollectController {
             return ResultCode.PERMISSION_DENIED
         }
         transactionTemplate.execute {
-            val update= UpdateWrapper<UserGroupEntity>().apply {
-                eq("id",userGroupEntity.id)
+            val update= KtUpdateWrapper(UserGroupEntity::class.java).apply {
+                eq(UserGroupEntity::id,userGroupEntity.id)
                 setSql("count = count + 1")
             }
             userGroupServiceImpl.update(update)
@@ -93,9 +92,9 @@ class UserCollectController {
                 setSearchCount(true)
             }
         }
-        val queryWrapper = QueryWrapper<UserCollectEntity>()
-        queryWrapper.eq("user_id", userId)
-        queryWrapper.eq("group_id",userGroupEntity.id)
+        val queryWrapper = KtQueryWrapper(UserCollectEntity::class.java)
+        queryWrapper.eq(UserCollectEntity::userId, userId)
+        queryWrapper.eq(UserCollectEntity::groupId, userGroupEntity.id)
         val result = userCollectService.page(pageParam, queryWrapper)
         val records = result.records
         val ids = records.mapNotNull { it.targetId }

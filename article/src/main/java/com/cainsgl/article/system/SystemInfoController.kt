@@ -2,6 +2,7 @@ package com.cainsgl.article.system
 
 import cn.dev33.satoken.annotation.SaCheckRole
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
 import com.cainsgl.article.service.DirectoryServiceImpl
 import com.cainsgl.article.service.KnowledgeBaseServiceImpl
 import com.cainsgl.article.service.PostServiceImpl
@@ -88,7 +89,7 @@ class SystemInfoController
         if (id == null)
         {
             return redisTemplate.getWithFineLock("about:index", { Duration.ofHours(24) }) {
-                val query = QueryWrapper<KnowledgeBaseEntity>().select("index", "id").eq("id", 2)
+                val query = KtQueryWrapper(KnowledgeBaseEntity::class.java).select(KnowledgeBaseEntity::index, KnowledgeBaseEntity::id).eq(KnowledgeBaseEntity::id, 2)
                 return@getWithFineLock knowledgeBaseService.getOne(query).index
             } ?: ResultCode.UNKNOWN_ERROR
         }

@@ -3,7 +3,7 @@ package com.cainsgl.article.controller
 import cn.dev33.satoken.annotation.SaCheckPermission
 import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.stp.StpUtil
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.cainsgl.article.dto.request.CreateDirectoryRequest
 import com.cainsgl.article.dto.request.MoveRequest
 import com.cainsgl.article.dto.request.ReSortRequest
@@ -135,13 +135,13 @@ class DirectoryController
             {
                 return true
             }
-            val updateWrapper= UpdateWrapper<PostEntity>()
-            updateWrapper.`in`("id",ids).eq("user_id",userId).set("kb_id",null).set("status",ArticleStatus.NO_KB)
+            val updateWrapper= KtUpdateWrapper(PostEntity::class.java)
+            updateWrapper.`in`(PostEntity::id,ids).eq(PostEntity::userId,userId).set(PostEntity::kbId,null).set(PostEntity::status,ArticleStatus.NO_KB)
             //获取所有的postId
             //设置知识库的数量扣减
             if(ids.isNotEmpty())
             {
-                val updateWrapper2= UpdateWrapper<KnowledgeBaseEntity>().eq("id",kbId).setSql("post_count = post_count - ${ids.size}")
+                val updateWrapper2= KtUpdateWrapper(KnowledgeBaseEntity::class.java).eq(KnowledgeBaseEntity::id,kbId).setSql("post_count = post_count - ${ids.size}")
                 knowledgeBaseService.update(updateWrapper2)
             }
 

@@ -5,6 +5,7 @@ import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.annotation.SaIgnore
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
 import com.cainsgl.api.user.UserService
 import com.cainsgl.common.dto.request.CursorList
 import com.cainsgl.common.dto.response.ResultCode
@@ -62,10 +63,10 @@ class FileController
     @PostMapping("/list")
     fun cursor(@RequestBody @Valid request: CursorList): Any
     {
-        val query = QueryWrapper<FileUrlEntity>().apply {
-            eq("user_id", request.id)
-            gt("short_url", request.lastId)
-            orderByAsc("short_url")
+        val query = KtQueryWrapper(FileUrlEntity::class.java).apply {
+            eq(FileUrlEntity::userId, request.id)
+            gt(FileUrlEntity::shortUrl, request.lastId)
+            orderByAsc(FileUrlEntity::shortUrl)
             last("limit 30")
         }
         return fileUrlService.list(query)
@@ -161,9 +162,9 @@ class FileController
 
         val userId = StpUtil.getLoginIdAsLong()
         val files = fileUrlService.list(
-            QueryWrapper<FileUrlEntity>()
-                .eq("user_id", userId)
-                .`in`("short_url", shortUrls)
+            KtQueryWrapper(FileUrlEntity::class.java)
+                .eq(FileUrlEntity::userId, userId)
+                .`in`(FileUrlEntity::shortUrl, shortUrls)
         )
 
         if (files.isNullOrEmpty())
@@ -190,7 +191,7 @@ class FileController
 
                 val currentDeleteCount = groupFiles.size
                 val totalReferences = fileUrlService.count(
-                    QueryWrapper<FileUrlEntity>().eq("url", fileUrl)
+                    KtQueryWrapper(FileUrlEntity::class.java).eq(FileUrlEntity::url, fileUrl)
                 )
 
                 // 删除数据库记录

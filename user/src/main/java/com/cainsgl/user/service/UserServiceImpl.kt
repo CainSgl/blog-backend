@@ -1,8 +1,8 @@
 package com.cainsgl.user.service
 
 import com.alibaba.fastjson2.JSON
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.api.user.UserService
@@ -45,7 +45,7 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
      */
     fun getUserByAccount(account: String): UserEntity?
     {
-        val queryWrapper: KtQueryWrapper<UserEntity> = KtQueryWrapper(UserEntity::class.java)
+        val queryWrapper = KtQueryWrapper(UserEntity::class.java)
         queryWrapper.eq(UserEntity::username, account).or().eq(UserEntity::email, account).or().eq(UserEntity::phone, account)
         return this.getOne(queryWrapper)
     }
@@ -70,17 +70,17 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
     fun setExtra(id: Long, extra: UserEntity.Extra): Boolean
     {
         val extraString = JSON.toJSONString(extra)
-        val updateWrapper = UpdateWrapper<UserEntity>()
-        updateWrapper.eq("id", id).set("extra", extraString)
+        val updateWrapper = KtUpdateWrapper(UserEntity::class.java)
+        updateWrapper.eq(UserEntity::id, id).set(UserEntity::extra, extraString)
         this.baseMapper.update(updateWrapper)
         return this.baseMapper.update(updateWrapper) > 0
     }
 
     override fun mallocMemory(userId: Long, memory: Int): Boolean
     {
-        val updateWrapper = UpdateWrapper<UserEntity>()
-        updateWrapper.eq("id", userId).setSql("used_memory = used_memory + $memory")
-            .le("used_memory", USER_MAX_USED_MEMORY - memory)
+        val updateWrapper = KtUpdateWrapper(UserEntity::class.java)
+        updateWrapper.eq(UserEntity::id, userId).setSql("used_memory = used_memory + $memory")
+            .le(UserEntity::usedMemory, USER_MAX_USED_MEMORY - memory)
         return this.baseMapper.update(updateWrapper) > 0
     }
 

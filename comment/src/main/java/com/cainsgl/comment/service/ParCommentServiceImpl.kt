@@ -1,6 +1,6 @@
 package com.cainsgl.comment.service
 
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.comment.entity.ParCommentEntity
 import com.cainsgl.comment.repository.ParCommentMapper
@@ -24,8 +24,8 @@ class ParCommentServiceImpl : ServiceImpl<ParCommentMapper, ParCommentEntity>()
 
     fun addReplyCount(id: Long, count: Int): Boolean
     {
-        val wrapper = UpdateWrapper<ParCommentEntity>()
-        wrapper.eq("id", id)
+        val wrapper = KtUpdateWrapper(ParCommentEntity::class.java)
+        wrapper.eq(ParCommentEntity::id, id)
         wrapper.setSql("reply_count = reply_count + $count")
         return baseMapper.update(wrapper) > 0
     }

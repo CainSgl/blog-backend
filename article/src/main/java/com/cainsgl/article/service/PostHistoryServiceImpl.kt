@@ -1,6 +1,6 @@
 package com.cainsgl.article.service
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.api.article.post.history.PostHistoryService
@@ -25,15 +25,15 @@ class PostHistoryServiceImpl : ServiceImpl<PostHistoryMapper, PostHistoryEntity>
      */
     override fun getLastById(postId: Long): PostHistoryEntity?
     {
-        val historyQuery = QueryWrapper<PostHistoryEntity>()
-            .eq("post_id", postId).orderByDesc("version").last("LIMIT 1 OFFSET 1")
+        val historyQuery = KtQueryWrapper(PostHistoryEntity::class.java)
+            .eq(PostHistoryEntity::postId, postId).orderByDesc(PostHistoryEntity::version).last("LIMIT 1 OFFSET 1")
         return baseMapper.selectOne(historyQuery)
     }
     fun getByCache(postId:Long): List<PostHistoryEntity>?
     {
        return redisTemplate.getWithFineLock("$HISTORY_REDIS_PREFIX_KEY$postId",{ Duration.ofMinutes(10)},{
-            val historyQuery = QueryWrapper<PostHistoryEntity>()
-                .eq("post_id", postId).orderByDesc("version").last("LIMIT 10 OFFSET 1")
+            val historyQuery = KtQueryWrapper(PostHistoryEntity::class.java)
+                .eq(PostHistoryEntity::postId, postId).orderByDesc(PostHistoryEntity::version).last("LIMIT 10 OFFSET 1")
             return@getWithFineLock baseMapper.selectList(historyQuery)?: emptyList()
         })
     }

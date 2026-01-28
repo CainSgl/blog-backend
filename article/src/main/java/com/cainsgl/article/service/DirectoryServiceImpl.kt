@@ -1,7 +1,7 @@
 package com.cainsgl.article.service
 
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
 import com.baomidou.mybatisplus.core.toolkit.IdWorker
+import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.api.article.directory.DirectoryService
@@ -145,7 +145,7 @@ class DirectoryServiceImpl : ServiceImpl<DirectoryMapper, DirectoryEntity>(), Di
             //去增加kb的post_count
             if (postId != null)
             {
-                val query = UpdateWrapper<KnowledgeBaseEntity>().eq("id", kbId).setSql("post_count = post_count + 1")
+                val query = KtUpdateWrapper(KnowledgeBaseEntity::class.java).eq(KnowledgeBaseEntity::id, kbId).setSql("post_count = post_count + 1")
                 knowledgeBaseService.update(query)
             }
             return if (success)

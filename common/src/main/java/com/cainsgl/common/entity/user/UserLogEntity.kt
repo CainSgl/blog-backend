@@ -25,9 +25,11 @@ data class UserLogEntity(
     @TableField(value = "info", typeHandler = JsonTypeHandler::class)
     var info: Map<String, Any>? = null,
 
-    @JSONField(serialize = false)
+    @field:JSONField(serialize = false)
     @TableField("created_at")
     var createdAt: LocalDateTime? = null,
+    @TableField("processed", select = false)
+    var processed: String? = null,
 )
 {
     fun isValidAction(): Boolean

@@ -6,7 +6,8 @@ import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.annotation.SaIgnore
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page
 import com.cainsgl.api.ai.AiService
 import com.cainsgl.api.user.extra.UserExtraInfoService
@@ -211,9 +212,9 @@ class PostController
     fun updatePost(@RequestBody @Valid request: UpdatePostRequest): Any
     {
         val userId = StpUtil.getLoginIdAsLong()
-        val query = QueryWrapper<PostEntity>()
-        query.eq("id", request.id)
-        query.eq("user_id", userId)
+        val query = KtQueryWrapper(PostEntity::class.java)
+        query.eq(PostEntity::id, request.id)
+        query.eq(PostEntity::userId, userId)
         val entity = postService.getOne(query) ?: //没对应的数据
         return ResultCode.RESOURCE_NOT_FOUND
         val postEntity = PostEntity(
@@ -226,7 +227,7 @@ class PostController
             return ResultCode.SUCCESS
         }
         val historyQuery =
-            QueryWrapper<PostHistoryEntity>().eq("post_id", postEntity.id).eq("user_id", userId).orderByDesc("version")
+            KtQueryWrapper(PostHistoryEntity::class.java).eq(PostHistoryEntity::postId, postEntity.id).eq(PostHistoryEntity::userId, userId).orderByDesc(PostHistoryEntity::version)
                 .last("LIMIT 1")
         val one = postHistoryService.getOne(historyQuery)
         if (one != null)
@@ -253,17 +254,17 @@ class PostController
     {
         val userId = StpUtil.getLoginIdAsLong()
         //这里是读时更新Read-Modify-Write，正常是要加事务的，但是这里是单个用户，不存在并发问题
-        val query = QueryWrapper<PostEntity>()
-        query.eq("id", request.id)
-        query.eq("user_id", userId)
+        val query = KtQueryWrapper(PostEntity::class.java)
+        query.eq(PostEntity::id, request.id)
+        query.eq(PostEntity::userId, userId)
         //拿到最新发布版本
         val post = postService.getOne(query) ?: //没对应的数据
         return ResultCode.RESOURCE_NOT_FOUND
 
         //获取编辑文档的最新版本，用来发布
         val historyQuery =
-            QueryWrapper<PostHistoryEntity>().select("id", "content", "version", "user_id").eq("post_id", post.id)
-                .eq("user_id", userId).orderByDesc("version").last("LIMIT 1")
+            KtQueryWrapper(PostHistoryEntity::class.java).select(PostHistoryEntity::id, PostHistoryEntity::content, PostHistoryEntity::version, PostHistoryEntity::userId).eq(PostHistoryEntity::postId, post.id)
+                .eq(PostHistoryEntity::userId, userId).orderByDesc(PostHistoryEntity::version).last("LIMIT 1")
         val history = postHistoryService.getOne(historyQuery)
         if(post.kbId==1L||post.kbId==2L)
         {
@@ -335,17 +336,17 @@ class PostController
     {
         //还需要删除目录
         val userId = StpUtil.getLoginIdAsLong()
-        val wrapper = UpdateWrapper<PostEntity>()
-        wrapper.eq("id", id)
-        wrapper.eq("user_id", userId)
-        wrapper.set("status", ArticleStatus.OFF_SHELF)
+        val wrapper = KtUpdateWrapper(PostEntity::class.java)
+        wrapper.eq(PostEntity::id, id)
+        wrapper.eq(PostEntity::userId, userId)
+        wrapper.set(PostEntity::status, ArticleStatus.OFF_SHELF)
         val result = transactionTemplate.execute {
             if (!postService.update(wrapper))
             {
                 return@execute ResultCode.RESOURCE_NOT_FOUND
             }
-            val wrapper2 = QueryWrapper<DirectoryEntity>()
-            wrapper2.eq("post_id", id)
+            val wrapper2 = KtQueryWrapper(DirectoryEntity::class.java)
+            wrapper2.eq(DirectoryEntity::postId, id)
             directoryService.remove(wrapper2)
         } ?: ResultCode.SUCCESS
 

@@ -1,6 +1,6 @@
 package com.cainsgl.user.service
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.api.user.extra.UserExtraInfoService
@@ -48,9 +48,9 @@ class UserExtraInfoServiceImpl : ServiceImpl<UserExtraInfoMapper, UserExtraInfoE
 
     override fun getInterestVector(userId: Long): FloatArray?
     {
-        val queryWrapper = QueryWrapper<UserExtraInfoEntity>()
-        queryWrapper.select("interest_vector")
-        queryWrapper.eq("user_id", userId)
+        val queryWrapper = KtQueryWrapper(UserExtraInfoEntity::class.java)
+        queryWrapper.select(UserExtraInfoEntity::interestVector)
+        queryWrapper.eq(UserExtraInfoEntity::userId, userId)
         val selectOne = baseMapper.selectOne(queryWrapper)
         return selectOne.interestVector
     }

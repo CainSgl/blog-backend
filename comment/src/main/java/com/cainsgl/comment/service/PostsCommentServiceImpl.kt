@@ -1,6 +1,6 @@
 package com.cainsgl.comment.service
 
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.comment.entity.PostsCommentEntity
 import com.cainsgl.comment.repository.PostsCommentMapper
@@ -19,7 +19,7 @@ class PostsCommentServiceImpl : ServiceImpl<PostsCommentMapper, PostsCommentEnti
         return baseMapper.selectByCursor(postId,  lastCreatedAt, lastLikeCount,lastId)
     }
     fun addCommentCount(id: Long, commentsCount: Int) :Boolean{
-        val update=UpdateWrapper<PostsCommentEntity>().eq("id",id).setSql("reply_count = reply_count + $commentsCount")
+        val update= KtUpdateWrapper(PostsCommentEntity::class.java).eq(PostsCommentEntity::id,id).setSql("reply_count = reply_count + $commentsCount")
          return update(update)
     }
 }

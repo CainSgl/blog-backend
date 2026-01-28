@@ -1,6 +1,6 @@
 package com.cainsgl.user.service
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.common.entity.user.UserGroupEntity
@@ -16,14 +16,14 @@ class UserGroupServiceImpl : ServiceImpl<UserGroupMapper, UserGroupEntity>(), IS
      * @param needPublish 为true代表只获取公开
      */
     fun getByUserIdAndType(userId: Long, type: String?, needPublish:Boolean=false): Map<String, List<UserGroupEntity>> {
-        val queryWrapper= QueryWrapper<UserGroupEntity>()
-        queryWrapper.eq("user_id",userId)
+        val queryWrapper = KtQueryWrapper(UserGroupEntity::class.java)
+        queryWrapper.eq(UserGroupEntity::userId, userId)
             .apply {
                 if (type != null) {
-                    eq("type", CollectType.fromStr(type).code)
+                    eq(UserGroupEntity::type, CollectType.fromStr(type).code)
                 }
                 if (needPublish) {
-                    eq("publish", true)
+                    eq(UserGroupEntity::publish, true)
                 }
             }
         return baseMapper.selectList(queryWrapper).groupBy { CollectType.fromNumber(it.type ?: -1).str }

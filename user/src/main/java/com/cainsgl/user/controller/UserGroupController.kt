@@ -1,8 +1,8 @@
 package com.cainsgl.user.controller
 
 import cn.dev33.satoken.stp.StpUtil
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.user.UserCollectEntity
 import com.cainsgl.common.entity.user.UserGroupEntity
@@ -49,9 +49,9 @@ class UserGroupController {
     @DeleteMapping
     fun delete(@RequestParam id: Long): Any {
         val userId = StpUtil.getLoginIdAsLong()
-        val query = QueryWrapper<UserGroupEntity>().apply {
-            eq("user_id", userId)
-            eq("id", id)
+        val query = KtQueryWrapper(UserGroupEntity::class.java).apply {
+            eq(UserGroupEntity::userId, userId)
+            eq(UserGroupEntity::id, id)
         }
         transactionTemplate.execute {
             val userGroup= userGroupServiceImpl.getOne(query)
@@ -61,9 +61,9 @@ class UserGroupController {
                     {
                         throw BSystemException("获取到的userGroup为null，出乎意料的bug")
                     }
-                    val query = QueryWrapper<UserCollectEntity>().apply {
-                        eq("user_id", userId)
-                        eq("group_id", userGroup.id)
+                    val query = KtQueryWrapper(UserCollectEntity::class.java).apply {
+                        eq(UserCollectEntity::userId, userId)
+                        eq(UserCollectEntity::groupId, userGroup.id)
                     }
                     userCollectService.remove(query)
                 }
@@ -75,15 +75,15 @@ class UserGroupController {
     @PutMapping
     fun put(@RequestBody request: PutGroupRequest): Any {
         val userId = StpUtil.getLoginIdAsLong()
-        val query = UpdateWrapper<UserGroupEntity>().apply {
-            eq("id", request.id)
-            eq("user_id", userId)
+        val query = KtUpdateWrapper(UserGroupEntity::class.java).apply {
+            eq(UserGroupEntity::id, request.id)
+            eq(UserGroupEntity::userId, userId)
             if (request.name != null)
-                set("name", request.name)
+                set(UserGroupEntity::name, request.name)
             if (request.description != null)
-                set("description", request.description)
+                set(UserGroupEntity::description, request.description)
             if (request.publish != null)
-                set("publish", request.publish)
+                set(UserGroupEntity::publish, request.publish)
         }
         userGroupServiceImpl.update(query)
         return ResultCode.SUCCESS

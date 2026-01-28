@@ -1,6 +1,6 @@
 package com.cainsgl.article.controller
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
 import com.cainsgl.article.document.PostDocument
 import com.cainsgl.article.service.PostDocumentService
 import com.cainsgl.article.service.PostServiceImpl
@@ -29,8 +29,8 @@ class AdminController
         while (hasMore)
         {
             // 从数据库中获取一批文章数据
-            val query = QueryWrapper<PostEntity>().select("id", "title", "content", "summary", "tags", "img", "status")
-                .orderByAsc("id").gt("id", lastId).ge("status", ArticleStatus.PUBLISHED).last("limit 100")
+            val query = KtQueryWrapper(PostEntity::class.java).select(PostEntity::id, PostEntity::title, PostEntity::content, PostEntity::summary, PostEntity::tags, PostEntity::img, PostEntity::status)
+                .orderByAsc(PostEntity::id).gt(PostEntity::id, lastId).ge(PostEntity::status, ArticleStatus.PUBLISHED).last("limit 100")
             val posts = postService.list(query)
             if (posts.isEmpty())
             {

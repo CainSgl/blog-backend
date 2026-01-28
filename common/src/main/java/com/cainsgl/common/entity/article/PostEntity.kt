@@ -78,7 +78,7 @@ data class PostEntity(
     var vecotr: FloatArray? = null,
 ){
     companion object{
-         val BASIC_COL= listOf("id","title","summary","status","is_top","is_recommend","view_count","like_count","comment_count","tags","user_id","published_at","kb_id","version","img","created_at","category_id","seo_keywords","seo_description")
+         val BASIC_COL= listOf( "id","title","summary","status","is_top","is_recommend","view_count","like_count","comment_count","tags","user_id","published_at","kb_id","version","img","created_at","category_id","seo_keywords","seo_description")
     }
 
     fun needUpdate():Boolean

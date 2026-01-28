@@ -1,7 +1,7 @@
 package com.cainsgl.user.service
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.common.entity.user.UserCollectEntity
@@ -21,8 +21,8 @@ class UserCollectServiceImpl : ServiceImpl<UserCollectMapper, UserCollectEntity>
 
     fun listByUserId(groupId: Long,userId: Long): List<UserCollectEntity>
     {
-        val query = QueryWrapper<UserCollectEntity>()
-        query.eq("group_id", groupId)
+        val query = KtQueryWrapper(UserCollectEntity::class.java)
+        query.eq(UserCollectEntity::groupId, groupId)
         return baseMapper.selectList(query)
     }
 
@@ -32,9 +32,9 @@ class UserCollectServiceImpl : ServiceImpl<UserCollectMapper, UserCollectEntity>
         val typeCode = CollectType.fromStr(type).code
         
         //查询该用户对该target的所有收藏记录
-        val query = QueryWrapper<UserCollectEntity>()
-        query.eq("user_id", userId)
-        query.eq("target_id", targetId)
+        val query = KtQueryWrapper(UserCollectEntity::class.java)
+        query.eq(UserCollectEntity::userId, userId)
+        query.eq(UserCollectEntity::targetId, targetId)
         val collects = baseMapper.selectList(query)
         
         if (collects.isEmpty()) {
@@ -46,9 +46,9 @@ class UserCollectServiceImpl : ServiceImpl<UserCollectMapper, UserCollectEntity>
         }
 
         // 找出这些 group 中 type 匹配的
-        val groupQuery = QueryWrapper<UserGroupEntity>()
-        groupQuery.`in`("id", groupIds)
-        groupQuery.eq("type", typeCode)
+        val groupQuery = KtQueryWrapper(UserGroupEntity::class.java)
+        groupQuery.`in`(UserGroupEntity::id, groupIds)
+        groupQuery.eq(UserGroupEntity::type, typeCode)
         val validGroups = userGroupMapper.selectList(groupQuery)
         val validGroupIds = validGroups.mapNotNull { it.id }.toSet()
 
@@ -57,8 +57,8 @@ class UserCollectServiceImpl : ServiceImpl<UserCollectMapper, UserCollectEntity>
             if (collect.groupId in validGroupIds) {
                 baseMapper.deleteById(collect.id)
                 
-                val updateWrapper = UpdateWrapper<UserGroupEntity>()
-                updateWrapper.eq("id", collect.groupId)
+                val updateWrapper = KtUpdateWrapper(UserGroupEntity::class.java)
+                updateWrapper.eq(UserGroupEntity::id, collect.groupId)
                 updateWrapper.setSql("count = count - 1")
                 userGroupMapper.update(null, updateWrapper)
             }

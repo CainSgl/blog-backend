@@ -1,7 +1,7 @@
 package com.cainsgl.comment.service
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.comment.entity.ParagraphEntity
 import com.cainsgl.comment.repository.ParagraphMapper
@@ -57,7 +57,7 @@ class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
         fun getDataByDB(): List<ParagraphEntity>
         {
             val query =
-                QueryWrapper<ParagraphEntity>().select("data_id", "count").eq("post_id", id).eq("version", version)
+                KtQueryWrapper(ParagraphEntity::class.java).select(ParagraphEntity::dataId,ParagraphEntity::count).eq(ParagraphEntity::postId, id).eq(ParagraphEntity::version, version)
             val entities = baseMapper.selectList(query)
             return entities
         }
@@ -128,7 +128,7 @@ class ParagraphServiceImpl : ServiceImpl<ParagraphMapper, ParagraphEntity>()
         {
             log.error("似乎是无法连接到redis，采用兜底方案", e)
             val update =
-                UpdateWrapper<ParagraphEntity>().eq("post_id", postId).eq("data_id", dataId).eq("version", version)
+                KtUpdateWrapper(ParagraphEntity::class.java).eq(ParagraphEntity::postId, postId).eq(ParagraphEntity::dataId, dataId).eq(ParagraphEntity::version, version)
                     .setSql("count = count+1")
             this.update(update)
         } finally

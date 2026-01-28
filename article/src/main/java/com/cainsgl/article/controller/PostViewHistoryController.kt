@@ -1,7 +1,7 @@
 package com.cainsgl.article.controller
 
 import cn.dev33.satoken.stp.StpUtil
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.cainsgl.article.dto.response.CursorResult
 import com.cainsgl.article.dto.response.PostViewHistoryDTO
 import com.cainsgl.article.entity.PostViewHistoryEntity
@@ -36,18 +36,18 @@ class PostViewHistoryController
     @DeleteMapping
     fun delete(@RequestParam ids:List<Long>): ResultCode
     {
-        val update= UpdateWrapper<PostViewHistoryEntity>()
+        val update= KtUpdateWrapper(PostViewHistoryEntity::class.java)
         val userId = StpUtil.getLoginIdAsLong()
-        update.`in`("id",ids).eq("user_id", userId)
+        update.`in`(PostViewHistoryEntity::id,ids).eq(PostViewHistoryEntity::userId, userId)
         postViewHistoryService.remove(update)
         return ResultCode.SUCCESS
     }
     @DeleteMapping("/all")
     fun deleteAll( ): ResultCode
     {
-        val update= UpdateWrapper<PostViewHistoryEntity>()
+        val update=KtUpdateWrapper(PostViewHistoryEntity::class.java)
         val userId = StpUtil.getLoginIdAsLong()
-        update.eq("user_id", userId)
+        update.eq(PostViewHistoryEntity::userId, userId)
         postViewHistoryService.remove(update)
         return ResultCode.SUCCESS
     }

@@ -1,6 +1,6 @@
 package com.cainsgl.article.service
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.api.ai.AiService
@@ -59,7 +59,7 @@ class PostChunkVectorServiceImpl : ServiceImpl<PostChunkVectorMapper, PostChunkV
             return true
         }
         //获取原先所有的chunk
-        val wrapper = QueryWrapper<PostChunkVectorEntity>().eq("post_id", post.id)
+        val wrapper = KtQueryWrapper(PostChunkVectorEntity::class.java).eq(PostChunkVectorEntity::postId, post.id)
         val list: List<PostChunkVectorEntity> = list(wrapper)
         //下面本质上是优化，他的目的其实是删除所有原来的向量化的结果，然后再重新向量化，但是向量化成本略高，所以就有下面的优化手段
         //切割原文进行差量分析，这里提供两种切割方式，第一个是按markdown切分成块，第二个是靠ai，这里目前使用第一种方案，第二种是在文章很水，口水话的时候比较推荐
@@ -120,7 +120,7 @@ class PostChunkVectorServiceImpl : ServiceImpl<PostChunkVectorMapper, PostChunkV
                 ).calculateHash()
             )
         }
-        val wrapper = QueryWrapper<PostChunkVectorEntity>().eq("post_id", post.id)
+        val wrapper = KtQueryWrapper(PostChunkVectorEntity::class.java).eq(PostChunkVectorEntity::postId, post.id)
         remove(wrapper)
         getBaseMapper().insert(willInsert)
         return true
@@ -128,7 +128,7 @@ class PostChunkVectorServiceImpl : ServiceImpl<PostChunkVectorMapper, PostChunkV
 
     override fun removeVector(postId: Long): Boolean
     {
-        val wrapper = QueryWrapper<PostChunkVectorEntity>().eq("post_id", postId)
+        val wrapper =KtQueryWrapper(PostChunkVectorEntity::class.java).eq(PostChunkVectorEntity::postId, postId)
         return remove(wrapper)
     }
 

@@ -1,6 +1,6 @@
 package com.cainsgl.article.system
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.article.system.entity.CarouselEntity
@@ -32,7 +32,7 @@ class CarouselServiceImpl : ServiceImpl<CarouselMapper, CarouselEntity>(), IServ
             val tomorrow6Am = now.plusDays(1).withHour(6).withMinute(0).withSecond(0).withNano(0)
             return@getWithFineLock Duration.between(now, tomorrow6Am)
         }, {
-            val query = QueryWrapper<CarouselEntity>().orderByDesc("date").last("limit 9")
+            val query = KtQueryWrapper(CarouselEntity::class.java).orderByDesc(CarouselEntity::date).last("limit 9")
             return@getWithFineLock baseMapper.selectList(query)
         }) ?: emptyList()
     }
