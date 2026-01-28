@@ -1,6 +1,7 @@
 package com.cainsgl.user.service
 
 import com.alibaba.fastjson2.JSON
+import com.baomidou.mybatisplus.core.toolkit.IdWorker
 import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
 import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.baomidou.mybatisplus.extension.service.IService
@@ -46,7 +47,8 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
     fun getUserByAccount(account: String): UserEntity?
     {
         val queryWrapper = KtQueryWrapper(UserEntity::class.java)
-        queryWrapper.eq(UserEntity::username, account).or().eq(UserEntity::email, account).or().eq(UserEntity::phone, account)
+        queryWrapper.eq(UserEntity::username, account).or().eq(UserEntity::email, account).or()
+            .eq(UserEntity::phone, account)
         return this.getOne(queryWrapper)
     }
 
@@ -96,6 +98,10 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
 
     override fun getById(id: Serializable?): UserEntity?
     {
+        if (id == null)
+        {
+            return null
+        }
         val key = "${USER_REDIS_PREFIX}${id}"
         val user = redisTemplate.opsForValue().get(key)
         if (user != null)
@@ -111,5 +117,17 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
         {
             return super<ServiceImpl>.getById(id)
         }
+    }
+
+    fun crateUserBaseInfo(userEntity: UserEntity?=null): UserEntity
+    {
+        val genId = IdWorker.getId()
+        val entity= userEntity ?: UserEntity().apply {
+            id = genId
+            roles = UserEntity.DEFAULT_ROLE
+            permissions= UserEntity.DEFAULT_PERMISSIONS
+        }
+        save(entity)
+        return entity
     }
 }

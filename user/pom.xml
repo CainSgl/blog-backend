@@ -59,6 +59,12 @@
             <version>6.9.2</version>
             <scope>compile</scope>
         </dependency>
+        <!-- EasyCaptcha 高性能验证码 -->
+        <dependency>
+            <groupId>com.github.whvcse</groupId>
+            <artifactId>easy-captcha</artifactId>
+            <version>1.6.2</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -108,7 +114,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <jvmTarget>1.8</jvmTarget>
+
                     <compilerPlugins>
                         <plugin>spring</plugin>
                     </compilerPlugins>

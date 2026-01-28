@@ -68,6 +68,8 @@ data class UserEntity(
 {
     companion object{
         val BASIC_COL= listOf("id","nickname","avatar_url","level","gender")
+        val DEFAULT_ROLE=listOf("user")
+        val DEFAULT_PERMISSIONS=emptyList<String>()
     }
 
     //到下一级的总经验值

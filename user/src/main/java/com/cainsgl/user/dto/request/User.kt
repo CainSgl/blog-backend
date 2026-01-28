@@ -5,9 +5,11 @@ import jakarta.validation.constraints.NotEmpty
 
 data class UserLoginRequest(
     @field:NotEmpty(message = "Username cannot be empty")
-    val account: String ,
+    val account: String,
     @field:NotEmpty(message = "Password cannot be empty")
-    val password: String
+    val password: String,
+    //用于防刷
+    val captcha:String?=null,
 )
 
 data class UserLogPostRequest(

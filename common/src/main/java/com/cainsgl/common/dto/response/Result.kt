@@ -53,7 +53,16 @@ data class Result(
             }
             return Result(BUSINESS_ERROR.code, exception.message)
         }
-
+        @JvmStatic
+        fun error(message:String): Result
+        {
+            return Result(BUSINESS_ERROR.code, message)
+        }
+        @JvmStatic
+        fun error(data:Any): Result
+        {
+            return Result(BUSINESS_ERROR.code, BUSINESS_ERROR.message, data)
+        }
         //系统异常
         @JvmStatic
         fun error(exception: BSystemException): Result

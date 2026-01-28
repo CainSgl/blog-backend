@@ -154,7 +154,7 @@
                         <source>src/main/java</source>
                         <source>target/generated-sources/annotations</source>
                     </sourceDirs>
-                    <jvmTarget>1.8</jvmTarget>
+                    <jvmTarget>17</jvmTarget>
                     <compilerPlugins>
                         <plugin>spring</plugin>
                     </compilerPlugins>
