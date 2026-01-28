@@ -1,6 +1,5 @@
 package com.cainsgl.user.controller
 
-import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.stp.StpUtil
 import com.cainsgl.common.dto.request.CursorList
 import com.cainsgl.common.dto.request.OnlyId
@@ -57,7 +56,7 @@ class FollowController
     }
 
 
-    @SaCheckRole("user")
+
     @DeleteMapping
     fun unFollow(@RequestParam id: Long): Boolean
     {
@@ -75,7 +74,7 @@ class FollowController
         return true
     }
 
-    @SaCheckRole("user")
+
     @PostMapping
     fun addFollow(@RequestBody request: OnlyId):Any
     {

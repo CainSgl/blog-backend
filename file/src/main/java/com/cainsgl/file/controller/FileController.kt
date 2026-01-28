@@ -1,8 +1,6 @@
 package com.cainsgl.file.controller
 
 
-import cn.dev33.satoken.annotation.SaCheckRole
-import cn.dev33.satoken.annotation.SaIgnore
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
@@ -37,7 +35,7 @@ class FileController
     @Resource
     lateinit var userService: UserService
 
-    @SaCheckRole("user")
+   
     @PostMapping("/upload")
     fun uploadFile(@RequestParam("file") file: MultipartFile): FileUrlEntity
     {
@@ -76,7 +74,7 @@ class FileController
      * 公开访问文件 - 通过重定向到预签名URL
      * 支持ETag缓存优化
      */
-    @SaIgnore
+ 
     @GetMapping
     fun getFile(
         @RequestParam("f") shortUrl: Long,
@@ -107,10 +105,10 @@ class FileController
         // 重定向到预签名URL
         val downloadUrl = fileService.getDownloadUrl(fileEntity.url!!, expiresInSeconds = 300)
         response.sendRedirect(downloadUrl)
-        return ResultCode.SUCCESS
+        return ResultCode.FORWARD
     }
 
-   // @SaCheckRole("user")
+   //
     @GetMapping("/download")
     fun downloadFile(@RequestParam("f") shortUrl: Long, response: HttpServletResponse):Any
     {
@@ -123,15 +121,14 @@ class FileController
             filename = fileEntity.name
         )
         response.sendRedirect(downloadUrl)
-        return ResultCode.SUCCESS
+        return ResultCode.FORWARD
     }
 
 
     /**
      * 删除单个文件
      */
-    @SaCheckRole("user")
-    @DeleteMapping
+    @GetMapping("free")
     fun deleteFile(@RequestParam("f") shortUrl: Long): Any
     {
         val userId = StpUtil.getLoginIdAsLong()
@@ -145,14 +142,13 @@ class FileController
         }
 
         deleteFileInternal(listOf(fileEntity), userId)
-        return ResultCode.SUCCESS
+        return ResultCode.FORWARD
     }
 
     /**
      * 批量删除文件
      */
-    @SaCheckRole("user")
-    @DeleteMapping("/batch")
+    @GetMapping("/batchFree")
     fun batchDeleteFiles(@RequestParam("f") shortUrls: List<Long>): Any
     {
         if (shortUrls.isEmpty())
@@ -212,7 +208,7 @@ class FileController
     /**
      * 获取用户的文件列表
      */
-    @SaCheckRole("user")
+   
     @GetMapping("/list")
     fun listUserFiles(): List<FileUrlEntity>
     {

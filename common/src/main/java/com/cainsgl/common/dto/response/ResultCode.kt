@@ -5,6 +5,7 @@ enum class ResultCode(val code: Int, val message: String, val codeScopeDesc: Str
     // ====================== 成功码段（200xx）======================
     SUCCESS(20000, "Success", "通用成功"),
     NO_DATA(20000, "未返回任何数据", "通用成功"),
+    FORWARD(20000,"重定向","无需返回"),
     // ====================== 业务异常码段（400xx）======================
     BUSINESS_ERROR(40000, "业务逻辑异常", "通用业务异常"),
     MISSING_PARAM(40001, "请求参数缺失", "参数异常"),
@@ -17,7 +18,7 @@ enum class ResultCode(val code: Int, val message: String, val codeScopeDesc: Str
     USER_NOT_LOGIN(40100, "用户未登录", "登录异常"),
     PERMISSION_DENIED(40101, "权限不足", "权限异常"),
     NOT_ROLE(40102, "用户角色不匹配", "权限异常"),
-    UNKOWN_SATOKEN_ERROR(40103, "未知的SATOKEN异常", "权限异常"),
+    UNKNOWN_SATOKEN_ERROR(40103, "未知的SATOKEN异常", "权限异常"),
     // ====================== 请求限流相关（429xx）======================
     TOO_MANY_REQUESTS(42900, "请求过于频繁，请稍后再试", "限流异常"),
     RATE_LIMIT_EXCEEDED(42901, "超出接口限流阈值", "限流异常"),

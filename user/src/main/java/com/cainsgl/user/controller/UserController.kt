@@ -1,7 +1,5 @@
 package com.cainsgl.user.controller
 
-import cn.dev33.satoken.annotation.SaCheckRole
-import cn.dev33.satoken.annotation.SaIgnore
 import cn.dev33.satoken.stp.StpUtil
 import com.cainsgl.common.config.interceptor.StpInterfaceImpl
 import com.cainsgl.common.dto.response.ResultCode
@@ -32,7 +30,7 @@ class UserController
     lateinit var userExtraInfoService: UserExtraInfoServiceImpl
     @Resource
     lateinit var userService: UserServiceImpl
-    @SaIgnore
+
     @PostMapping("/login")
     fun login(@RequestBody @Valid loginRequest: UserLoginRequest): Any
     {
@@ -75,7 +73,6 @@ class UserController
         return LoginResponse(token, user.calculateLevelInfo().sanitizeSystemSensitiveData())
     }
 
-    @SaCheckRole("user")
     @PostMapping("/logout")
     fun logout(): String
     {
@@ -92,7 +89,6 @@ class UserController
     /**
      * 获取当前登录用户信息
      */
-    @SaCheckRole("user")
     @GetMapping("/current")
     fun getCurrentUser(): UserCurrentResponse
     {
@@ -103,7 +99,7 @@ class UserController
         return  UserCurrentResponse(userInfo!!.calculateLevelInfo().sanitizeSystemSensitiveData(),hotInfo)
     }
 
-    @SaIgnore
+
     @GetMapping
     fun get(@RequestParam id: Long): Any
     {
@@ -113,7 +109,7 @@ class UserController
         val hotInfo = userExtraInfoService.getBySaveOnNull(user.id!!)
         return UserGetResponse(user,hotInfo)
     }
-    @SaCheckRole("user")
+
     @PutMapping
     fun update(@RequestBody request: UpdateUserRequest):Any
     {

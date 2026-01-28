@@ -1,8 +1,6 @@
 package com.cainsgl.article.controller
 
-import cn.dev33.satoken.annotation.SaCheckPermission
 import cn.dev33.satoken.annotation.SaCheckRole
-import cn.dev33.satoken.annotation.SaIgnore
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
@@ -14,20 +12,19 @@ import com.cainsgl.article.dto.request.CreateKnowledgeBaseRequest
 import com.cainsgl.article.dto.request.CursorKbRequest
 import com.cainsgl.article.dto.request.PageUserIdListRequest
 import com.cainsgl.article.dto.request.UpdateKnowledgeBaseRequest
-import com.cainsgl.article.service.DirectoryServiceImpl
-import com.cainsgl.article.service.KnowledgeBaseServiceImpl
-import com.cainsgl.article.service.PostOperationServiceImpl
+import com.cainsgl.article.service.*
 import com.cainsgl.common.dto.response.PageResponse
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.KnowledgeBaseEntity
 import com.cainsgl.common.entity.article.OperateType
+import com.cainsgl.common.entity.article.PostEntity
 import com.cainsgl.common.exception.BusinessException
 import com.cainsgl.senstitve.config.SensitiveWord
 import jakarta.annotation.Resource
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Min
-import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -36,7 +33,16 @@ class KnowledgeBaseController
 {
 
 
-    @Autowired
+    @Resource
+    private lateinit var postDocumentService: PostDocumentService
+
+    @Resource
+    private lateinit var transactionTemplate: TransactionTemplate
+
+    @Resource
+    private lateinit var postService: PostServiceImpl
+
+    @Resource
     private lateinit var userFollowService: UserFollowService
 
     @Resource
@@ -51,7 +57,7 @@ class KnowledgeBaseController
     @Resource
     lateinit var postOperationService: PostOperationServiceImpl
 
-    @SaIgnore
+
     @GetMapping
     fun get(@RequestParam @Min(value = 1, message = "知识库id非法") id: Long): Any
     {
@@ -91,7 +97,42 @@ class KnowledgeBaseController
         return Triple(knowledgeBase, directoryTree, stared)
     }
 
-    @SaIgnore
+    @DeleteMapping
+    fun delete(@RequestParam id: Long,@RequestParam(required = false) removePost: Boolean=false): Any
+    {
+        val userId = StpUtil.getLoginIdAsLong()
+        val query = KtQueryWrapper(KnowledgeBaseEntity::class.java).eq(KnowledgeBaseEntity::id, id)
+            .eq(KnowledgeBaseEntity::userId, userId)
+        return transactionTemplate.execute {
+            if (knowledgeBaseService.remove(query))
+            {
+                if(removePost)
+                {
+                    val postQuery = KtQueryWrapper(PostEntity::class.java).select(PostEntity::id, PostEntity::status).eq(PostEntity::kbId, id)
+                    val list = postService.list(postQuery)
+                    list.forEach {
+                        if(it.status==ArticleStatus.ONLY_FANS||it.status==ArticleStatus.PUBLISHED)
+                        {
+                            postDocumentService.delete(it.id!!)
+                        }
+                    }
+                    postService.removeByIds(list)
+                    return@execute list.size
+                }
+
+                val postQuery =
+                    KtUpdateWrapper(PostEntity::class.java).eq(PostEntity::kbId, id).set(PostEntity::kbId, null)
+                        .set(PostEntity::status, ArticleStatus.NO_KB)
+                //影响了这么多个文章
+                return@execute postService.baseMapper.update(postQuery)
+            } else
+            {
+                return@execute ResultCode.RESOURCE_NOT_FOUND
+            }
+        } ?: ResultCode.UNKNOWN_ERROR
+    }
+
+
     @GetMapping("/basic")
     fun getBasic(@RequestParam @Min(value = 1, message = "知识库id非法") id: Long): Any
     {
@@ -116,7 +157,6 @@ class KnowledgeBaseController
     }
 
 
-    @SaIgnore
     @PostMapping("/list")
     fun list(@RequestBody @Valid request: PageUserIdListRequest): PageResponse<KnowledgeBaseEntity>
     {
@@ -155,7 +195,7 @@ class KnowledgeBaseController
             {
                 like("name", request.keyword.lowercase())
             }
-            if(request.onlyTitle)
+            if (request.onlyTitle)
             {
                 select("name")
             }
@@ -168,16 +208,16 @@ class KnowledgeBaseController
     }
 
 
-    @SaIgnore
     @GetMapping("/index")
     fun getIndex(@RequestParam @Min(value = 1, message = "知识库id非法") id: Long): Any
     {
-        val query = KtQueryWrapper(KnowledgeBaseEntity::class.java).select(KnowledgeBaseEntity::index, KnowledgeBaseEntity::id).eq(KnowledgeBaseEntity::id, id)
+        val query =
+            KtQueryWrapper(KnowledgeBaseEntity::class.java).select(KnowledgeBaseEntity::index, KnowledgeBaseEntity::id)
+                .eq(KnowledgeBaseEntity::id, id)
         return knowledgeBaseService.getOne(query) ?: ResultCode.RESOURCE_NOT_FOUND
     }
 
 
-    @SaCheckPermission("kb.post")
     @PostMapping
     fun createKnowledgeBase(@RequestBody @Valid request: CreateKnowledgeBaseRequest): Any
     {
@@ -193,17 +233,16 @@ class KnowledgeBaseController
         return ResultCode.DB_ERROR
     }
 
-    @SaCheckRole("user")
+
     @PutMapping
     fun updateKnowledgeBase(@RequestBody @Valid request: UpdateKnowledgeBaseRequest): ResultCode
     {
         val userId = StpUtil.getLoginIdAsLong()
-        val updateWrapper = KtUpdateWrapper(KnowledgeBaseEntity::class.java)
-        updateWrapper.eq(KnowledgeBaseEntity::id, request.id)
-        updateWrapper.eq(KnowledgeBaseEntity::userId, userId)
+        val updateWrapper = KtUpdateWrapper(KnowledgeBaseEntity::class.java).eq(KnowledgeBaseEntity::id, request.id)
+            .eq(KnowledgeBaseEntity::userId, userId)
         val kbEntity = KnowledgeBaseEntity(
-            status = request.status, name = request.name, index = sensitiveWord.replace(request.content),
-            coverUrl = request.coverUrl
+            status = request.status, name = sensitiveWord.replace(request.name),
+            index = sensitiveWord.replace(request.content), coverUrl = request.coverUrl
         )
         if (knowledgeBaseService.update(kbEntity, updateWrapper))
         {
@@ -220,7 +259,6 @@ class KnowledgeBaseController
         return knowledgeBaseService.addKbLikeCount(kbId = kbId, count)
     }
 
-    @SaIgnore
     @PostMapping("/cursor")
     fun cursor(@RequestBody request: CursorKbRequest): Any
     {

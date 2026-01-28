@@ -1,6 +1,5 @@
 package com.cainsgl.ai.controller
 
-import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.stp.StpUtil
 import com.cainsgl.ai.dto.request.ContentRequest
 import com.cainsgl.ai.service.AiServiceImpl
@@ -27,14 +26,14 @@ class AiController
     @Resource
     lateinit var redisTemplate: RedisTemplate<String, Any>
 
-    @SaCheckRole("user")
+    
     @PostMapping("/tag/generate")
     @RateLimitByToken(message = "生成标签接口不能频繁访问", interval = 10000, limit = 1)
     fun getTagsByAI(@RequestBody @Valid generateTagsRequest: ContentRequest): Any
     {
         return aiService.getTagsByContent(generateTagsRequest.content)
     }
-    @SaCheckRole("user")
+    
     @PostMapping("/summary/generate")
     @RateLimitByToken(message = "生成标签接口不能频繁访问", interval = 10000, limit = 1)
     fun getSummaryByAI(@RequestBody @Valid generateTagsRequest: ContentRequest): Any
@@ -52,7 +51,7 @@ class AiController
         aiService.chat(contentRequest.content, emitter, StpUtil.getLoginIdAsLong())
         return emitter
     }
-    @SaCheckRole("user")
+    
     @GetMapping("/history")
     fun chatHistory(): Any
     {

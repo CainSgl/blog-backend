@@ -43,7 +43,7 @@ class UserLogServiceImpl : ServiceImpl<UserLogMapper, UserLogEntity>(), UserLogS
         val queryWrapper = KtQueryWrapper(UserLogEntity::class.java)
         queryWrapper.last("limit $value").eq(UserLogEntity::processed, false)
         var list: List<UserLogEntity>? = null
-        val size = transactionTemplate.execute { status ->
+        val size = transactionTemplate.execute {
             list = list(queryWrapper)
             if(list.isNullOrEmpty())
             {

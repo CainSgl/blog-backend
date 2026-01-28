@@ -1,7 +1,6 @@
 package com.cainsgl.article.controller
 
 import cn.dev33.satoken.annotation.SaCheckPermission
-import cn.dev33.satoken.annotation.SaCheckRole
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.cainsgl.article.dto.request.CreateDirectoryRequest
@@ -40,7 +39,7 @@ class DirectoryController
     lateinit var knowledgeBaseService: KnowledgeBaseServiceImpl
     @Resource
     lateinit var transactionTemplate: TransactionTemplate
-    @SaCheckRole("user")
+    
     @PutMapping
     fun updateDirectory(@RequestBody @Valid request: UpdateDirectoryRequest): ResultCode
     {
@@ -57,7 +56,7 @@ class DirectoryController
         return ResultCode.RESOURCE_NOT_FOUND
     }
 
-    @SaCheckRole("user")
+    
     @PostMapping("/resort")
     fun resort(@RequestBody @Valid request: ReSortRequest): ResultCode
     {
@@ -72,7 +71,7 @@ class DirectoryController
         return resortDirectory
     }
 
-    @SaCheckRole("user")
+    
     @PostMapping("/move")
     fun resortAndUpdate(@RequestBody @Valid request: MoveRequest): ResultCode
     {
@@ -122,7 +121,7 @@ class DirectoryController
         }
         return ResultCode.DB_ERROR
     }
-    @SaCheckRole("user")
+    
     @DeleteMapping
     fun deleteDirectory(@RequestParam @Min(value = 1, message ="知识库id非法") kbId: Long,
                         @RequestParam @Min(value = 1,message = "目录id非法") dirId: Long): Int

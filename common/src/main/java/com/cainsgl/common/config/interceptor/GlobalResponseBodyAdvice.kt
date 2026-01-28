@@ -48,6 +48,10 @@ class GlobalResponseBodyAdvice : ResponseBodyAdvice<Any>
         response: ServerHttpResponse
     ): Any?
     {
+        if(body==ResultCode.FORWARD)
+        {
+            return null;
+        }
         val requestPath = request.uri.path
         // 排除特定路径（健康检查等）
         if (EXCLUDE_PATHS.any { requestPath.startsWith(it) })

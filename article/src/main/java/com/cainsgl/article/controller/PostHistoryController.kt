@@ -23,7 +23,6 @@ class PostHistoryController
     @Resource
     lateinit var postHistoryService: PostHistoryServiceImpl
 
-    @SaCheckRole("user")
     @GetMapping("/last")
     fun getByLast(@RequestParam id: Long): Any
     {

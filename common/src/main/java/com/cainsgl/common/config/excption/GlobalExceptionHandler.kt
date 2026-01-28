@@ -99,7 +99,7 @@ class GlobalExceptionHandler
             return ResultCode.PERMISSION_DENIED
         }
         log.error("未知的Satoken异常", e)
-        return ResultCode.UNKOWN_SATOKEN_ERROR
+        return ResultCode.UNKNOWN_SATOKEN_ERROR
     }
     //这是一样的，一般是post或者其他复杂请求体的检验出错
     @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException::class)

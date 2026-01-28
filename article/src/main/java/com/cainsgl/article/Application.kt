@@ -5,10 +5,12 @@ import org.springframework.boot.CommandLineRunner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.context.annotation.ComponentScan
+import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories
 import org.springframework.stereotype.Component
 
 @SpringBootApplication
 @ComponentScan(basePackages = ["com.cainsgl.*"])
+@EnableElasticsearchRepositories(basePackages = ["com.cainsgl.article.repository"])
 class Application {
     companion object {
         @JvmStatic

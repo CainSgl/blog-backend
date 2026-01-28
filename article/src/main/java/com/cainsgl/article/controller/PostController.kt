@@ -2,8 +2,6 @@ package com.cainsgl.article.controller
 
 
 import cn.dev33.satoken.annotation.SaCheckPermission
-import cn.dev33.satoken.annotation.SaCheckRole
-import cn.dev33.satoken.annotation.SaIgnore
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
@@ -19,11 +17,9 @@ import com.cainsgl.article.dto.response.GetPostResponse
 import com.cainsgl.article.service.*
 import com.cainsgl.article.util.XssSanitizerUtils
 import com.cainsgl.common.annotation.RateLimitByToken
-import com.cainsgl.common.dto.request.OnlyId
 import com.cainsgl.common.dto.response.PageResponse
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.ArticleStatus
-import com.cainsgl.common.entity.article.DirectoryEntity
 import com.cainsgl.common.entity.article.PostEntity
 import com.cainsgl.common.entity.article.PostHistoryEntity
 import com.cainsgl.common.exception.BusinessException
@@ -78,10 +74,13 @@ class PostController
 
     @Resource
     lateinit var postDocumentService: PostDocumentService
+
     @Resource
     lateinit var postViewHistoryService: PostViewHistoryServiceImpl
+
     @Resource
-    lateinit var redisTemplate: RedisTemplate<Any,Any>
+    lateinit var redisTemplate: RedisTemplate<Any, Any>
+
     //来自其他模块的，只能通过Service来访问
     @Resource
     lateinit var userExtraInfoService: UserExtraInfoService
@@ -96,8 +95,6 @@ class PostController
     lateinit var sensitiveWord: SensitiveWord
 
 
-
-    @SaIgnore
     @GetMapping
     fun get(
         @RequestParam id: Long, @RequestParam simple: Boolean = false, request: HttpServletRequest,
@@ -145,9 +142,9 @@ class PostController
         val operate = if (userId != null)
         {
             Thread.ofVirtual().start {
-                if(post.kbId!=1L&&post.kbId!=2L)
+                if (post.kbId != 1L && post.kbId != 2L)
                 {
-                    redisTemplate.changeViewCount(1L,userId)
+                    redisTemplate.changeViewCount(1L, userId)
                     postViewHistoryService.createHistory(post.id!!, userId)
                 }
             }
@@ -160,6 +157,23 @@ class PostController
         return GetPostResponse(postService.getContentByEntity(post), operate)
     }
 
+    @DeleteMapping
+    fun delete(@RequestParam id: Long): Any
+    {
+        val userId = StpUtil.getLoginIdAsLong()
+
+        val query = KtQueryWrapper(PostEntity::class.java).eq(PostEntity::id, id).eq(PostEntity::userId, userId)
+        return transactionTemplate.execute {
+            if (postService.remove(query))
+            {
+                postDocumentService.delete(id)
+            } else
+            {
+                return@execute ResultCode.RESOURCE_NOT_FOUND
+            }
+            return@execute ResultCode.SUCCESS
+        } ?: ResultCode.UNKNOWN_ERROR
+    }
     @GetMapping("/top")
     fun getTopPostByUserId(@RequestParam id: Long): Any
     {
@@ -199,7 +213,7 @@ class PostController
                 //多半是参数问题
                 return@execute ResultCode.PARAM_INVALID
             }
-            redisTemplate.changePostCount(1,userId)
+            redisTemplate.changePostCount(1, userId)
             //发送消息
             rocketMQClientTemplate.asyncSendNormalMessage("article:post", postEntity.id, null)
             return@execute CreatePostResponse(postEntity, dirId)
@@ -207,7 +221,6 @@ class PostController
     }
 
 
-    @SaCheckRole("user")
     @PutMapping
     fun updatePost(@RequestBody @Valid request: UpdatePostRequest): Any
     {
@@ -219,16 +232,16 @@ class PostController
         return ResultCode.RESOURCE_NOT_FOUND
         val postEntity = PostEntity(
             id = request.id, title = sensitiveWord.replace(request.title),
-            summary = sensitiveWord.replace(request.summary), img = request.img, top = request.isTop,tags=request.tags
+            summary = sensitiveWord.replace(request.summary), img = request.img, top = request.isTop,
+            tags = request.tags
         )
         if (request.content.isNullOrEmpty())
         {
             if (postEntity.needUpdate()) postService.updateById(postEntity)
             return ResultCode.SUCCESS
         }
-        val historyQuery =
-            KtQueryWrapper(PostHistoryEntity::class.java).eq(PostHistoryEntity::postId, postEntity.id).eq(PostHistoryEntity::userId, userId).orderByDesc(PostHistoryEntity::version)
-                .last("LIMIT 1")
+        val historyQuery = KtQueryWrapper(PostHistoryEntity::class.java).eq(PostHistoryEntity::postId, postEntity.id)
+            .eq(PostHistoryEntity::userId, userId).orderByDesc(PostHistoryEntity::version).last("LIMIT 1")
         val one = postHistoryService.getOne(historyQuery)
         if (one != null)
         {
@@ -248,10 +261,15 @@ class PostController
         return ResultCode.SUCCESS
     }
 
-    @SaCheckRole("user")
+
     @PostMapping("/publish")
-    fun publish(@RequestBody @Valid request: OnlyId): Any
+    fun publish(@RequestBody @Valid request: PubPostRequest): Any
     {
+        val willSetStatus = ArticleStatus.fromDesc(request.status)
+        if (!willSetStatus.public)
+        {
+            return ResultCode.PARAM_INVALID
+        }
         val userId = StpUtil.getLoginIdAsLong()
         //这里是读时更新Read-Modify-Write，正常是要加事务的，但是这里是单个用户，不存在并发问题
         val query = KtQueryWrapper(PostEntity::class.java)
@@ -262,18 +280,19 @@ class PostController
         return ResultCode.RESOURCE_NOT_FOUND
 
         //获取编辑文档的最新版本，用来发布
-        val historyQuery =
-            KtQueryWrapper(PostHistoryEntity::class.java).select(PostHistoryEntity::id, PostHistoryEntity::content, PostHistoryEntity::version, PostHistoryEntity::userId).eq(PostHistoryEntity::postId, post.id)
-                .eq(PostHistoryEntity::userId, userId).orderByDesc(PostHistoryEntity::version).last("LIMIT 1")
+        val historyQuery = KtQueryWrapper(PostHistoryEntity::class.java).select(
+            PostHistoryEntity::id, PostHistoryEntity::content, PostHistoryEntity::version, PostHistoryEntity::userId
+        ).eq(PostHistoryEntity::postId, post.id).eq(PostHistoryEntity::userId, userId)
+            .orderByDesc(PostHistoryEntity::version).last("LIMIT 1")
         val history = postHistoryService.getOne(historyQuery)
-        if(post.kbId==1L||post.kbId==2L)
+        if (post.kbId == 1L || post.kbId == 2L)
         {
             //特殊处理，兼容公告，关于页面
-            post.content=history.content
-            if(post.version!=null)
+            post.content = history.content
+            if (post.version != null)
             {
                 post.version = post.version!! + 1
-            }else
+            } else
             {
                 post.version = 1
             }
@@ -282,6 +301,7 @@ class PostController
         }
         val sanitizedContent = sensitiveWord.replace(XssSanitizerUtils.sanitize(history.content!!))
         //检验是否有内容变更
+
         if (post.content == sanitizedContent)
         {
             //完全是之前的版本，什么都不用做
@@ -289,6 +309,7 @@ class PostController
         }
         post.content = sanitizedContent
         post.version = history.version
+        post.status = willSetStatus
         //重新写回历史版本，防止有人查看历史版本被攻击
         history.content = sanitizedContent
         history.createdAt = LocalDateTime.now()
@@ -330,38 +351,9 @@ class PostController
         return ResultCode.SUCCESS
     }
 
-    @SaCheckPermission("article.delete")
-    @DeleteMapping
-    fun deletePost(@RequestParam id: Long): Any
-    {
-        //还需要删除目录
-        val userId = StpUtil.getLoginIdAsLong()
-        val wrapper = KtUpdateWrapper(PostEntity::class.java)
-        wrapper.eq(PostEntity::id, id)
-        wrapper.eq(PostEntity::userId, userId)
-        wrapper.set(PostEntity::status, ArticleStatus.OFF_SHELF)
-        val result = transactionTemplate.execute {
-            if (!postService.update(wrapper))
-            {
-                return@execute ResultCode.RESOURCE_NOT_FOUND
-            }
-            val wrapper2 = KtQueryWrapper(DirectoryEntity::class.java)
-            wrapper2.eq(DirectoryEntity::postId, id)
-            directoryService.remove(wrapper2)
-        } ?: ResultCode.SUCCESS
-
-        // 异步删除 ES 中的文档，这里是简化实现
-        //TODO 后续要保证可靠性
-        Thread.ofVirtual().start {
-            redisTemplate.changePostCount(-1,userId)
-            postDocumentService.delete(id)
-        }
-
-        return result
-    }
 
 
-    @SaIgnore
+
     @PostMapping("/search")
     @RateLimitByToken(interval = 5000, limit = 1, message = "精准语义搜索5秒内仅能搜索一次！")
     fun searchPost(@RequestBody request: SearchPostRequest): Any
@@ -380,6 +372,7 @@ class PostController
         } catch (e: Exception)
         {
             //没有，不管
+            log.error { "no_vector" }
         }
         var embedding = aiService.getEmbedding(request.query)
         if (userOffsetVector != null)
@@ -389,7 +382,6 @@ class PostController
         return postChunkVectorService.getPostsByVector(targetVector = embedding, request.vectorOffset!!)
     }
 
-    @SaIgnore
     @PostMapping("/search/vector")
     fun searchEsPost(@RequestBody request: SearchPostRequest): Any
     {
@@ -397,7 +389,7 @@ class PostController
         return postService.getPostBySimilarVector(embedding)
     }
 
-    @SaIgnore
+
     @PostMapping("/search/es")
     fun searchEsPost(@RequestBody request: SearchEsPostRequest): Any
     {
@@ -410,7 +402,7 @@ class PostController
         )
     }
 
-    @SaIgnore
+
     @PostMapping("/list")
     fun list(@RequestBody @Valid request: PageUserIdListRequest): Any
     {
@@ -449,7 +441,7 @@ class PostController
             {
                 like("title", request.keyword.lowercase())
             }
-            if(request.onlyTitle)
+            if (request.onlyTitle)
             {
                 select("title")
             }
@@ -462,18 +454,38 @@ class PostController
     }
 
 
-    @SaIgnore
     @PostMapping("/cursor")
     fun cursor(@RequestBody request: CursorPostRequest): Any
     {
         return postService.cursor(request.lastUpdatedAt, request.lastLikeRatio, request.lastId, request.pageSize)
     }
 
-    @SaIgnore
     @GetMapping("/recommend")
     fun recommend(@RequestParam id: Long): Any
     {
 
         return postService.similarPost(id)
+    }
+
+    @GetMapping("/setKb")
+    fun setKb(@RequestParam id: Long,@RequestParam kbId: Long): Any
+    {
+        val userId=StpUtil.getLoginIdAsLong()
+        val update= KtUpdateWrapper(PostEntity::class.java).eq(PostEntity::id,id).eq(PostEntity::userId,userId).eq(
+            PostEntity::status, ArticleStatus.NO_KB).set(PostEntity::kbId,kbId).set(PostEntity::status, ArticleStatus.DRAFT)
+        transactionTemplate.execute { status ->
+            if (postService.update(update))
+            {
+                //更新成功，去kb里创建
+                val id=   directoryService.saveDirectory(kbId, userId, "该文档来自回收站，请重新命名", null)
+                if(id==-1L)
+                {
+                    status.setRollbackOnly();
+                    return@execute ResultCode.PARAM_INVALID;
+                }
+            }
+            return@execute ResultCode.SUCCESS
+        }
+        return ResultCode.SUCCESS
     }
 }

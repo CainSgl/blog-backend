@@ -21,6 +21,6 @@ data class PageUserIdListRequest(
 ){
     companion object{
         val kbOptions:List<String> = listOf("created_at","like_count")
-        val postOptions:List<String> =  listOf("published_at","view_count","like_count")
+        val postOptions:List<String> =  listOf("published_at","view_count","like_count","updated_at")
     }
 }

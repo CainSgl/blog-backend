@@ -32,7 +32,7 @@ class UserLogController
         return userLogService.loadLogsToRedis(number)
     }
 
-    @SaCheckRole("user")
+
     @PostMapping("/article")
     fun articlePost(userLogPostRequest: UserLogPostRequest): Any
     {
@@ -55,7 +55,7 @@ class UserLogController
             userLogService.save(userLogEntity)
             return ResultCode.SUCCESS
     }
-    @SaCheckRole("user")
+
     @PostMapping("/kb")
     fun kbPost(userLogPostRequest: UserLogPostRequest): Any
     {
