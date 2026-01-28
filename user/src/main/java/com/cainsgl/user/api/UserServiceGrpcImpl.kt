@@ -19,4 +19,13 @@ class UserServiceGrpcImpl : UserServiceGrpc.UserServiceImplBase() {
         responseObserver.onNext(response)
         responseObserver.onCompleted()
     }
+
+    override fun createNotice(request: CreateNoticeRequest, responseObserver: StreamObserver<CreateNoticeResponse>) {
+        val success = userService.createNotice(request.targetId, request.type, request.userId, request.targetUser)
+        val response = CreateNoticeResponse.newBuilder()
+            .setSuccess(success)
+            .build()
+        responseObserver.onNext(response)
+        responseObserver.onCompleted()
+    }
 }

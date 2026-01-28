@@ -6,7 +6,6 @@ import cn.dev33.satoken.stp.StpUtil
 import com.cainsgl.common.config.interceptor.StpInterfaceImpl
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.user.UserEntity
-import com.cainsgl.common.exception.BusinessException
 import com.cainsgl.common.util.user.DeviceUtils
 import com.cainsgl.user.dto.request.UpdateUserRequest
 import com.cainsgl.user.dto.request.UserLoginRequest
@@ -37,11 +36,15 @@ class UserController
     @PostMapping("/login")
     fun login(@RequestBody @Valid loginRequest: UserLoginRequest): Any
     {
+        if(loginRequest.password.length < 6)
+        {
+            return ResultCode.PARAM_INVALID
+        }
         // 查询用户并验证
-        val user = userService.getUserByAccount(loginRequest.account) ?: throw BusinessException("用户不存在或密码错误")
+        val user = userService.getUserByAccount(loginRequest.account) ?:return "用户不存在或密码错误" //throw BusinessException("用户不存在或密码错误")
         if (!passwordEncoder.matches(loginRequest.password, user.passwordHash))
         {
-            throw BusinessException("用户不存在或密码错误")
+            return "用户不存在或密码错误"
         }
         // 检查用户状态
         if (!user.isActive())
@@ -54,7 +57,7 @@ class UserController
             {
                 "账户已被封禁至 ${extra.bannedTime}"
             }
-            throw BusinessException(message)
+            return message
         }
         val device = DeviceUtils.getDeviceType()
         //注销所有旧 Token

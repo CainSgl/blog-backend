@@ -46,8 +46,20 @@ message MallocMemoryResponse {
     bool success = 1;
 }
 
+message CreateNoticeRequest {
+    int64 target_id = 1;
+    int32 type = 2;
+    int64 user_id = 3;
+    int64 target_user = 4;
+}
+
+message CreateNoticeResponse {
+    bool success = 1;
+}
+
 service UserService {
     rpc mallocMemory (MallocMemoryRequest) returns (MallocMemoryResponse);
+    rpc createNotice (CreateNoticeRequest) returns (CreateNoticeResponse);
 }
 
 // SaveCount Service

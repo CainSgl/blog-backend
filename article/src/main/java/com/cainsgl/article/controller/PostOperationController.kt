@@ -1,10 +1,12 @@
 package com.cainsgl.article.controller
 
 import cn.dev33.satoken.stp.StpUtil
+import com.cainsgl.api.user.UserService
 import com.cainsgl.article.service.PostOperationServiceImpl
 import com.cainsgl.article.service.PostServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.OperateType
+import com.cainsgl.common.entity.user.UserNoticeType
 import com.cainsgl.common.util.user.UserHotInfoUtils.Companion.changeLikeCount
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
@@ -27,8 +29,11 @@ class PostOperationController
     lateinit var postService: PostServiceImpl
     @Resource
     lateinit var redisTemplate: RedisTemplate<Any,Any>
+    //其他模块
+    @Resource
+    lateinit var userService: UserService
     @GetMapping("/like")
-    fun like(@RequestParam id: Long, @RequestParam add: Boolean = true): Any
+    fun like(@RequestParam id: Long, @RequestParam add: Boolean = true,@RequestParam authorId: Long): Any
     {
         val userId = StpUtil.getLoginIdAsLong()
         postOperationService.addOperate(userId = userId, type = OperateType.LIKE_TYPE, id = id, add = add)
@@ -36,6 +41,7 @@ class PostOperationController
         {
             redisTemplate.changeLikeCount(1,userId)
             postService.addLikeCount(id, 1)
+            userService.createNotice(id, UserNoticeType.LIKE_POST.type, authorId,targetUser=userId)
         } else
         {
             redisTemplate.changeLikeCount(1,userId)

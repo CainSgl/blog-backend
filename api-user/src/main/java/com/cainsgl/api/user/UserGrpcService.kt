@@ -1,5 +1,6 @@
 package com.cainsgl.api.user
 
+import com.cainsgl.grpc.user.CreateNoticeRequest
 import com.cainsgl.grpc.user.MallocMemoryRequest
 import com.cainsgl.grpc.user.MallocMemoryResponse
 import com.cainsgl.grpc.user.UserServiceGrpc
@@ -19,6 +20,17 @@ class UserGrpcService : UserService {
             .setMemory(memory)
             .build()
         val response = userServiceGrpc.mallocMemory(request)
+        return response.success
+    }
+
+    override fun createNotice(targetId: Long, type: Int, userId: Long, targetUser: Long): Boolean {
+        val request = CreateNoticeRequest.newBuilder()
+            .setTargetId(targetId)
+            .setType(type)
+            .setUserId(userId)
+            .setTargetUser(targetUser)
+            .build()
+        val response = userServiceGrpc.createNotice(request)
         return response.success
     }
 }

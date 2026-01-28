@@ -100,8 +100,8 @@ class UserExtraInfoServiceImpl : ServiceImpl<UserExtraInfoMapper, UserExtraInfoE
         }
         val userExtraInfoEntity = UserExtraInfoEntity(userId = id)
         //TODO，目前将Vector不会起任何作用
-        userExtraInfoEntity.interestVector = FloatArray(1024)
-        userExtraInfoEntity.interestVector!!.fill(1e-8f)
+//        userExtraInfoEntity.interestVector = FloatArray(1024)
+//        userExtraInfoEntity.interestVector!!.fill(1e-8f)
         save(userExtraInfoEntity)
         return userExtraInfoEntity
     }

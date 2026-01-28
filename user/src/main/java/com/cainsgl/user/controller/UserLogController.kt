@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*
 private val log = KotlinLogging.logger {}
 
 @RestController
-@RequestMapping("/log")
+@RequestMapping("/user/log")
 class UserLogController
 {
 

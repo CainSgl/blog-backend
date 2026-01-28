@@ -1,15 +1,17 @@
 package com.cainsgl.user.service
 
 import com.alibaba.fastjson2.JSON
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.api.user.UserService
 import com.cainsgl.common.entity.user.UserEntity
+import com.cainsgl.common.entity.user.UserNoticeEntity
 import com.cainsgl.common.util.FineLockCacheUtils.getWithFineLock
 import com.cainsgl.common.util.HotKeyValidator
 import com.cainsgl.common.util.HotKeyValidator.Companion.HOT_KEY_COUNT_THRESHOLD
+import com.cainsgl.common.util.user.UserHotInfoUtils.Companion.changeMsgCount
 import com.cainsgl.user.repository.UserMapper
 import jakarta.annotation.Resource
 import org.springframework.data.redis.core.RedisTemplate
@@ -22,12 +24,18 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
 {
 
     @Resource
-    private lateinit var redisTemplate: RedisTemplate<String, UserEntity>
+    lateinit var redisTemplate: RedisTemplate<String, UserEntity>
+
+    @Resource
+    lateinit var userNoticeServiceImpl: UserNoticeServiceImpl
+
     @Resource
     lateinit var hotKeyValidator: HotKeyValidator
-    companion object{
-        const val USER_MAX_USED_MEMORY=1024*1024*1024*3L
-        const val USER_REDIS_PREFIX="user:info:"
+
+    companion object
+    {
+        const val USER_MAX_USED_MEMORY = 1024 * 1024 * 1024 * 3L
+        const val USER_REDIS_PREFIX = "user:info:"
     }
 
     /**
@@ -37,10 +45,11 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
      */
     fun getUserByAccount(account: String): UserEntity?
     {
-        val queryWrapper: QueryWrapper<UserEntity>  = QueryWrapper<UserEntity>()
-        queryWrapper.eq("username", account).or().eq("email", account).or().eq("phone", account)
+        val queryWrapper: KtQueryWrapper<UserEntity> = KtQueryWrapper(UserEntity::class.java)
+        queryWrapper.eq(UserEntity::username, account).or().eq(UserEntity::email, account).or().eq(UserEntity::phone, account)
         return this.getOne(queryWrapper)
     }
+
     /**
      * 获取用户扩展信息
      * @param id
@@ -51,6 +60,7 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
         val s = baseMapper.selectExtraById(id)
         return JSON.parseObject(s, UserEntity.Extra::class.java)
     }
+
     /**
      * 设置用户扩展信息
      * @param id
@@ -65,27 +75,39 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
         this.baseMapper.update(updateWrapper)
         return this.baseMapper.update(updateWrapper) > 0
     }
-    
-    override fun mallocMemory(userId: Long, memory: Int): Boolean {
+
+    override fun mallocMemory(userId: Long, memory: Int): Boolean
+    {
         val updateWrapper = UpdateWrapper<UserEntity>()
-        updateWrapper.eq("id", userId).setSql("used_memory = used_memory + $memory").le("used_memory",USER_MAX_USED_MEMORY-memory)
+        updateWrapper.eq("id", userId).setSql("used_memory = used_memory + $memory")
+            .le("used_memory", USER_MAX_USED_MEMORY - memory)
         return this.baseMapper.update(updateWrapper) > 0
+    }
+
+    override fun createNotice(targetId: Long, type: Int, userId: Long, targetUser: Long): Boolean
+    {
+        val entity =
+            UserNoticeEntity(targetId = targetId, type = type.toShort(), userId = userId, targetUser = targetUser)
+        userNoticeServiceImpl.save(entity)
+        val redis = redisTemplate as RedisTemplate<Any, Any>
+        redis.changeMsgCount(1, userId)
+        return true
     }
 
     override fun getById(id: Serializable?): UserEntity?
     {
-        val key="${USER_REDIS_PREFIX}${id}"
+        val key = "${USER_REDIS_PREFIX}${id}"
         val user = redisTemplate.opsForValue().get(key)
-        if(user != null)
+        if (user != null)
         {
             return user
         }
-        if(hotKeyValidator.isHotKey(key,count=HOT_KEY_COUNT_THRESHOLD*2))
+        if (hotKeyValidator.isHotKey(key, count = HOT_KEY_COUNT_THRESHOLD * 2))
         {
-            return redisTemplate.getWithFineLock(key, { Duration.ofMinutes(20) }){
+            return redisTemplate.getWithFineLock(key, { Duration.ofMinutes(20) }) {
                 return@getWithFineLock super<ServiceImpl>.getById(id)
             }
-        }else
+        } else
         {
             return super<ServiceImpl>.getById(id)
         }

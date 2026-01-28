@@ -3,6 +3,7 @@ package com.cainsgl.comment.controller
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.toolkit.IdWorker
 import com.cainsgl.api.article.post.PostService
+import com.cainsgl.api.user.UserService
 import com.cainsgl.comment.dto.request.CreateParagraphRequest
 import com.cainsgl.comment.dto.request.CreateReplyRequest
 import com.cainsgl.comment.entity.ParCommentEntity
@@ -12,6 +13,7 @@ import com.cainsgl.comment.service.ParagraphServiceImpl
 import com.cainsgl.comment.service.PostsCommentServiceImpl
 import com.cainsgl.comment.service.ReplyServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
+import com.cainsgl.common.entity.user.UserNoticeType
 import com.cainsgl.common.util.user.UserHotInfoUtils.Companion.changeCommentCount
 import com.cainsgl.senstitve.config.SensitiveWord
 import jakarta.annotation.Resource
@@ -42,7 +44,8 @@ class ParCommentController {
     //其他模块的
     @Resource
     lateinit var postService: PostService
-
+    @Resource
+    lateinit var userService: UserService
     @Resource
     lateinit var postsCommentService: PostsCommentServiceImpl
     @Resource
@@ -155,9 +158,8 @@ class ParCommentController {
             }
             replyService.save(replyEntity)
             redisTemplate.changeCommentCount(1,userId)
-            //去提醒被回复的用户
-           // redisTemplate.changeMsgCount(1,userId)
-            //TODO 创建msg，告诉用户，调用grpc
+            //MQ TODO ，可以靠mq优化
+            userService.createNotice(id, UserNoticeType.REPLY.type, request.replyId,targetUser=userId)
             return@execute id.toString()
         } ?: "error"
         val res=HashMap<String,String>()

@@ -21,7 +21,7 @@ data class UserEntity(
     @TableField("email")
     var email: String? = null,
 
-    @JSONField(serialize = false)
+    @field:JSONField(serialize = false)
     @TableField("password_hash")
     var passwordHash: String? = null,
 
@@ -49,7 +49,7 @@ data class UserEntity(
     @TableField(value = "permissions", typeHandler = StringListTypeHandler::class)
     var permissions: List<String>?=null,
 
-    @JSONField(serialize = false)
+    @field:JSONField(serialize = false)
     @TableField("status")
     var status: String? = null,
     @TableField("email_verified")

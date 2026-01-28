@@ -17,7 +17,7 @@ data class CreateReplyRequest(
     val postCommentId: Long?,
     val parCommentId:Long?,
     val dataId:Int?,
-    val replyId:Long?,
+    val replyId:Long,
     @field:NotEmpty
     val content:String,
     val postId:Long,

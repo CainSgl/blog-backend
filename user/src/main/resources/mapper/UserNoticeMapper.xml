@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cainsgl.user.repository.UserNoticeMapper">
+    <resultMap id="UserNoticeResultMap" type="com.cainsgl.common.entity.user.UserNoticeEntity">
+        <id column="id" property="id"/>
+        <result column="type" property="type"/>
+        <result column="target_id" property="targetId"/>
+        <result column="user_id" property="userId"/>
+        <result column="target_user" property="targetUser"/>
+        <result column="checked" property="checked"/>
+    </resultMap>
+    
+    <resultMap id="UserNoticeVOResultMap" type="com.cainsgl.user.dto.response.vo.UserNoticeVO">
+        <id column="id" property="id"/>
+        <result column="type" property="type"/>
+        <result column="target_id" property="targetId"/>
+        <result column="user_id" property="userId"/>
+        <result column="target_user" property="targetUser"/>
+        <result column="checked" property="checked"/>
+        <result column="target_user_nickname" property="targetUserNickname"/>
+        <result column="target_user_avatar_url" property="targetUserAvatarUrl"/>
+        <result column="target_user_level" property="targetUserLevel"/>
+        <result column="target_user_gender" property="targetUserGender"/>
+    </resultMap>
+    
+    <sql id="Base_Column_List">
+        id, type, target_id, user_id, target_user, checked
+    </sql>
+    
+    <select id="selectUserNoticeWithTargetUserInfo" resultMap="UserNoticeVOResultMap">
+        SELECT 
+            un.id,
+            un.type,
+            un.target_id,
+            un.user_id,
+            un.target_user,
+            un.checked,
+            u.nickname AS target_user_nickname,
+            u.avatar_url AS target_user_avatar_url,
+            u.level AS target_user_level,
+            u.gender AS target_user_gender
+        FROM user_notice un
+        LEFT JOIN users u ON un.target_user = u.id
+        WHERE un.user_id = #{userId}
+        <if test="type != null">
+            AND un.type = #{type}
+        </if>
+        <if test="after != null">
+            AND un.id &lt; #{after}
+        </if>
+        ORDER BY un.id DESC
+        LIMIT #{size}
+    </select>
+</mapper>
