@@ -2,6 +2,7 @@ package com.cainsgl.comment.controller
 
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.toolkit.IdWorker
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
 import com.cainsgl.api.article.post.PostService
 import com.cainsgl.comment.dto.request.CommentPostRequest
 import com.cainsgl.comment.entity.PostsCommentEntity
@@ -38,7 +39,14 @@ class PostCommentController
     {
         return postsCommentService.getByCursor(postId, lastCreatedAt, lastLikeCount,lastId)
     }
-
+    @GetMapping("/locate")
+    fun locate(id: Long):PostsCommentEntity?
+    {
+        //返回dataId
+        val query= KtQueryWrapper(PostsCommentEntity::class.java).select(PostsCommentEntity::postId,
+            PostsCommentEntity::version).eq(PostsCommentEntity::id, id)
+        return postsCommentService.getOne(query)
+    }
     @PostMapping
     fun create(@RequestBody request: CommentPostRequest): Any
     {

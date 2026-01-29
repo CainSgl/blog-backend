@@ -31,15 +31,15 @@ data class UserNoticeEntity(
 )
 
 
-enum class UserNoticeType(@JsonValue val str:String, @EnumValue val type: Int)
+enum class UserNoticeType(@JsonValue val str:String, @EnumValue val type: Int,val dbField:String,val check:Boolean=dbField != "unknown")
 {
     //TODO
-    REPLY("回复",0),
-    LIKE_POST("点赞文章",1),
-    LIKE_COMMENT("点赞评论",2),
-    REPORT("举报",3),
-    MSG("消息",4),
-    UNKNOW("未知",5);
+    REPLY("回复",0,"msgReplyCount"),
+    LIKE_POST("点赞文章",1,"msgLikeCount"),
+    LIKE_COMMENT("点赞评论",2,"msgLikeCount"),
+    REPORT("举报",3,"msgReportCount"),
+    MSG("消息",4,"msgMessageCount"),
+    UNKNOW("未知",5,"unknown"),;
     @JsonValue
     fun toJSONValue(): Any {
         return str

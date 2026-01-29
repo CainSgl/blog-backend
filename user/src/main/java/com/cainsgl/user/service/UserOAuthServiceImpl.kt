@@ -5,6 +5,7 @@ import com.alibaba.fastjson2.JSON
 import com.alibaba.fastjson2.JSONPath
 import com.baomidou.mybatisplus.core.toolkit.IdWorker
 import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
+import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.common.config.interceptor.StpInterfaceImpl
@@ -101,7 +102,7 @@ class UserOAuthServiceImpl : ServiceImpl<UserOAuthMapper, UserOAuthEntity>(), IS
         {
             val parseObject: Map<*, *> = JSON.parseObject(bodyStr, Map::class.java)
             //直接创建账号并登录，方便前端
-            val oauth = createOAuthOrGet(parseObject["uid"].toString(), OAuthType.BILIBILI)
+            val oauth = createOAuthOrGet(uid, OAuthType.BILIBILI)
             var user = userService.getById(oauth.userId)
             val isNew=user==null
             if(isNew)
@@ -112,6 +113,8 @@ class UserOAuthServiceImpl : ServiceImpl<UserOAuthMapper, UserOAuthEntity>(), IS
                         gender = parseObject["sex"].toString()
 
                     })
+                val update= KtUpdateWrapper(UserOAuthEntity::class.java).eq(UserOAuthEntity::id,oauth.id).set(UserOAuthEntity::userId,user.id)
+                update(update)
             }
             StpUtil.login(user.id, DeviceUtils.getDeviceType())
             StpUtil.getSession().set(StpInterfaceImpl.USER_ROLE_KEY, user.roles)

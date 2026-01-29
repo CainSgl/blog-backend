@@ -12,9 +12,9 @@
     
     <resultMap id="UserNoticeVOResultMap" type="com.cainsgl.user.dto.response.vo.UserNoticeVO">
         <id column="id" property="id"/>
-        <result column="type" property="type"/>
         <result column="target_id" property="targetId"/>
         <result column="user_id" property="userId"/>
+        <result column="created_at" property="createdAt"/>
         <result column="target_user" property="targetUser"/>
         <result column="checked" property="checked"/>
         <result column="target_user_nickname" property="targetUserNickname"/>
@@ -30,17 +30,17 @@
     <select id="selectUserNoticeWithTargetUserInfo" resultMap="UserNoticeVOResultMap">
         SELECT 
             un.id,
-            un.type,
             un.target_id,
             un.user_id,
             un.target_user,
             un.checked,
+            un.created_at,
             u.nickname AS target_user_nickname,
             u.avatar_url AS target_user_avatar_url,
             u.level AS target_user_level,
             u.gender AS target_user_gender
         FROM user_notice un
-        LEFT JOIN users u ON un.target_user = u.id
+        LEFT JOIN "user" u ON un.target_user = u.id
         WHERE un.user_id = #{userId}
         <if test="type != null">
             AND un.type = #{type}

@@ -108,9 +108,12 @@ class FileController
     @GetMapping("/download")
     fun downloadFile(@RequestParam("f") shortUrl: Long, response: HttpServletResponse):Any
     {
-        val fileEntity = fileUrlService.getById(shortUrl)
-            ?: return ResultCode.RESOURCE_NOT_FOUND
-        
+        if(shortUrl<100L)
+        {
+            //忽略
+            return ResultCode.SUCCESS
+        }
+        val fileEntity = fileUrlService.getById(shortUrl) ?: return ResultCode.RESOURCE_NOT_FOUND
         val sha256Hash = fileEntity.url ?: return ResultCode.RESOURCE_NOT_FOUND
         val extension = fileEntity.name?.substringAfterLast(".", "") ?: ""
             

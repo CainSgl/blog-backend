@@ -73,7 +73,12 @@ data class UserCurrentResponse(
     var postCount: Int? = null,
     var articleViewCount: Int? = null,
     var nextLevelTotalExp:Int?=null,
-    var expToNextLevel: Int? = null
+    var expToNextLevel: Int? = null,
+    val msgCount: Int? = null,
+    var msgReplyCount: Int? = null,
+    var msgLikeCount: Int? = null,
+    var msgReportCount: Int? = null,
+    var msgMessageCount: Int? = null,
 )
 {
     constructor(user: UserEntity, hotInfo: UserExtraInfoEntity) : this()

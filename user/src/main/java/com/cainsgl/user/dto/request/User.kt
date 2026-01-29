@@ -24,4 +24,5 @@ data class UpdateUserRequest(
     val avatarUrl: String?=null,
     val bio: String?=null,
     val gender: String?=null,
+    val username: String?=null,
 )

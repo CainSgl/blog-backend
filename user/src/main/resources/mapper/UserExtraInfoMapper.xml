@@ -59,6 +59,35 @@
                 </foreach>
                 ELSE 0 END,
             </if>
+
+            <if test="msgReplyCountMap != null and !msgReplyCountMap.isEmpty()">
+                msg_reply_count = msg_reply_count + CASE
+                <foreach collection="msgReplyCountMap" index="key" item="value" separator=" ">
+                    WHEN user_id = #{key} THEN #{value}
+                </foreach>
+                ELSE 0 END,
+            </if>
+            <if test="msgLikeCountMap != null and !msgLikeCountMap.isEmpty()">
+                msg_like_count = msg_like_count + CASE
+                <foreach collection="msgLikeCountMap" index="key" item="value" separator=" ">
+                    WHEN user_id = #{key} THEN #{value}
+                </foreach>
+                ELSE 0 END,
+            </if>
+            <if test="msgReportCountMap != null and !msgReportCountMap.isEmpty()">
+                msg_report_count = msg_report_count + CASE
+                <foreach collection="msgReportCountMap" index="key" item="value" separator=" ">
+                    WHEN user_id = #{key} THEN #{value}
+                </foreach>
+                ELSE 0 END,
+            </if>
+            <if test="msgMessageCountMap != null and !msgMessageCountMap.isEmpty()">
+                msg_message_count = msg_message_count + CASE
+                <foreach collection="msgMessageCountMap" index="key" item="value" separator=" ">
+                    WHEN user_id = #{key} THEN #{value}
+                </foreach>
+                ELSE 0 END,
+            </if>
         </set>
         WHERE user_id IN
         <foreach collection="userIds" item="userId" open="(" separator="," close=")">

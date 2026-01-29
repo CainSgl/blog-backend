@@ -92,7 +92,7 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
             UserNoticeEntity(targetId = targetId, type = type.toShort(), userId = userId, targetUser = targetUser)
         userNoticeServiceImpl.save(entity)
         val redis = redisTemplate as RedisTemplate<Any, Any>
-        redis.changeMsgCount(1, userId)
+        redis.changeMsgCount(1, userId,type)
         return true
     }
 
@@ -127,6 +127,10 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
             id = genId
             roles = UserEntity.DEFAULT_ROLE
             permissions= UserEntity.DEFAULT_PERMISSIONS
+        }
+        if(entity.gender!="男"&&entity.gender!="女")
+        {
+            entity.gender=""
         }
         save(entity)
         return entity

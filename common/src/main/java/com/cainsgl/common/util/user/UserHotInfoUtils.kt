@@ -1,7 +1,10 @@
 package com.cainsgl.common.util.user
 
+import com.cainsgl.common.entity.user.UserNoticeType
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.data.redis.core.RedisTemplate
 
+private val logger = KotlinLogging.logger {}
 class UserHotInfoUtils
 {
     companion object
@@ -31,9 +34,18 @@ class UserHotInfoUtils
         {
             addCount(count, userId, "articleViewCount")
         }
-        fun RedisTemplate<Any, Any>.changeMsgCount(count: Long, userId: Long)
+        fun RedisTemplate<Any, Any>.changeMsgCount(count: Long, userId: Long,type:Int)
         {
             addCount(count, userId, "msgCount")
+            //根据type不同，也去增加不同的count
+            val type = UserNoticeType.getByValue(type)
+            if(!type.check)
+            {
+                //说明是哪几个unknow的
+                logger.error { "unknown unknown count $count" }
+                return
+            }
+            addCount(count, userId,type.dbField )
         }
     }
 

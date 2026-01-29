@@ -13,7 +13,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,par_comment_id,user_id,content,like_count,created_at,post_comment_id,reply_id
+        id,par_comment_id,user_id,content,like_count,created_at,post_comment_id,reply_id,reply_comment_id
     </sql>
 
     <select id="selectByParCommentIdCursor" parameterType="map" resultMap="BaseResultMap">
