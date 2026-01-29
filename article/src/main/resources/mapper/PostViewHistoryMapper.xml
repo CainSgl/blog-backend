@@ -38,7 +38,7 @@
             p.summary,
             p.view_count
         FROM post_view_history h
-        INNER JOIN posts p ON h.post_id = p.id
+        INNER JOIN post p ON h.post_id = p.id
         WHERE h.user_id = #{userId}
         <if test="after != null">
             AND h.browse_time &lt; #{after}

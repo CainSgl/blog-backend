@@ -15,7 +15,6 @@ import jakarta.annotation.Resource
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
-import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 
@@ -23,8 +22,7 @@ import org.springframework.web.multipart.MultipartFile
 @RequestMapping("/file")
 class FileController
 {
-    @Resource
-    private lateinit var transactionTemplate: TransactionTemplate
+
 
     @Resource
     lateinit var fileService: FileService
@@ -37,16 +35,16 @@ class FileController
 
    
     @PostMapping("/upload")
-    fun uploadFile(@RequestParam("file") file: MultipartFile): FileUrlEntity
+    fun uploadFile(@RequestParam("file") file: MultipartFile): Any
     {
         val userId = StpUtil.getLoginIdAsLong()
         //增加用户文件大小使用量
         if (userService.mallocMemory(userId, file.size.toInt()))
         {
-            val fileUrl = fileService.upload(file)
+            val sha256Hash = fileService.upload(file)  // 只返回 SHA256
             val fileUrlEntity = FileUrlEntity(
                 userId = userId,
-                url = fileUrl,
+                url = sha256Hash,  // 直接存储 SHA256
                 name = file.originalFilename,
                 fileSize = file.size.toInt()
             )
@@ -54,7 +52,7 @@ class FileController
             return fileUrlEntity
         } else
         {
-            throw BusinessException("你的云存储空间已满，请删除无用文件后再使用！")
+            return com.cainsgl.common.dto.response.Result.error("你的云存储空间已满，请删除无用文件后再使用！")
         }
     }
 
@@ -74,7 +72,6 @@ class FileController
      * 公开访问文件 - 通过重定向到预签名URL
      * 支持ETag缓存优化
      */
- 
     @GetMapping
     fun getFile(
         @RequestParam("f") shortUrl: Long,
@@ -86,36 +83,40 @@ class FileController
         val fileEntity = fileUrlService.getById(shortUrl) 
             ?: return ResultCode.RESOURCE_NOT_FOUND
 
-        // ETag缓存检查
+        val sha256Hash = fileEntity.url ?: return ResultCode.RESOURCE_NOT_FOUND
+        val extension = fileEntity.name?.substringAfterLast(".", "") ?: ""
+
+        // ETag缓存检查（使用 hash 作为 ETag）
         val eTag = request.getHeader("If-None-Match")
-        if (!eTag.isNullOrEmpty() && eTag == fileEntity.url)
+        if (!eTag.isNullOrEmpty() && eTag == sha256Hash)
         {
             response.status = HttpServletResponse.SC_NOT_MODIFIED
-            response.setHeader("ETag", fileEntity.url)
+            response.setHeader("ETag", sha256Hash)
             return ResultCode.SUCCESS
         }
 
         // 设置响应头
-        response.setHeader("ETag", fileEntity.url)
-//        if (width != null)
-//        {
-//            response.setHeader("X-Image-Render-Width", width)
-//        }
+        response.setHeader("ETag", sha256Hash)
 
         // 重定向到预签名URL
-        val downloadUrl = fileService.getDownloadUrl(fileEntity.url!!, expiresInSeconds = 300)
+        val downloadUrl = fileService.getDownloadUrl(sha256Hash, extension, expiresInSeconds = 300)
         response.sendRedirect(downloadUrl)
         return ResultCode.FORWARD
     }
 
-   //
+
     @GetMapping("/download")
     fun downloadFile(@RequestParam("f") shortUrl: Long, response: HttpServletResponse):Any
     {
         val fileEntity = fileUrlService.getById(shortUrl)
             ?: return ResultCode.RESOURCE_NOT_FOUND
+        
+        val sha256Hash = fileEntity.url ?: return ResultCode.RESOURCE_NOT_FOUND
+        val extension = fileEntity.name?.substringAfterLast(".", "") ?: ""
+            
         val downloadUrl = fileService.getDownloadUrl(
-            objectKey = fileEntity.url!!,
+            sha256Hash = sha256Hash,
+            extension = extension,
             expiresInSeconds = 30,
             isDownload = true,
             filename = fileEntity.name
@@ -123,7 +124,6 @@ class FileController
         response.sendRedirect(downloadUrl)
         return ResultCode.FORWARD
     }
-
 
     /**
      * 删除单个文件
@@ -140,9 +140,8 @@ class FileController
         {
             return ResultCode.PERMISSION_DENIED
         }
-
-        deleteFileInternal(listOf(fileEntity), userId)
-        return ResultCode.FORWARD
+        fileUrlService.deleteFileInternal(listOf(fileEntity), userId)
+        return ResultCode.SUCCESS
     }
 
     /**
@@ -168,42 +167,11 @@ class FileController
           return ResultCode.RESOURCE_NOT_FOUND
         }
 
-        deleteFileInternal(files, userId)
+        fileUrlService.deleteFileInternal(files, userId)
         return ResultCode.SUCCESS
     }
 
-    /**
-     * 删除文件的内部实现
-     * 处理引用计数和实际文件删除
-     */
-    private fun deleteFileInternal(files: List<FileUrlEntity>, userId: Long)
-    {
-        val urlToFilesMap = files.groupBy { it.url }
-        val totalSize = files.sumOf { it.fileSize ?: 0 }
 
-        transactionTemplate.execute {
-            urlToFilesMap.forEach { (fileUrl, groupFiles) ->
-                if (fileUrl.isNullOrBlank()) return@forEach
-
-                val currentDeleteCount = groupFiles.size
-                val totalReferences = fileUrlService.count(
-                    KtQueryWrapper(FileUrlEntity::class.java).eq(FileUrlEntity::url, fileUrl)
-                )
-
-                // 删除数据库记录
-                groupFiles.forEach { file -> fileUrlService.removeById(file) }
-
-                // 如果没有其他引用，删除实际文件
-                if (totalReferences <= currentDeleteCount)
-                {
-                    fileService.delete(fileUrl)
-                }
-            }
-            
-            // 释放用户存储空间
-            userService.mallocMemory(userId, -totalSize)
-        }
-    }
 
     /**
      * 获取用户的文件列表

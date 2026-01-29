@@ -122,7 +122,8 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
     fun crateUserBaseInfo(userEntity: UserEntity?=null): UserEntity
     {
         val genId = IdWorker.getId()
-        val entity= userEntity ?: UserEntity().apply {
+        val entity= userEntity ?: UserEntity()
+        entity.apply {
             id = genId
             roles = UserEntity.DEFAULT_ROLE
             permissions= UserEntity.DEFAULT_PERMISSIONS

@@ -1,12 +1,17 @@
 package com.cainsgl.comment.entity
 
-import com.baomidou.mybatisplus.annotation.FieldFill
+import com.baomidou.mybatisplus.annotation.IdType
 import com.baomidou.mybatisplus.annotation.TableField
+import com.baomidou.mybatisplus.annotation.TableId
 import com.baomidou.mybatisplus.annotation.TableName
-import java.time.LocalDateTime
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
 
-@TableName(value = "paragraphs")
+@TableName(value = "paragraph")
 data class ParagraphEntity(
+    @TableId(type = IdType.ASSIGN_ID)
+    @field:JsonSerialize(using = ToStringSerializer::class)
+    var id: Long? = null,
     @TableField("post_id")
     var postId: Long? = null,
 

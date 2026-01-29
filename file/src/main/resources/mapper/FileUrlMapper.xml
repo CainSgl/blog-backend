@@ -9,4 +9,10 @@
         short_url, user_id, url
     </sql>
 
+    <!-- 统计指定 URL 的引用次数 -->
+    <select id="countByUrl" resultType="long">
+        SELECT COUNT(*) FROM file_url
+        WHERE url = #{url, typeHandler=com.cainsgl.common.handler.ByteaTypeHandler}
+    </select>
+
 </mapper>

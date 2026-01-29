@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.cainsgl.article.repository.PostChunkVectorMapper">
-    <!-- 映射 post_chunk_vectors 表到 PostChunkVectorEntity -->
+    <!-- 映射 post_chunk_vector 表到 PostChunkVectorEntity -->
     <resultMap id="PostChunkVectorResultMap" type="com.cainsgl.common.entity.article.PostChunkVectorEntity">
     </resultMap>
     <!-- 通用列片段 -->
@@ -17,7 +17,7 @@
 
     <select id="selectPostsByCosine" resultMap="PostCosineResultMap">
         SELECT post_id, (vector &lt;-&gt; #{targetVector, typeHandler=com.cainsgl.common.handler.VectorTypeHandler}) AS distance, chunk
-        FROM post_chunk_vectors
+        FROM post_chunk_vector
         WHERE (vector &lt;-&gt; #{targetVector, typeHandler=com.cainsgl.common.handler.VectorTypeHandler}) &gt; #{startValue}
         ORDER BY distance
         LIMIT #{limit}

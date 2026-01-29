@@ -10,10 +10,10 @@ import org.apache.ibatis.annotations.Select
 interface PostHistoryMapper : BaseMapper<PostHistoryEntity> {
     @Select("""
         SELECT ph.content
-        FROM posts_history ph
+        FROM post_history ph
         WHERE ph.id = #{id} 
           AND ph.post_id = #{postId}
-          AND ph.version < (SELECT MAX(version) FROM posts_history WHERE post_id = #{postId})
+          AND ph.version < (SELECT MAX(version) FROM post_history WHERE post_id = #{postId})
     """)
     fun getContentByIdAndPostIdWithNonMaxVersion(
         @Param("id") id: Long,

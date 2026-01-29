@@ -21,8 +21,8 @@ class BackGroundController : InitializingBean
     companion object
     {
         const val WELCOME_REDIS_PREFIX_BACKGROUND = "welcome:background"
-        const val ETAG_THRESHOLD = 3 // ETag计数阈值
-        const val URL_EXPIRES_SECONDS = 3600L // 预签名URL有效期1小时
+        const val ETAG_THRESHOLD = 3
+        const val URL_EXPIRES_SECONDS = 600L
     }
 
     @Resource
@@ -94,9 +94,10 @@ class BackGroundController : InitializingBean
         response.setHeader("Cache-Control", "public, max-age=3600")
         
         val downloadUrl = fileService.getDownloadUrl(
-            objectKey = backgroundUrl,
+            sha256Hash = backgroundUrl,
             expiresInSeconds = URL_EXPIRES_SECONDS,
-            isDownload = false
+            isDownload = false,
+            filename=""
         )
         
         response.sendRedirect(downloadUrl)

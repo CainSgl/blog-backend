@@ -19,7 +19,7 @@ interface UserExtraInfoMapper : BaseMapper<UserExtraInfoEntity>
 //    )
 //    fun selectInterestVector(userId: Long): FloatArray
 
-    @Update("UPDATE user_extra_infos SET interest_vector = #{interestVector, typeHandler=com.cainsgl.common.handler.VectorTypeHandler} WHERE user_id = #{userId}")
+    @Update("UPDATE user_extra_info SET interest_vector = #{interestVector, typeHandler=com.cainsgl.common.handler.VectorTypeHandler} WHERE user_id = #{userId}")
     fun updateInterestVector(@Param("userId") userId: Long, @Param("interestVector") interestVector: FloatArray): Int
 
     /**

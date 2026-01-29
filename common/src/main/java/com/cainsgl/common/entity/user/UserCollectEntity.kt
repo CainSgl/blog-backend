@@ -7,7 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableName
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
 
-@TableName("users_collect")
+@TableName("user_collect")
 class UserCollectEntity(
     @TableId(type = IdType.ASSIGN_ID)
     @field:JsonSerialize(using = ToStringSerializer::class)

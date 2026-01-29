@@ -8,7 +8,7 @@
     </sql>
 
     <update id="batchIncrementUserExtraInfo">
-        UPDATE user_extra_infos
+        UPDATE user_extra_info
         <set>
             <if test="likeCountMap != null and !likeCountMap.isEmpty()">
                 like_count = like_count + CASE

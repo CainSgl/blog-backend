@@ -7,7 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableName
 import com.cainsgl.common.handler.VectorTypeHandler
 import org.apache.commons.codec.digest.DigestUtils
 
-@TableName(value = "post_chunk_vectors", autoResultMap = true)
+@TableName(value = "post_chunk_vector", autoResultMap = true)
 data class PostChunkVectorEntity(
     @TableId(type = IdType.ASSIGN_ID)
     var id: Long? = null,

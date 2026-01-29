@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
 import java.time.LocalDate
 
-@TableName(value = "replys")
+@TableName(value = "reply")
 data class ReplyEntity(
     @TableId(type = IdType.ASSIGN_ID)
     @field:JsonSerialize(using = ToStringSerializer::class)

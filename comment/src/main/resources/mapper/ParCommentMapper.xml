@@ -20,7 +20,7 @@
     <select id="selectByCursor" parameterType="map" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List" />
-        FROM paragraph_comments
+        FROM paragraph_comment
         WHERE post_id = #{postId}
         AND data_id = #{dataId}
         AND version = #{version}

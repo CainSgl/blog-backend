@@ -3,7 +3,7 @@
 <mapper namespace="com.cainsgl.comment.repository.ParagraphMapper">
 
     <update id="batchIncrementParagraphCount">
-        UPDATE paragraphs
+        UPDATE paragraph
         SET count = count + CASE
         <foreach collection="updates" item="item" separator=" ">
             WHEN post_id = #{item.postId} AND version = #{item.version} AND data_id = #{item.dataId}

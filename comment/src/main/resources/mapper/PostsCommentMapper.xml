@@ -19,7 +19,7 @@
     <select id="selectByCursor" parameterType="map" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List" />
-        FROM posts_comment
+        FROM post_comment
         WHERE post_id = #{postId}
         <if test="lastCreatedAt != null and lastLikeCount != null">
             AND (

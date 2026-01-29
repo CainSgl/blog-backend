@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
 
 //为什么会专门建额外的一张用户信息表，这是为了冷热数据分离，这里的数据都是会频繁更新的，我们会缓存在redis，然后定时同步到数据库
-@TableName(value = "user_extra_infos", autoResultMap = true)
+@TableName(value = "user_extra_info", autoResultMap = true)
 open class UserExtraInfoEntity(
     @TableId(value = "user_id", type = IdType.INPUT)
     @field:JsonSerialize(using = ToStringSerializer::class)

@@ -19,7 +19,7 @@
     <select id="selectByParCommentIdCursor" parameterType="map" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List" />
-        FROM replys
+        FROM reply
         WHERE par_comment_id = #{parCommentId}
         <if test="lastCreatedAt != null and lastLikeCount != null">
             AND (
@@ -35,7 +35,7 @@
     <select id="selectByPostCommentIdCursor" parameterType="map" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List" />
-        FROM replys
+        FROM reply
         WHERE post_comment_id = #{postCommentId}
         <if test="lastCreatedAt != null and lastLikeCount != null">
             AND (

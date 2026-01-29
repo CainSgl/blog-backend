@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
 import java.time.LocalDateTime
 
-@TableName(value = "posts", autoResultMap = true)
+@TableName(value = "post", autoResultMap = true)
 data class PostEntity(
     @TableId(type = IdType.ASSIGN_ID)
     @field:JsonSerialize(using = ToStringSerializer::class)

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
 import java.time.LocalDateTime
 
-@TableName("posts_comment")
+@TableName("post_comment")
 data class PostsCommentEntity(
     @TableId(type = IdType.AUTO)
     @field:JsonSerialize(using = ToStringSerializer::class)

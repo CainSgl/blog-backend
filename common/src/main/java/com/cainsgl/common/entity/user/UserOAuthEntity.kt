@@ -1,9 +1,12 @@
 package com.cainsgl.common.entity.user
 
-import com.baomidou.mybatisplus.annotation.*
+import com.baomidou.mybatisplus.annotation.IdType
+import com.baomidou.mybatisplus.annotation.TableField
+import com.baomidou.mybatisplus.annotation.TableId
+import com.baomidou.mybatisplus.annotation.TableName
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
-import java.time.LocalDateTime
+import java.time.LocalDate
 
 @TableName("user_oauth")
 data class UserOAuthEntity(
@@ -30,10 +33,9 @@ data class UserOAuthEntity(
     @TableField("expires_at")
     var expiresAt: String? = null,
 
-    @TableField(value = "created_at", fill = FieldFill.INSERT)
-    var createdAt: LocalDateTime? = null,
-
-)
+    @TableField(value = "created_at")
+    var createdAt: LocalDate? = null,
+    )
 enum class OAuthType(val type: String, val value:Short) {
     BILIBILI("bilibili",0),
 }

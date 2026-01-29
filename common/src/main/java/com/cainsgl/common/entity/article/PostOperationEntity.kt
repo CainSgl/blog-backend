@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonValue
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
 
-@TableName("post_operations")
+@TableName("post_operation")
 data class PostOperationEntity(
     @TableId(type = IdType.ASSIGN_ID)
     @field:JsonSerialize(using = ToStringSerializer::class)

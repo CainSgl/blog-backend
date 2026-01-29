@@ -7,7 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableName
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
 
-@TableName("directories")
+@TableName("directory")
 data class DirectoryEntity(
     @TableId(type = IdType.ASSIGN_ID)
     @field:JsonSerialize(using = ToStringSerializer::class)
@@ -30,4 +30,6 @@ data class DirectoryEntity(
 
     @TableField("sort_num")
     var sortNum: Short? = null,
+    @TableField("user_id", select = false)
+    var userId: Long? = null,
 )

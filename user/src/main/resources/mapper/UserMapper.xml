@@ -13,7 +13,7 @@
     <!-- 获取用户的extra字段 -->
     <select id="selectExtraById" resultType="String">
         SELECT extra
-        FROM users
+        FROM "user"
         WHERE id = #{id}
     </select>
 

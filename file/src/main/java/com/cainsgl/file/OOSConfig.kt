@@ -54,17 +54,17 @@ class FileService
             throw BSystemException("上传的文件不能为空")
         }
         val originalFilename = file.originalFilename!!
-        val fileSha256: String = "file/${calculateFileSHA256(file)}"
+        val fileSha256: String = calculateFileSHA256(file)  // 只返回 SHA256
         var fileSuffix = ""
         if (originalFilename.contains("."))
         {
             fileSuffix = originalFilename.substring(originalFilename.lastIndexOf("."))
         }
-        val objectKey: String = bucketName + fileSha256 + fileSuffix
+        val objectKey: String = bucketName + "file/" + fileSha256 + fileSuffix
         if (isFileExistInCos(objectKey))
         {
-            // 已存在，直接返回访问URL，无需重复上传
-            return objectKey
+            // 已存在，直接返回 SHA256，无需重复上传
+            return fileSha256
         }
         file.inputStream.use { stream ->
             val putObjectInput =
@@ -72,12 +72,60 @@ class FileService
             val output: PutObjectOutput = tos.putObject(putObjectInput)
             log.info { "putObject succeed, object's etag is " + output.etag }
             log.info { "putObject succeed, object's crc64 is " + output.hashCrc64ecma }
-            return objectKey
+            return fileSha256  // 只返回 SHA256
         }
     }
 
-    fun delete(objectKey: String): DeleteObjectOutput
+    /**
+     * 从 SHA256 hash 构建完整的对象存储 key
+     * @param sha256Hash SHA256 hash 字符串
+     * @param extension 文件扩展名（可选）
+     * @return 完整的对象存储 key，格式: bucketName/file/{sha256}.{ext}
+     */
+    fun buildObjectKey(sha256Hash: String, extension: String? = null): String
     {
+        val ext = if (!extension.isNullOrEmpty())
+        {
+            if (extension.startsWith(".")) extension else ".$extension"
+        } else ""
+        return "${bucketName}file/$sha256Hash$ext"
+    }
+
+    /**
+     * 生成预签名下载URL
+     * @param sha256Hash SHA256 hash 字符串
+     * @param extension 文件扩展名（可选）
+     * @param expiresInSeconds URL有效期（秒）
+     * @param isDownload 是否作为附件下载（true）或内联显示（false）
+     * @param filename 下载时的文件名（仅在isDownload=true时使用）
+     * @return 预签名URL
+     */
+    fun getDownloadUrl(
+        sha256Hash: String, extension: String? = null, expiresInSeconds: Long = 300, isDownload: Boolean = false,
+        filename: String? = null
+    ): String
+    {
+        val objectKey = buildObjectKey(sha256Hash, extension)
+        val input = PreSignedURLInput().setBucket(bucketName).setKey(objectKey).setHttpMethod(HttpMethod.GET)
+            .setExpires(expiresInSeconds)
+
+        // 设置Content-Disposition响应头
+        if (isDownload && !filename.isNullOrBlank())
+        {
+            val map = mapOf(
+                "response-content-disposition" to "attachment; filename=\"$filename\"",
+                "Content-Type" to "application/octet-stream"
+            )
+            input.header = map
+        }
+
+        val output = tos.preSignedURL(input)
+        return output.signedUrl
+    }
+
+    fun delete(sha256Hash: String, extension: String? = null): DeleteObjectOutput
+    {
+        val objectKey = buildObjectKey(sha256Hash, extension)
         val input = DeleteObjectInput().setBucket(bucketName).setKey(objectKey)
         return tos.deleteObject(input)
     }
@@ -90,33 +138,6 @@ class FileService
         }
     }
 
-    /**
-     * 生成预签名下载URL
-     * @param objectKey 对象存储的key
-     * @param expiresInSeconds URL有效期（秒）
-     * @param isDownload 是否作为附件下载（true）或内联显示（false）
-     * @param filename 下载时的文件名（仅在isDownload=true时使用）
-     * @return 预签名URL
-     */
-    fun getDownloadUrl(
-        objectKey: String, expiresInSeconds: Long = 300, isDownload: Boolean = false, filename: String? = null
-    ): String
-    {
-        val input = PreSignedURLInput().setBucket(bucketName).setKey(objectKey).setHttpMethod(HttpMethod.GET)
-            .setExpires(expiresInSeconds)
-
-        // 设置Content-Disposition响应头
-        if (isDownload && !filename.isNullOrBlank())
-        {
-            val map = mapOf("response-content-disposition" to "attachment; filename=\"$filename\"",
-                "Content-Type" to "application/octet-stream"
-            )
-            input.header = map
-        }
-
-        val output = tos.preSignedURL(input)
-        return output.signedUrl
-    }
 
     /**
      * @deprecated 已废弃，建议使用getDownloadUrl生成预签名URL后重定向，减轻服务器压力

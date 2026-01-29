@@ -111,7 +111,6 @@ class DirectoryController
     @PostMapping
     fun createDirectory(@RequestBody @Valid request: CreateDirectoryRequest): Any
     {
-        //创建新目录，先检查用户是否拥有该kb
         val userId = StpUtil.getLoginIdAsLong()
         val id = directoryService.saveDirectory(request.kbId, userId, request.name, request.parentId)
         if(id>0)

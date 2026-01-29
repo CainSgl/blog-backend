@@ -9,7 +9,7 @@ import java.time.LocalDateTime
 import kotlin.math.max
 import kotlin.math.pow
 
-@TableName("users")
+@TableName("\"user\"")
 data class UserEntity(
     @TableId(type = IdType.ASSIGN_ID)
     @field:JsonSerialize(using = ToStringSerializer::class)

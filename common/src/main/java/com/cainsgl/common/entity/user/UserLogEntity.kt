@@ -8,7 +8,7 @@ import com.baomidou.mybatisplus.annotation.TableName
 import com.cainsgl.common.handler.JsonTypeHandler
 import java.time.LocalDateTime
 
-@TableName(value = "user_logs", autoResultMap = true)
+@TableName(value = "user_log", autoResultMap = true)
 data class UserLogEntity(
     @TableId(type = IdType.ASSIGN_ID)
     var id: Long? = null,
