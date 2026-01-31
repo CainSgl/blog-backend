@@ -10,6 +10,7 @@ import com.cainsgl.user.dto.response.UserCurrentResponse
 import com.cainsgl.user.dto.response.UserGetResponse
 import com.cainsgl.user.service.UserExtraInfoServiceImpl
 import com.cainsgl.user.service.UserServiceImpl
+import com.cainsgl.user.service.CheckInServiceImpl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
 import org.springframework.web.bind.annotation.*
@@ -28,6 +29,9 @@ class UserController
 
     @Resource
     lateinit var userService: UserServiceImpl
+
+    @Resource
+    lateinit var checkInService: CheckInServiceImpl
 
 
     /**
@@ -91,5 +95,15 @@ class UserController
             return UserGetResponse(user, userExtraInfoService.getBySaveOnNull(user.id!!))
         }
         return ResultCode.RESOURCE_NOT_FOUND
+    }
+
+    /**
+     * 用户签到
+     */
+    @PostMapping("/checkin")
+    fun checkIn(): Any
+    {
+        val userId = StpUtil.getLoginIdAsLong()
+        return checkInService.checkIn(userId)
     }
 }

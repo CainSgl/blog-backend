@@ -2,10 +2,36 @@ package com.cainsgl.article.util
 
 
 import org.junit.Test
+import kotlin.experimental.and
 
 class GfmChunkUtilsTest {
+    fun hasBitFromByte(byteValue: UByte, bitPosition: Int): Boolean {
+        val mask = 1 shl bitPosition
+        return (byteValue.toInt() and mask) != 0
+    }
+    @Test
+    fun `tt`()
+    {
+        val mask=1 shl 7;
+        val a:UByte=(-128).toUByte();
+        val intA:Int = a.toInt()
+        val ans= mask and a.toInt()
+        println(mask.toFullBinaryString())
+        println(a.toFullBinaryString())
+        println(ans!=0)
+        println(hasBitFromByte(a,7-0))
 
+    }
+    fun UByte.toFullBinaryString(): String {
+        return String.format("%8s", (this and 0xFF.toUByte()).toString(2)).replace(' ', '0')
+    }
+    fun Byte.toFullBinaryString(): String {
+        return String.format("%8s", (this and 0xFF.toByte()).toString(2)).replace(' ', '0')
+    }
 
+    fun Int.toFullBinaryString(): String {
+        return String.format("%32s", this.toString(2)).replace(' ', '0')
+    }
 
     @Test
     fun `test chunk with html tags`() {
