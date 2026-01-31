@@ -29,7 +29,8 @@ data class UserEntity(
     var nickname: String? = null,
 
     @TableField("avatar_url")
-    var avatarUrl: String? = null,
+    @field:JsonSerialize(using = ToStringSerializer::class)
+    var avatarUrl: Long? = null,
 
     @TableField("bio")
     var bio: String? = null,

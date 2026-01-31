@@ -4,12 +4,14 @@ import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.toolkit.IdWorker
 import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
 import com.cainsgl.api.article.post.PostService
+import com.cainsgl.api.article.util.ChangePostCommentCount
 import com.cainsgl.comment.dto.request.CommentPostRequest
 import com.cainsgl.comment.entity.PostsCommentEntity
 import com.cainsgl.comment.service.PostsCommentServiceImpl
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.senstitve.config.SensitiveWord
 import jakarta.annotation.Resource
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.bind.annotation.*
 import java.time.LocalDateTime
@@ -18,6 +20,9 @@ import java.time.LocalDateTime
 @RequestMapping("/post/comment")
 class PostCommentController
 {
+    @Resource
+     lateinit var changePostCommentCount: ChangePostCommentCount
+
     @Resource
     lateinit var postsCommentService: PostsCommentServiceImpl
 
@@ -30,6 +35,9 @@ class PostCommentController
 
     @Resource
     lateinit var postService: PostService
+
+    @Resource
+    lateinit var redisTemplate: RedisTemplate<Any, Any>
 
     @GetMapping
     fun getByCursor(
@@ -63,11 +71,21 @@ class PostCommentController
                     postId = request.postId
                 )
             )
-            postService.addCommentCount(request.postId, 1)
+            changePostCommentCount.changePostCommentCount(request.postId, 1)
+
             val res=HashMap<String,String>()
             res["id"] = id.toString()
             res["content"]=content?:""
             return@execute res
         }?:ResultCode.UNKNOWN_ERROR
+    }
+
+    @GetMapping("/like")
+    fun likeComment(@RequestParam id: Long,@RequestParam add: Boolean): Any
+    {
+        val key = "cursor:post_comment:like:$id"
+        val increment = if (add) 1L else -1L
+        redisTemplate.opsForValue().increment(key, increment)
+        return ResultCode.SUCCESS
     }
 }

@@ -43,6 +43,9 @@ spring:
     restclient:
       ssl:
         bundle: es-ssl-bundle
+    connection-timeout: 10s
+    socket-timeout: 60s
+    socket-keep-alive: true
   profiles:
     active: ${system.profiles-active}
   datasource:

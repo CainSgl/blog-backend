@@ -35,6 +35,7 @@
             un.target_user,
             un.checked,
             un.created_at,
+            un.type,
             u.nickname AS target_user_nickname,
             u.avatar_url AS target_user_avatar_url,
             u.level AS target_user_level,
@@ -42,9 +43,11 @@
         FROM user_notice un
         LEFT JOIN "user" u ON un.target_user = u.id
         WHERE un.user_id = #{userId}
-        <if test="type != null">
-            AND un.type = #{type}
-        </if>
+        AND (
+        <foreach collection="types" item="type" separator=" OR ">
+            un.type = #{type}
+        </foreach>
+        )
         <if test="after != null">
             AND un.id &lt; #{after}
         </if>

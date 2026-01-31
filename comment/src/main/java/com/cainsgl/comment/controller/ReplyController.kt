@@ -3,7 +3,7 @@ package com.cainsgl.comment.controller
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.toolkit.IdWorker
 import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
-import com.cainsgl.api.article.post.PostService
+import com.cainsgl.api.article.util.ChangePostCommentCount
 import com.cainsgl.api.user.UserService
 import com.cainsgl.comment.dto.request.CreateReplyRequest
 import com.cainsgl.comment.dto.request.NoticeReplyResponse
@@ -45,7 +45,7 @@ class ReplyController
 
     //其他模块的
     @Resource
-    lateinit var postService: PostService
+    lateinit var changePostCommentCount: ChangePostCommentCount
 
     @Resource
     lateinit var userService: UserService
@@ -163,7 +163,7 @@ class ReplyController
         )
 
         val entityId: String = transactionTemplate.execute { status ->
-            if (!postService.addCommentCount(id = request.postId, 1))
+            if (!changePostCommentCount.changePostCommentCount(request.postId, 1))
             {
                 status.setRollbackOnly()
                 return@execute null
@@ -197,5 +197,14 @@ class ReplyController
         res["id"] = entityId
         res["content"] = content ?: ""
         return res
+    }
+
+    @GetMapping("/like")
+    fun likeComment(@RequestParam id: Long, @RequestParam add: Boolean): Any
+    {
+        val key = "cursor:reply:like:$id"
+        val increment = if (add) 1L else -1L
+        redisTemplate.opsForValue().increment(key, increment)
+        return ResultCode.SUCCESS
     }
 }

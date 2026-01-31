@@ -14,24 +14,23 @@ private val log = KotlinLogging.logger {}
 
 @RestController
 @RequestMapping("/user/notice")
-class UserNoticeController {
+class UserNoticeController
+{
 
     @Resource
     lateinit var userNoticeService: UserNoticeServiceImpl
 
     @GetMapping
     fun getUserNotice(
-        @RequestParam(required = false) type: String,
-        @RequestParam(required = false) after: Long?,
+        @RequestParam(required = false) type: List<String>, @RequestParam(required = false) after: Long?,
         @RequestParam(defaultValue = "20") size: Int
-    ): Any {
-        if(size>100)
+    ): Any
+    {
+        if (size > 100)
         {
             return ResultCode.PARAM_INVALID
         }
         val userId = StpUtil.getLoginIdAsLong()
-        return userNoticeService.getUserNoticeAndMarkChecked(userId, type, after, size)
+        return userNoticeService.getUserNoticeAndMarkCheckedByType(userId, type, after, size)
     }
-
-
 }

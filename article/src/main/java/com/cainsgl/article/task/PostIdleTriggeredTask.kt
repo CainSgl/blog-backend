@@ -1,7 +1,7 @@
 package com.cainsgl.article.task
 
+import com.cainsgl.api.article.util.ChangePostCommentCount.Companion.POST_COUNT_INFO_REDIS_PREFIX
 import com.cainsgl.article.service.PostServiceImpl
-import com.cainsgl.article.service.PostServiceImpl.Companion.POST_COUNT_INFO_REDIS_PREFIX
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
 import org.springframework.beans.factory.annotation.Value
@@ -124,15 +124,15 @@ class PostIdleTriggeredTask {
                 val scriptBytes = getAndDeleteScript.toByteArray()
                 connection.eval(scriptBytes, org.springframework.data.redis.connection.ReturnType.MULTI, 1, keyBytes)
             }
-            
+
             // 处理返回结果
             if (result == null) return emptyMap()
-            
+
             @Suppress("UNCHECKED_CAST")
             val list = result as? List<ByteArray> ?: return emptyMap()
-            
+
             if (list.isEmpty()) return emptyMap()
-            
+
             // 将字节数组列表转换为 Map
             list.chunked(2).associate { chunk ->
                 val k = String(chunk[0])

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.baomidou.mybatisplus.extension.service.IService
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.cainsgl.api.article.post.PostService
+import com.cainsgl.api.article.util.ChangePostCommentCount.Companion.POST_COUNT_INFO_REDIS_PREFIX
 import com.cainsgl.article.repository.PostMapper
 import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.PostEntity
@@ -32,8 +33,7 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
     companion object
     {
         const val POST_INFO_REDIS_PREFIX = "post:"
-        //TODO 后续需要写回数据库
-        const val POST_COUNT_INFO_REDIS_PREFIX = "cursor:postcount:"
+
     }
 
 
@@ -173,10 +173,6 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
 
     override fun addCommentCount(id: Long, count: Int): Boolean
     {
-//        val wrapper = UpdateWrapper<PostEntity>()
-//        wrapper.eq("id", id)
-//        wrapper.setSql("comment_count = comment_count + $count")
-//        return baseMapper.update(wrapper) > 0
         return addCount(id, count.toLong(), "comment")
     }
 

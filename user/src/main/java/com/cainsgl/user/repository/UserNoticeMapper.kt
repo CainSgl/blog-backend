@@ -11,7 +11,7 @@ interface UserNoticeMapper : BaseMapper<UserNoticeEntity> {
     
     fun selectUserNoticeWithTargetUserInfo(
         @Param("userId") userId: Long,
-        @Param("type") type: Short?,
+        @Param("types") types: Collection<Short>,
         @Param("after") after: Long?,
         @Param("size") size: Int
     ): List<UserNoticeVO>

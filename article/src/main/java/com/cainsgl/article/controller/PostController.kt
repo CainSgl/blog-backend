@@ -1,7 +1,6 @@
 package com.cainsgl.article.controller
 
 
-import cn.dev33.satoken.annotation.SaCheckPermission
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
@@ -156,7 +155,13 @@ class PostController
 
         return GetPostResponse(postService.getContentByEntity(post), operate)
     }
-
+    @GetMapping("/batch")
+    fun getBatch(@RequestParam ids: List<Long>): List<PostEntity>?
+    {
+        val query= KtQueryWrapper(PostEntity::class.java).select(PostEntity::id,PostEntity::title, PostEntity::viewCount,PostEntity::likeCount,
+            PostEntity::createdAt,PostEntity::img).`in`(PostEntity::id,ids).ge(PostEntity::status, ArticleStatus.PUBLISHED)
+       return postService.list(query)
+    }
     @DeleteMapping
     fun delete(@RequestParam id: Long): Any
     {
@@ -188,7 +193,7 @@ class PostController
     }
 
 
-    @SaCheckPermission("article.post")
+
     @PostMapping
     fun createPost(@RequestBody @Valid request: CreatePostRequest): Any
     {

@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.annotation.TableField
 import com.baomidou.mybatisplus.annotation.TableId
 import com.baomidou.mybatisplus.annotation.TableName
 import com.cainsgl.common.handler.ByteaTypeHandler
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
 import java.time.LocalDate
@@ -24,7 +23,6 @@ data class FileUrlEntity(
      * 存储 SHA256 hash (64 字符 hex -> 32 字节 bytea)
      */
     @TableField(value = "url", typeHandler = ByteaTypeHandler::class)
-    @JsonIgnore
     var url: String? = null,
     
     @TableField("name")

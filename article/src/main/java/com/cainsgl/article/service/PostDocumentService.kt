@@ -65,6 +65,15 @@ class PostDocumentService
         query: String, useTag: Boolean, useContent: Boolean, size: Int = 20, searchAfter: List<Any>?
     ): SearchResult
     {
+        return retryOnConnectionReset(maxRetries = 3) {
+            performSearch(query, useTag, useContent, size, searchAfter)
+        }
+    }
+
+    private fun performSearch(
+        query: String, useTag: Boolean, useContent: Boolean, size: Int, searchAfter: List<Any>?
+    ): SearchResult
+    {
         val boolQueryBuilder = BoolQuery.Builder()
         // 构建 should 查询（至少匹配一个）
         val shouldQueries = mutableListOf<Query>()
@@ -139,6 +148,31 @@ class PostDocumentService
             data = documents, searchAfter = nextSearchAfter, total = searchHits.totalHits,
             hasMore = documents.size == size
         )
+    }
+
+    private fun <T> retryOnConnectionReset(maxRetries: Int = 3, delayMs: Long = 500, block: () -> T): T
+    {
+        var lastException: Exception? = null
+        repeat(maxRetries) { attempt ->
+            try
+            {
+                return block()
+            } catch (e: org.springframework.dao.DataAccessResourceFailureException)
+            {
+                lastException = e
+                if (e.message?.contains("Connection reset") == true && attempt < maxRetries - 1)
+                {
+                    Thread.sleep(delayMs * (attempt + 1)) // 指数退避
+                } else
+                {
+                    throw e
+                }
+            } catch (e: Exception)
+            {
+                throw e
+            }
+        }
+        throw lastException ?: RuntimeException("Retry failed")
     }
 }
 

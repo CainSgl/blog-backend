@@ -7,5 +7,6 @@ interface PostService {
     fun getByIds(ids: List<Long>): List<PostEntity>
     fun getVectorById(id:Long):FloatArray?
     fun addViewCount(id:Long,count:Int):Boolean
+    @Deprecated("直接操作redis即可，无需grpc远程调用")
     fun addCommentCount(id:Long,count:Int):Boolean
 }

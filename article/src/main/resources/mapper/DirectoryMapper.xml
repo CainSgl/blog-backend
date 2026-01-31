@@ -126,7 +126,7 @@
     <!-- 获取同级目录列表 -->
     <select id="selectSiblingDirectories" resultMap="DirectoryResultMap">
         SELECT *
-        FROM directories
+        FROM directory
         WHERE kb_id = #{kbId}
           AND (
               <if test="parentId != null">

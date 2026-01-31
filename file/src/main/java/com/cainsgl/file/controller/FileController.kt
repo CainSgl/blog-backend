@@ -132,8 +132,13 @@ class FileController
      * 删除单个文件
      */
     @GetMapping("free")
-    fun deleteFile(@RequestParam("f") shortUrl: Long): Any
+    fun deleteFile(@RequestParam("f", required = false) shortUrl: Long?): Any
     {
+        if(shortUrl==null||shortUrl<100L)
+        {
+            return ResultCode.SUCCESS
+        }
+
         val userId = StpUtil.getLoginIdAsLong()
         val fileEntity = fileUrlService.getById(shortUrl)
             ?: throw BusinessException("文件不存在或已被删除")

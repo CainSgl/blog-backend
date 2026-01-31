@@ -48,4 +48,17 @@
         LIMIT 10
     </select>
 
+    <update id="batchIncrementLikeCount">
+        UPDATE reply
+        SET like_count = like_count + CASE
+        <foreach collection="updates" item="item" separator=" ">
+            WHEN id = #{item.id} THEN #{item.incrementValue}
+        </foreach>
+        ELSE 0 END
+        WHERE id IN
+        <foreach collection="updates" item="item" open="(" separator="," close=")">
+            #{item.id}
+        </foreach>
+    </update>
+
 </mapper>

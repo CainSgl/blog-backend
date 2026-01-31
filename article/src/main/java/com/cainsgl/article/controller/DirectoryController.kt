@@ -1,6 +1,5 @@
 package com.cainsgl.article.controller
 
-import cn.dev33.satoken.annotation.SaCheckPermission
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.cainsgl.article.dto.request.CreateDirectoryRequest
@@ -107,7 +106,7 @@ class DirectoryController
         return res
     }
 
-    @SaCheckPermission("directory.post")
+
     @PostMapping
     fun createDirectory(@RequestBody @Valid request: CreateDirectoryRequest): Any
     {

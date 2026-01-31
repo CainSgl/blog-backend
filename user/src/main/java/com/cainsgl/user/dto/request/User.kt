@@ -3,14 +3,7 @@ package com.cainsgl.user.dto.request
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotEmpty
 
-data class UserLoginRequest(
-    @field:NotEmpty(message = "Username cannot be empty")
-    val account: String,
-    @field:NotEmpty(message = "Password cannot be empty")
-    val password: String,
-    //用于防刷
-    val captcha:String?=null,
-)
+
 
 data class UserLogPostRequest(
     @field: NotEmpty(message = "用户行为不能为空")
@@ -21,7 +14,7 @@ data class UserLogPostRequest(
 
 data class UpdateUserRequest(
     val nickname: String?=null,
-    val avatarUrl: String?=null,
+    val avatarUrl: Long?=null,
     val bio: String?=null,
     val gender: String?=null,
     val username: String?=null,

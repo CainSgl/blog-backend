@@ -11,14 +11,24 @@ import org.springframework.stereotype.Service
 @Service
 class UserNoticeServiceImpl : ServiceImpl<UserNoticeMapper, UserNoticeEntity>(), IService<UserNoticeEntity>
 {
-
-    fun getUserNoticeAndMarkChecked(userId: Long, typeStr: String, after: Long?, size: Int): Map<String, Any?>
+    fun getUserNoticeAndMarkCheckedByType(userId: Long, types: List<String>, after: Long?, size: Int): Map<String, Any?>
     {
-        val noticeType = UserNoticeType.getByOperate(typeStr)
-        val type = if (noticeType != UserNoticeType.UNKNOW) noticeType.type.toShort() else null
-        
+        val typeList= types.mapNotNull {
+            val type = UserNoticeType.getByOperate(it)
+            if(type== UserNoticeType.UNKNOW)
+            {
+                return@mapNotNull null
+            }
+            return@mapNotNull type.type.toShort()
+        }
+        return getUserNoticeAndMarkChecked(userId, after, size,typeList)
+
+    }
+    fun getUserNoticeAndMarkChecked(userId: Long, after: Long?, size: Int, types:List<Short>): Map<String, Any?>
+    {
+
         // 使用连表查询获取通知及 target_user 的基本信息
-        val records = baseMapper.selectUserNoticeWithTargetUserInfo(userId, type, after, size)
+        val records = baseMapper.selectUserNoticeWithTargetUserInfo(userId, types, after, size)
         
         // 标记为已读
         if (records.isNotEmpty())
@@ -40,5 +50,6 @@ class UserNoticeServiceImpl : ServiceImpl<UserNoticeMapper, UserNoticeEntity>(),
             "hasMore" to (records.size >= size)
         )
     }
+
 
 }

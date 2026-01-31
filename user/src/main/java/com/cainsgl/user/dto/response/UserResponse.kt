@@ -31,7 +31,7 @@ data class UserGetResponse(
         userEntity.id,
         userEntity.username,
         userEntity.nickname,
-        userEntity.avatarUrl,
+        userEntity.avatarUrl.toString(),
         userEntity.bio,
         userEntity.level,
         userEntity.status,
@@ -85,6 +85,7 @@ data class UserCurrentResponse(
     {
         BeanUtils.copyProperties(user, this)
         BeanUtils.copyProperties(hotInfo, this)
+        this.avatarUrl=user.avatarUrl.toString()
     }
 }
 

@@ -17,6 +17,7 @@ data class UserNoticeVO(
     var targetUser: Long? = null,
     
     var checked: Boolean? = null,
+    var type:Short? = null,
 
     var createdAt: LocalDateTime? = null,
     // target_user 的基本信息

@@ -42,8 +42,9 @@ class UserOAuthServiceImpl : ServiceImpl<UserOAuthMapper, UserOAuthEntity>(), IS
     companion object
     {
         private const val BILIBILI_TOKEN_PREFIX = "oauth:bilibili:token:"
-        private const val TOKEN_EXPIRE_MINUTES = 5L // token 有效期 5 分钟
-        private const val OAUTH_SUCESS_REGSTER = "oauth:sucess:token:"
+        private const val TOKEN_EXPIRE_MINUTES = 5*60L // token 有效期 5 分钟
+        private const val OAUTH_SUCCESS_REGESTER = "oauth:success:token:"
+        const val REGISTER_TOKEN="register:token:"
     }
 
     /**
@@ -51,7 +52,7 @@ class UserOAuthServiceImpl : ServiceImpl<UserOAuthMapper, UserOAuthEntity>(), IS
      * @param uid Bilibili 用户 ID
      * @return 生成的 token
      */
-    fun generateBilibiliToken(prefix: String = BILIBILI_TOKEN_PREFIX, value: Any =5): String
+    fun generateToken(prefix: String = BILIBILI_TOKEN_PREFIX, value: Any =5,expireTime:Long=TOKEN_EXPIRE_MINUTES): String
     {
         var token: String;
         while (true)
@@ -59,17 +60,29 @@ class UserOAuthServiceImpl : ServiceImpl<UserOAuthMapper, UserOAuthEntity>(), IS
             token = Base64.getUrlEncoder().withoutPadding()
                 .encodeToString(UUID.randomUUID().toString().toByteArray(StandardCharsets.UTF_8))
             val redisKey = "$prefix$token"
-            //碰撞概率极低，这里只是为了万一，所以偷懒不写lua了
-            if (redisTemplate.hasKey(redisKey) == true)
+            val exits= redisTemplate.opsForValue().setIfAbsent(redisKey, value,expireTime, TimeUnit.SECONDS)
+            if(exits ==true)
             {
-                continue;
+                break;
             }
-            redisTemplate.opsForValue().set(redisKey, value, TOKEN_EXPIRE_MINUTES, TimeUnit.MINUTES)
-            break;
         }
         return token
     }
-
+    fun getByToken(prefix: String = BILIBILI_TOKEN_PREFIX,token: String): Any?
+    {
+        val redisKey = "$prefix$token"
+        return redisTemplate.opsForValue().get(redisKey)
+    }
+    fun setByToken(prefix: String = BILIBILI_TOKEN_PREFIX,token: String, value: Any?,expireTime:Long=TOKEN_EXPIRE_MINUTES)
+    {
+        val redisKey = "$prefix$token"
+        redisTemplate.opsForValue().set(redisKey, value,expireTime, TimeUnit.SECONDS)
+    }
+    fun removeByToken(prefix: String = BILIBILI_TOKEN_PREFIX,token: String)
+    {
+        val redisKey = "$prefix$token"
+        redisTemplate.delete(redisKey)
+    }
     fun verifyToken(token: String): Boolean
     {
         val redisKey = "$BILIBILI_TOKEN_PREFIX$token"

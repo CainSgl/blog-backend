@@ -61,7 +61,7 @@ class UserController
         {
             //返回
             val userId = StpUtil.getLoginIdAsLong()
-            val update = KtUpdateWrapper(UserEntity::class.java).eq(UserEntity::id, userId)
+            val update = KtUpdateWrapper(UserEntity::class.java).eq(UserEntity::id, userId).isNull(UserEntity::username)
                 .ne(UserEntity::username, request.username).set(UserEntity::username, request.username)
             return if (userService.update(update))
             {

@@ -93,4 +93,14 @@ class ParCommentController
         val query = KtQueryWrapper(ParCommentEntity::class.java).eq(ParCommentEntity::id, id)
         return parCommentService.getOne(query)
     }
+
+    @GetMapping("/like")
+    fun likeComment(@RequestParam id: Long, @RequestParam add: Boolean): Any
+    {
+        val userId = StpUtil.getLoginIdAsLong()
+        val key = "cursor:par_comment:like:$id"
+        val increment = if (add) 1L else -1L
+        redisTemplate.opsForValue().increment(key, increment)
+        return ResultCode.SUCCESS
+    }
 }
