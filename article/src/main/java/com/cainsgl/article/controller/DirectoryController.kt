@@ -22,7 +22,7 @@ import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/dir")
+@RequestMapping("/post/dir")
 class DirectoryController
 {
 

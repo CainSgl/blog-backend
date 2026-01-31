@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*
 private val log = KotlinLogging.logger {}
 
 @RestController
-@RequestMapping("/follow")
+@RequestMapping("/user/follow")
 class FollowController
 {
     @Resource

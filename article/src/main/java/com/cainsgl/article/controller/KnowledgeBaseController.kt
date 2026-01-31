@@ -28,7 +28,7 @@ import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/kb")
+@RequestMapping("/post/kb")
 class KnowledgeBaseController
 {
 

@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*
 import java.time.LocalDateTime
 
 @RestController
-@RequestMapping("/post/comment")
+@RequestMapping("/comment/post")
 class PostCommentController
 {
     @Resource

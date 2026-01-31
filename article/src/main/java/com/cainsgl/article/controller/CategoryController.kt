@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController
 private val log = KotlinLogging.logger {}
 
 @RestController
-@RequestMapping("/category")
+@RequestMapping("/post/category")
 class CategoryController {
 
     @Resource
