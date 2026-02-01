@@ -6,7 +6,6 @@ import com.cainsgl.common.entity.user.UserExtraInfoEntity
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
-import org.apache.rocketmq.client.core.RocketMQClientTemplate
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.core.Cursor
 import org.springframework.data.redis.core.RedisTemplate
@@ -26,8 +25,8 @@ class UserLogJob
     @Resource
     lateinit var userLogService: UserLogService
 
-    @Resource
-    lateinit var rocketMQClientTemplate: RocketMQClientTemplate
+//    @Resource
+//    lateinit var rocketMQClientTemplate: RocketMQClientTemplate
 
     @Resource
     lateinit var redisTemplate: RedisTemplate<String, Int>

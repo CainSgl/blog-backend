@@ -30,7 +30,6 @@ import jakarta.annotation.Resource
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
-import org.apache.rocketmq.client.core.RocketMQClientTemplate
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.bind.annotation.*
@@ -56,8 +55,8 @@ class PostController
     @Resource
     lateinit var directoryService: DirectoryServiceImpl
 
-    @Resource
-    lateinit var rocketMQClientTemplate: RocketMQClientTemplate
+//    @Resource
+//    lateinit var rocketMQClientTemplate: RocketMQClientTemplate
 
     @Resource
     lateinit var transactionTemplate: TransactionTemplate
@@ -220,7 +219,7 @@ class PostController
             }
             redisTemplate.changePostCount(1, userId)
             //发送消息
-            rocketMQClientTemplate.asyncSendNormalMessage("article:post", postEntity.id, null)
+          //  rocketMQClientTemplate.asyncSendNormalMessage("article:post", postEntity.id, null)
             return@execute CreatePostResponse(postEntity, dirId)
         } ?: ResultCode.UNKNOWN_ERROR
     }
@@ -333,7 +332,7 @@ class PostController
                 return@start
             }
             //发送消息，这里不需要回调，也不需要保证可靠，不是强一致的需求，毕竟只是一次版本的迭代，问题不大
-            rocketMQClientTemplate.asyncSendNormalMessage("article:publish", request.id, null)
+    //        rocketMQClientTemplate.asyncSendNormalMessage("article:publish", request.id, null)
             postDocumentService.save(
                 PostDocument(
                     id = post.id!!, title = post.title ?: "", summary = post.summary, img = post.img,

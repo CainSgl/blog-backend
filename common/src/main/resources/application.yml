@@ -40,9 +40,6 @@ spring:
     uris: ${es.uris}
     username: ${es.username}
     password: ${es.password}
-    restclient:
-      ssl:
-        bundle: es-ssl-bundle
     connection-timeout: 10s
     socket-timeout: 60s
     socket-keep-alive: true
@@ -70,13 +67,6 @@ spring:
         pool:
           max-active: 8
           max-idle: 8
-  ssl:
-    bundle:
-      pem:
-        es-ssl-bundle:
-          truststore:
-            certificate: ${es.ssl-bundle.trust-certificate}
-
 
 mybatis-plus:
   type-handlers-package: com.cainsgl.common.handler
@@ -104,8 +94,9 @@ management:
       enabled: true         # 启用存活状态
     readinessState:
       enabled: true        # 启用就绪状态
-
 server:
+  servlet:
+    context-path: /api
   jetty:
     threads:
       acceptors: ${system.cpu-cores}

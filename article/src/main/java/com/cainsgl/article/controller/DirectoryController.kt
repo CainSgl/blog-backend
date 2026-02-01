@@ -16,7 +16,7 @@ import com.cainsgl.common.entity.article.PostEntity
 import jakarta.annotation.Resource
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Min
-import org.apache.rocketmq.client.core.RocketMQClientTemplate
+
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.bind.annotation.*
@@ -26,8 +26,8 @@ import org.springframework.web.bind.annotation.*
 class DirectoryController
 {
 
-    @Autowired
-    private lateinit var rocketMQClientTemplate: RocketMQClientTemplate
+//    @Autowired
+//    private lateinit var rocketMQClientTemplate: RocketMQClientTemplate
 
     @Autowired
     private lateinit var postService: PostServiceImpl
@@ -168,10 +168,10 @@ class DirectoryController
         {
             return 0
         }
-        for(postId in res)
-        {
-            rocketMQClientTemplate.asyncSendNormalMessage("article:content", postId, null)
-        }
+//        for(postId in res)
+//        {
+//            rocketMQClientTemplate.asyncSendNormalMessage("article:content", postId, null)
+//        }
         directoryService.removeCache(kbId)
         return res.size
     }

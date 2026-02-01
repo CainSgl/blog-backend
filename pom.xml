@@ -48,7 +48,7 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>22</java.version>
+        <java.version>25</java.version>
         <spring-boot.version>3.5.10</spring-boot.version>
         <grpc-starter.version>3.1.0.RELEASE</grpc-starter.version>
         <kotlin.version>2.3.0</kotlin.version>
@@ -99,6 +99,10 @@
             </extension>
         </extensions>
         <plugins>
+            <plugin>
+                <groupId>org.graalvm.buildtools</groupId>
+                <artifactId>native-maven-plugin</artifactId>
+            </plugin>
             <!-- 禁止打包，后面的业务模块单独开启-->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
@@ -167,6 +171,14 @@
                     </dependency>
                 </dependencies>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
@@ -211,18 +223,7 @@
                             </goals>
                         </execution>
                     </executions>
-                    <!--                    <configuration>-->
-                    <!--                        <source>${java.version}</source>-->
-                    <!--                        <target>${java.version}</target>-->
-                    <!--                        <encoding>UTF-8</encoding>-->
-                    <!--                        <annotationProcessorPaths>-->
-                    <!--                            <path>-->
-                    <!--                                <groupId>org.projectlombok</groupId>-->
-                    <!--                                <artifactId>lombok</artifactId>-->
-                    <!--                                <version>${lombok.version}</version>-->
-                    <!--                            </path>-->
-                    <!--                        </annotationProcessorPaths>-->
-                    <!--                    </configuration>-->
+
                 </plugin>
             </plugins>
         </pluginManagement>

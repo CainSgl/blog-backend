@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController
 private val log = KotlinLogging.logger {}
 
 @RestController
-@RequestMapping("/welcome")
+@RequestMapping("/file/welcome")
 class BackGroundController : InitializingBean
 {
     companion object
