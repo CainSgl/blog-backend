@@ -123,6 +123,38 @@ class FileService
         return output.signedUrl
     }
 
+    /**
+     * 生成预签名POST表单数据，用于前端直传
+     * @param sha256Hash SHA256 hash 字符串
+     * @param extension 文件扩展名
+     * @param expiresInSeconds 签名有效期（秒）
+     * @return 包含policy、signature等字段的Map
+     */
+    fun generatePresignedPostSignature(
+        sha256Hash: String,
+        extension: String,
+        expiresInSeconds: Long = 6
+    ): Map<String, String>
+    {
+        val objectKey = buildObjectKey(sha256Hash, extension)
+        val input = PreSignedPostSignatureInput()
+            .setBucket(bucketName)
+            .setKey(objectKey)
+            .setExpires(expiresInSeconds)
+
+        val output = tos.preSignedPostSignature(input)
+        
+        return mapOf(
+            "url" to "https://${bucketName}.tos-cn-hongkong.volces.com",
+            "key" to objectKey,
+            "policy" to output.policy,
+            "algorithm" to output.algorithm,
+            "credential" to output.credential,
+            "date" to output.date,
+            "signature" to output.signature
+        )
+    }
+
     fun delete(sha256Hash: String, extension: String? = null): DeleteObjectOutput
     {
         val objectKey = buildObjectKey(sha256Hash, extension)

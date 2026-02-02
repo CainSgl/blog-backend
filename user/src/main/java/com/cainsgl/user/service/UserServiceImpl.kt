@@ -1,5 +1,6 @@
 package com.cainsgl.user.service
 
+import cn.dev33.satoken.stp.StpUtil
 import com.alibaba.fastjson2.JSON
 import com.baomidou.mybatisplus.core.toolkit.IdWorker
 import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
@@ -35,7 +36,7 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
 
     companion object
     {
-        const val USER_MAX_USED_MEMORY = 1024 * 1024 * 1024 * 3L
+        const val USER_MAX_USED_MEMORY = 1024 * 1024 * 1024 * 10L
         const val USER_REDIS_PREFIX = "user:info:"
     }
 
@@ -80,9 +81,21 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
 
     override fun mallocMemory(userId: Long, memory: Int): Boolean
     {
+        if (StpUtil.hasRole("admin"))
+        {
+            return true;
+        }
+        val vip = StpUtil.hasRole(userId, "vip")
+        val maxsize = if (vip)
+        {
+            USER_MAX_USED_MEMORY * 3
+        } else
+        {
+            USER_MAX_USED_MEMORY
+        }
         val updateWrapper = KtUpdateWrapper(UserEntity::class.java)
         updateWrapper.eq(UserEntity::id, userId).setSql("used_memory = used_memory + $memory")
-            .le(UserEntity::usedMemory, USER_MAX_USED_MEMORY - memory)
+            .le(UserEntity::usedMemory, maxsize - memory)
         return this.baseMapper.update(updateWrapper) > 0
     }
 
@@ -92,7 +105,7 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
             UserNoticeEntity(targetId = targetId, type = type.toShort(), userId = userId, targetUser = targetUser)
         userNoticeServiceImpl.save(entity)
         val redis = redisTemplate as RedisTemplate<Any, Any>
-        redis.changeMsgCount(1, userId,type)
+        redis.changeMsgCount(1, userId, type)
         return true
     }
 
@@ -110,7 +123,7 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
         }
         if (hotKeyValidator.isHotKey(key, count = HOT_KEY_COUNT_THRESHOLD * 2))
         {
-            return redisTemplate.getWithFineLock(key, { Duration.ofMinutes(20) }) {
+            return redisTemplate.getWithFineLock(key, { Duration.ofSeconds(60) }) {
                 return@getWithFineLock super<ServiceImpl>.getById(id)
             }
         } else
@@ -119,18 +132,18 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
         }
     }
 
-    fun crateUserBaseInfo(userEntity: UserEntity?=null): UserEntity
+    fun crateUserBaseInfo(userEntity: UserEntity? = null): UserEntity
     {
         val genId = IdWorker.getId()
-        val entity= userEntity ?: UserEntity()
+        val entity = userEntity ?: UserEntity()
         entity.apply {
             id = genId
             roles = UserEntity.DEFAULT_ROLE
-            permissions= UserEntity.DEFAULT_PERMISSIONS
+            permissions = UserEntity.DEFAULT_PERMISSIONS
         }
-        if(entity.gender!="男"&&entity.gender!="女")
+        if (entity.gender != "男" && entity.gender != "女")
         {
-            entity.gender=""
+            entity.gender = ""
         }
         save(entity)
         return entity

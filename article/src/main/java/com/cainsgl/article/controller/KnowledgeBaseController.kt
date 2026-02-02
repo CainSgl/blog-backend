@@ -14,6 +14,7 @@ import com.cainsgl.article.dto.request.PageUserIdListRequest
 import com.cainsgl.article.dto.request.UpdateKnowledgeBaseRequest
 import com.cainsgl.article.service.*
 import com.cainsgl.common.dto.response.PageResponse
+import com.cainsgl.common.dto.response.Result
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.KnowledgeBaseEntity
@@ -78,12 +79,14 @@ class KnowledgeBaseController
                     )
                 } else
                 {
-                    throw BusinessException(knowledgeBase.userId.toString())
+                    return Result.error(knowledgeBase.userId.toString())
+//                    throw BusinessException(knowledgeBase.userId.toString())
                 }
             }
             if (userId != knowledgeBase.userId)
             {
-                throw BusinessException("由于私密性设置无法访问该知识库")
+                return Result.error("由于私密性设置无法访问该知识库")
+//                throw BusinessException()
             }
         }
         var stared = false
@@ -96,7 +99,31 @@ class KnowledgeBaseController
         val directoryTree: List<DirectoryTreeDTO> = directoryService.getDirectoryTreeByKbId(id)
         return Triple(knowledgeBase, directoryTree, stared)
     }
-
+    @GetMapping("/info")
+    fun getBasicInfo(@RequestParam id: Long): Any
+    {
+        val entity= knowledgeBaseService.getById(id)?: return ResultCode.RESOURCE_NOT_FOUND
+        if(entity.status == ArticleStatus.PUBLISHED)
+        {
+            return entity
+        }
+        val userId=StpUtil.getLoginIdAsLong()
+        if(entity.userId==userId)
+        {
+            return entity
+        }
+        if (entity.status == ArticleStatus.ONLY_FANS)
+        {
+            return if (userFollowService.hasFollow(userId, entity.userId!!))
+            {
+                entity
+            }else
+            {
+                ResultCode.SUCCESS
+            }
+        }
+        return ResultCode.SUCCESS
+    }
     @DeleteMapping
     fun delete(@RequestParam id: Long,@RequestParam(required = false) removePost: Boolean=false): Any
     {

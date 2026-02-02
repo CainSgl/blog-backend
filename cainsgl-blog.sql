@@ -13,7 +13,7 @@ create table "user"
     username       varchar(50),
     email          varchar(100),
     password_hash  varchar(255),
-    nickname       varchar(30)   default 'user'::character varying     not null,
+    nickname       varchar(30)   default '用户'::character varying     not null,
     bio            varchar(100)  default ''::character varying         not null,
     level          integer       default 0                             not null,
     experience     integer       default 0                             not null,
@@ -166,17 +166,12 @@ alter table permission_group
 -- =============================================
 create table category
 (
-    id         bigint                  not null
-        constraint categories_pkey
-            primary key,
-    name       varchar(100)            not null
-        constraint categories_name_key
-            unique,
-    parent_id  bigint
-        constraint categories_parent_id_fkey
-            references category
-            on delete set null,
-    created_at timestamp default now() not null
+    id         bigint                  not null,
+    name       varchar(100)            not null,
+    parent_id  bigint,
+    created_at timestamp default now() not null,
+    constraint categories_pkey primary key (id),
+    constraint categories_name_key unique (name)
 );
 COMMENT ON COLUMN category.id IS '分类ID，主键';
 COMMENT ON COLUMN category.name IS '分类名称';
@@ -333,21 +328,15 @@ create index idx_knowledge_bases_cursor_status
 -- =============================================
 create table directory
 (
-    id        bigint       not null
-        constraint directories_pkey
-            primary key,
-    kb_id     bigint       not null
-        constraint directories_kb_id_fkey
-            references knowledge_base
-            on delete cascade,
-    parent_id bigint
-        constraint directories_parent_id_fkey
-            references directory
-            on delete set null,
+    id        bigint       not null,
+    kb_id     bigint       not null,
+    parent_id bigint,
     name      varchar(100) not null,
     post_id   bigint,
     sort_num  smallint default 0,
-    user_id   bigint
+    user_id   bigint,
+    -- 仅保留主键约束，确保 ID 唯一
+    constraint directories_pkey primary key (id)
 );
 COMMENT ON TABLE directory IS '知识库的目录层级结构';
 COMMENT ON COLUMN directory.id IS '目录节点ID';
@@ -653,7 +642,7 @@ create table reply
     user_id          bigint,
     content          varchar(255)                 not null,
     like_count       integer default 0            not null,
-    created_at       date    default CURRENT_DATE not null,
+    created_at       timestamp    default now() not null,
     post_comment_id  bigint,
     reply_id         bigint,
     reply_comment_id bigint

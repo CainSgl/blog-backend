@@ -10,13 +10,14 @@ import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.file.FileUrlEntity
 import com.cainsgl.common.exception.BusinessException
 import com.cainsgl.file.FileService
+import com.cainsgl.file.dto.request.PresignedUploadRequest
+import com.cainsgl.file.dto.response.PresignedUploadResponse
 import com.cainsgl.file.service.FileUrlServiceImpl
 import jakarta.annotation.Resource
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.multipart.MultipartFile
 
 @RestController
 @RequestMapping("/file")
@@ -33,28 +34,95 @@ class FileController
     @Resource
     lateinit var userService: UserService
 
-   
-    @PostMapping("/upload")
-    fun uploadFile(@RequestParam("file") file: MultipartFile): Any
+    /**
+     * 获取预签名上传凭证（前端直传）
+     * 1. 检查文件是否已存在（通过SHA256）
+     * 2. 如果存在，直接返回文件信息，无需上传
+     * 3. 如果不存在，生成预签名POST表单数据供前端直传
+     */
+    @PostMapping("/presigned-upload")
+    fun getPresignedUpload(@RequestBody @Valid request: PresignedUploadRequest): Any
     {
         val userId = StpUtil.getLoginIdAsLong()
-        //增加用户文件大小使用量
-        if (userService.mallocMemory(userId, file.size.toInt()))
-        {
-            val sha256Hash = fileService.upload(file)  // 只返回 SHA256
-            val fileUrlEntity = FileUrlEntity(
-                userId = userId,
-                url = sha256Hash,  // 直接存储 SHA256
-                name = file.originalFilename,
-                fileSize = file.size.toInt()
-            )
-            fileUrlService.save(fileUrlEntity)
-            return fileUrlEntity
-        } else
+        
+        // 检查用户存储空间
+        if (!userService.mallocMemory(userId, request.fileSize.toInt()))
         {
             return com.cainsgl.common.dto.response.Result.error("你的云存储空间已满，请删除无用文件后再使用！")
         }
+        
+        // 提取文件扩展名
+        val extension = request.filename.substringAfterLast(".", "")
+        
+        // 检查文件是否已存在（通过SHA256去重）- 使用自定义 Mapper 方法
+        val existingFile = fileUrlService.baseMapper.findByUserIdAndUrl(request.sha256)
+        
+        if (existingFile != null)
+        {
+            // 文件已存在，无需上传，释放刚才分配的空间
+           // userService.mallocMemory(userId, -request.fileSize.toInt())
+            return PresignedUploadResponse(
+                url = "",
+                key = "",
+                policy = "",
+                algorithm = "",
+                credential = "",
+                date = "",
+                signature = "",
+                fileId = existingFile.shortUrl,
+                needUpload = false
+            )
+        }
+        
+        // 生成预签名POST表单数据
+        val presignedData = fileService.generatePresignedPostSignature(
+            sha256Hash = request.sha256,
+            extension = extension
+        )
+        
+        // 创建文件记录（状态为待上传）
+        val fileUrlEntity = FileUrlEntity(
+            userId = userId,
+            url = request.sha256,
+            name = request.filename,
+            fileSize = request.fileSize.toInt()
+        )
+        fileUrlService.save(fileUrlEntity)
+        
+        return PresignedUploadResponse(
+            url = presignedData["url"]!!,
+            key = presignedData["key"]!!,
+            policy = presignedData["policy"]!!,
+            algorithm = presignedData["algorithm"]!!,
+            credential = presignedData["credential"]!!,
+            date = presignedData["date"]!!,
+            signature = presignedData["signature"]!!,
+            fileId = fileUrlEntity.shortUrl,
+            needUpload = true
+        )
     }
+   
+//    @PostMapping("/upload")
+//    fun uploadFile(@RequestParam("file") file: MultipartFile): Any
+//    {
+//        val userId = StpUtil.getLoginIdAsLong()
+//        //增加用户文件大小使用量
+//        if (userService.mallocMemory(userId, file.size.toInt()))
+//        {
+//            val sha256Hash = fileService.upload(file)  // 只返回 SHA256
+//            val fileUrlEntity = FileUrlEntity(
+//                userId = userId,
+//                url = sha256Hash,  // 直接存储 SHA256
+//                name = file.originalFilename,
+//                fileSize = file.size.toInt()
+//            )
+//            fileUrlService.save(fileUrlEntity)
+//            return fileUrlEntity
+//        } else
+//        {
+//            return com.cainsgl.common.dto.response.Result.error("你的云存储空间已满，请删除无用文件后再使用！")
+//        }
+//    }
 
     @PostMapping("/list")
     fun cursor(@RequestBody @Valid request: CursorList): Any

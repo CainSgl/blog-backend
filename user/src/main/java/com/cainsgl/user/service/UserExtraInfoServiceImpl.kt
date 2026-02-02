@@ -79,7 +79,7 @@ class UserExtraInfoServiceImpl : ServiceImpl<UserExtraInfoMapper, UserExtraInfoE
             //这里和user去公用一个key即可
             if (hotKeyValidator.isHotKey("${USER_REDIS_PREFIX}${id}", count = HOT_KEY_COUNT_THRESHOLD * 2))
             {
-                return redisTemplate.withFineLockByDoubleChecked(key, { Duration.ofMinutes(20) }) {
+                return redisTemplate.withFineLockByDoubleChecked(key, { Duration.ofSeconds(30) }) {
                     return@withFineLockByDoubleChecked super<ServiceImpl>.getById(id) as Any?
                 } as UserExtraInfoEntity?
             } else

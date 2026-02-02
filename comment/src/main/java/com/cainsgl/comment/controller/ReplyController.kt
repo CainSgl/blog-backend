@@ -22,7 +22,7 @@ import jakarta.annotation.Resource
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.bind.annotation.*
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 @RestController
 @RequestMapping("/comment/reply")
@@ -58,7 +58,7 @@ class ReplyController
 
     @GetMapping
     fun getReplyComment(
-        @RequestParam postCommentId: Long?, @RequestParam parCommentId: Long?, lastCreatedAt: LocalDate?,
+        @RequestParam postCommentId: Long?, @RequestParam parCommentId: Long?, lastCreatedAt: LocalDateTime?,
         lastLikeCount: Int?, lastId: Long?
     ): List<ReplyEntity>
     {

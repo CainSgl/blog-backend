@@ -9,6 +9,16 @@ grpc:
       negotiationType: PLAINTEXT
       enableKeepAlive: true
       keepAliveWithoutCalls: true
+    PostService:
+      address: ${grpc-client.post-service}
+      negotiationType: PLAINTEXT
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+    PostHistoryService:
+      address: ${grpc-client.post-service}
+      negotiationType: PLAINTEXT
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
     PostChunkVectorService:
       address: ${grpc-client.post-service}
       negotiationType: PLAINTEXT

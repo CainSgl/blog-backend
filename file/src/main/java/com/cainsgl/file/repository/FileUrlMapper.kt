@@ -12,4 +12,10 @@ interface FileUrlMapper : BaseMapper<FileUrlEntity> {
      * 使用 ByteaTypeHandler 处理 bytea 类型
      */
     fun countByUrl(@Param("url") url: String): Long
+    
+    /**
+     * 根据 userId 和 SHA256 hash 查询文件
+     * 使用 ByteaTypeHandler 处理 bytea 类型
+     */
+    fun findByUserIdAndUrl( @Param("url") url: String): FileUrlEntity?
 }

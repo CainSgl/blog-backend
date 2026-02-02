@@ -139,5 +139,5 @@ userLog:
 
 idle:
   task:
-    check-interval: 20000
-    cpu-threshold: 40.0
+    check-interval: 30000
+    cpu-threshold: 70.0

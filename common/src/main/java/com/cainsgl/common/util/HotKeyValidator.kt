@@ -21,9 +21,9 @@ class HotKeyValidator(
     
     companion object {
         // 阈值
-        const val HOT_KEY_COUNT_THRESHOLD = 6L
+        const val HOT_KEY_COUNT_THRESHOLD = 8L
         // 时间窗口
-         const val TIME_WINDOW_SECONDS = 30L
+         const val TIME_WINDOW_SECONDS = 2L
         private val LUA_SCRIPT = """
             local count = redis.call('INCR', KEYS[1])
             if count == 1 then

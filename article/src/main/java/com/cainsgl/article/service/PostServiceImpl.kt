@@ -12,6 +12,7 @@ import com.cainsgl.common.entity.article.PostEntity
 import com.cainsgl.common.util.FineLockCacheUtils.getWithFineLock
 import com.cainsgl.common.util.FineLockCacheUtils.withFineLockByDoubleChecked
 import com.cainsgl.common.util.HotKeyValidator
+import com.cainsgl.common.util.HotKeyValidator.Companion.HOT_KEY_COUNT_THRESHOLD
 import jakarta.annotation.Resource
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
@@ -96,7 +97,7 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
             entity.content = content
             return entity
         }
-        if (hotKeyValidator.isHotKey(key, count = 9))
+        if (hotKeyValidator.isHotKey(key, count = (HOT_KEY_COUNT_THRESHOLD*3)/2))
         {
             entity.content = redisTemplateStr.withFineLockByDoubleChecked(key, { Duration.ofMinutes(10) }) {
                 getPostContent(entity.id!!)

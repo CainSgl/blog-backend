@@ -47,7 +47,7 @@ class FileUrlServiceImpl : ServiceImpl<FileUrlMapper, FileUrlEntity>(), IService
         }
         if (hotKeyValidator.isHotKey(key))
         {
-            return redisTemplate.withFineLockByDoubleChecked(key, { Duration.ofMinutes(30) }) {
+            return redisTemplate.withFineLockByDoubleChecked(key, { Duration.ofMinutes(10) }) {
                 return@withFineLockByDoubleChecked super<ServiceImpl>.getById(id)
             }
         } else

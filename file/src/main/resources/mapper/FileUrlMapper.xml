@@ -15,4 +15,12 @@
         WHERE url = #{url, typeHandler=com.cainsgl.common.handler.ByteaTypeHandler}
     </select>
 
+    <!-- 根据 userId 和 url 查询文件 -->
+    <select id="findByUserIdAndUrl" resultType="com.cainsgl.common.entity.file.FileUrlEntity">
+        SELECT short_url, user_id, url, name, file_size, created_at
+        FROM file_url
+        WHERE url = #{url, typeHandler=com.cainsgl.common.handler.ByteaTypeHandler}
+        LIMIT 1
+    </select>
+
 </mapper>

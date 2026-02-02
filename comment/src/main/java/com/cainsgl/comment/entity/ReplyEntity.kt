@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableId
 import com.baomidou.mybatisplus.annotation.TableName
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 @TableName(value = "reply")
 data class ReplyEntity(
@@ -29,7 +29,7 @@ data class ReplyEntity(
     var likeCount: Int? = null,
 
     @TableField("created_at")
-    var createdAt: LocalDate? = null,
+    var createdAt: LocalDateTime? = null,
 
     @TableField("post_comment_id")
     @field:JsonSerialize(using = ToStringSerializer::class)
