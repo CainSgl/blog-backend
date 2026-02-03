@@ -53,7 +53,7 @@
         SELECT <include refid="Basic_Column_List"/>
         FROM post
         WHERE status &gt;= 'published'
-        ORDER BY updated_at::date DESC, like_ratio DESC, id DESC
+        ORDER BY published_at::date DESC, like_ratio DESC, id DESC
         LIMIT #{pageSize}
     </select>
     

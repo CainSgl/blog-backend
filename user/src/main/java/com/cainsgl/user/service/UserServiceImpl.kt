@@ -1,6 +1,5 @@
 package com.cainsgl.user.service
 
-import cn.dev33.satoken.stp.StpUtil
 import com.alibaba.fastjson2.JSON
 import com.baomidou.mybatisplus.core.toolkit.IdWorker
 import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
@@ -14,6 +13,7 @@ import com.cainsgl.common.util.FineLockCacheUtils.getWithFineLock
 import com.cainsgl.common.util.HotKeyValidator
 import com.cainsgl.common.util.HotKeyValidator.Companion.HOT_KEY_COUNT_THRESHOLD
 import com.cainsgl.common.util.user.UserHotInfoUtils.Companion.changeMsgCount
+import com.cainsgl.user.document.UserDocument
 import com.cainsgl.user.repository.UserMapper
 import jakarta.annotation.Resource
 import org.springframework.data.redis.core.RedisTemplate
@@ -33,6 +33,9 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
 
     @Resource
     lateinit var hotKeyValidator: HotKeyValidator
+
+    @Resource
+    lateinit var userDocumentService: UserDocumentService
 
     companion object
     {
@@ -64,38 +67,11 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
         return JSON.parseObject(s, UserEntity.Extra::class.java)
     }
 
-    /**
-     * 设置用户扩展信息
-     * @param id
-     * @param extra
-     * @return
-     */
-    fun setExtra(id: Long, extra: UserEntity.Extra): Boolean
-    {
-        val extraString = JSON.toJSONString(extra)
-        val updateWrapper = KtUpdateWrapper(UserEntity::class.java)
-        updateWrapper.eq(UserEntity::id, id).set(UserEntity::extra, extraString)
-        this.baseMapper.update(updateWrapper)
-        return this.baseMapper.update(updateWrapper) > 0
-    }
-
     override fun mallocMemory(userId: Long, memory: Int): Boolean
     {
-        if (StpUtil.hasRole("admin"))
-        {
-            return true;
-        }
-        val vip = StpUtil.hasRole(userId, "vip")
-        val maxsize = if (vip)
-        {
-            USER_MAX_USED_MEMORY * 3
-        } else
-        {
-            USER_MAX_USED_MEMORY
-        }
         val updateWrapper = KtUpdateWrapper(UserEntity::class.java)
         updateWrapper.eq(UserEntity::id, userId).setSql("used_memory = used_memory + $memory")
-            .le(UserEntity::usedMemory, maxsize - memory)
+            .le(UserEntity::usedMemory, USER_MAX_USED_MEMORY - memory)
         return this.baseMapper.update(updateWrapper) > 0
     }
 
@@ -146,6 +122,38 @@ class UserServiceImpl : ServiceImpl<UserMapper, UserEntity>(), UserService, ISer
             entity.gender = ""
         }
         save(entity)
+        
+        // 同步到 ES
+        if (entity.nickname != null)
+        {
+            try
+            {
+                userDocumentService.save(UserDocument(id = entity.id!!, nickname = entity.nickname!!))
+            } catch (e: Exception)
+            {
+                // ES 同步失败不影响主流程
+            }
+        }
+        
         return entity
+    }
+
+    override fun updateById(entity: UserEntity): Boolean
+    {
+        val result = super<ServiceImpl>.updateById(entity)
+        
+        // 如果更新成功且包含昵称，同步到 ES
+        if (result && entity.id != null && entity.nickname != null)
+        {
+            try
+            {
+                userDocumentService.save(UserDocument(id = entity.id!!, nickname = entity.nickname!!))
+            } catch (e: Exception)
+            {
+                // ES 同步失败不影响主流程
+            }
+        }
+        
+        return result
     }
 }

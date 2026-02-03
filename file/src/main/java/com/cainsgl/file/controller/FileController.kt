@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
 import com.cainsgl.api.user.UserService
 import com.cainsgl.common.dto.request.CursorList
+import com.cainsgl.common.dto.response.Result
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.file.FileUrlEntity
 import com.cainsgl.common.exception.BusinessException
@@ -166,8 +167,13 @@ class FileController
         // 设置响应头
         response.setHeader("ETag", sha256Hash)
 
-        // 重定向到预签名URL
-        val downloadUrl = fileService.getDownloadUrl(sha256Hash, extension, expiresInSeconds = 300)
+        // 重定向到预签名URL（带缓存，7天有效期）
+        val downloadUrl = fileService.getDownloadUrl(
+            sha256Hash = sha256Hash, 
+            extension = extension, 
+            expiresInSeconds = 604800,  // 7天
+            shortUrl = shortUrl
+        )
         response.sendRedirect(downloadUrl)
         return ResultCode.FORWARD
     }
@@ -184,13 +190,24 @@ class FileController
         val fileEntity = fileUrlService.getById(shortUrl) ?: return ResultCode.RESOURCE_NOT_FOUND
         val sha256Hash = fileEntity.url ?: return ResultCode.RESOURCE_NOT_FOUND
         val extension = fileEntity.name?.substringAfterLast(".", "") ?: ""
-            
+
+
+        if(fileEntity.fileSize!!>5*1024*1024)
+        {
+            if (!StpUtil.isLogin())
+            {
+                return Result.error("该文件过大，请先登录后再使用！")
+            }
+        }
+
+        // 使用缓存的预签名URL，7天有效期
         val downloadUrl = fileService.getDownloadUrl(
             sha256Hash = sha256Hash,
             extension = extension,
-            expiresInSeconds = 30,
+            expiresInSeconds = 604800,  // 7天
             isDownload = true,
-            filename = fileEntity.name
+            filename = fileEntity.name,
+            shortUrl = shortUrl
         )
         response.sendRedirect(downloadUrl)
         return ResultCode.FORWARD

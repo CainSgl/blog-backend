@@ -52,3 +52,11 @@ data class CursorPostRequest(
     @field:Max(value = 100, message = "每页数量不能超过100")
     val pageSize: Int
 )
+
+data class OverviewPostRequest(
+    @field:Min(value = 1, message = "页码必须大于0")
+    val page: Long = 1,
+    @field:Max(value = 100, message = "每页数量不能超过100")
+    @field:Min(value = 1, message = "每页数量必须大于0")
+    val size: Long = 20
+)

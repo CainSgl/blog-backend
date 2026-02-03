@@ -13,7 +13,7 @@ create table "user"
     username       varchar(50),
     email          varchar(100),
     password_hash  varchar(255),
-    nickname       varchar(30)   default '用户'::character varying     not null,
+    nickname       varchar(30)   default 'user'::character varying     not null,
     bio            varchar(100)  default ''::character varying         not null,
     level          integer       default 0                             not null,
     experience     integer       default 0                             not null,
@@ -88,13 +88,13 @@ create unique index idx_users_username_unique
 CREATE OR REPLACE FUNCTION update_user_level_on_exp()
     RETURNS TRIGGER AS $$
 DECLARE
-    new_level INTEGER;
+new_level INTEGER;
     required_exp INTEGER;
 BEGIN
     -- 如果经验值没有增加，直接返回
     IF NEW.experience <= OLD.experience THEN
         RETURN NEW;
-    END IF;
+END IF;
 
     -- 初始化新等级为当前等级
     new_level := OLD.level;
@@ -103,26 +103,26 @@ BEGIN
     -- 从当前等级+1开始检查，直到找到经验值不足以升级的等级
     LOOP
         -- 计算下一级所需的累计经验值：2^(new_level + 1)
-        required_exp := POWER(2, new_level + 1)::INTEGER;
+required_exp := POWER(2, new_level + 1)::INTEGER;
 
         -- 如果当前经验值达到了下一级的要求，则升级
         IF NEW.experience >= required_exp THEN
             new_level := new_level + 1;
-        ELSE
+ELSE
             -- 经验值不足以继续升级，退出循环
             EXIT;
-        END IF;
+END IF;
 
         -- 防止无限循环（理论上不会发生，但作为安全措施）
         IF new_level > 100 THEN
             EXIT;
-        END IF;
-    END LOOP;
+END IF;
+END LOOP;
 
     -- 更新等级字段
     NEW.level := new_level;
 
-    RETURN NEW;
+RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -133,7 +133,7 @@ CREATE TRIGGER trigger_update_user_level
     BEFORE UPDATE OF experience
     ON "user"
     FOR EACH ROW
-EXECUTE FUNCTION update_user_level_on_exp();
+    EXECUTE FUNCTION update_user_level_on_exp();
 
 -- 使用说明和测试示例
 COMMENT ON FUNCTION update_user_level_on_exp() IS '
@@ -166,12 +166,17 @@ alter table permission_group
 -- =============================================
 create table category
 (
-    id         bigint                  not null,
-    name       varchar(100)            not null,
-    parent_id  bigint,
-    created_at timestamp default now() not null,
-    constraint categories_pkey primary key (id),
-    constraint categories_name_key unique (name)
+    id         bigint                  not null
+        constraint categories_pkey
+            primary key,
+    name       varchar(100)            not null
+        constraint categories_name_key
+            unique,
+    parent_id  bigint
+        constraint categories_parent_id_fkey
+            references category
+            on delete set null,
+    created_at timestamp default now() not null
 );
 COMMENT ON COLUMN category.id IS '分类ID，主键';
 COMMENT ON COLUMN category.name IS '分类名称';
@@ -210,7 +215,7 @@ create table post
     version         integer        default 1,
     like_ratio      numeric generated always as (
         CASE
-            WHEN (view_count = 0) THEN (1)::numeric
+        WHEN (view_count = 0) THEN (1)::numeric
             ELSE ((like_count)::numeric / (view_count)::numeric)
             END) stored,
     star_count      integer        default 0
@@ -328,15 +333,21 @@ create index idx_knowledge_bases_cursor_status
 -- =============================================
 create table directory
 (
-    id        bigint       not null,
-    kb_id     bigint       not null,
-    parent_id bigint,
+    id        bigint       not null
+        constraint directories_pkey
+            primary key,
+    kb_id     bigint       not null
+        constraint directories_kb_id_fkey
+            references knowledge_base
+            on delete cascade,
+    parent_id bigint
+        constraint directories_parent_id_fkey
+            references directory
+            on delete set null,
     name      varchar(100) not null,
     post_id   bigint,
     sort_num  smallint default 0,
-    user_id   bigint,
-    -- 仅保留主键约束，确保 ID 唯一
-    constraint directories_pkey primary key (id)
+    user_id   bigint
 );
 COMMENT ON TABLE directory IS '知识库的目录层级结构';
 COMMENT ON COLUMN directory.id IS '目录节点ID';
@@ -642,7 +653,7 @@ create table reply
     user_id          bigint,
     content          varchar(255)                 not null,
     like_count       integer default 0            not null,
-    created_at       timestamp    default now() not null,
+    created_at       date    default CURRENT_DATE not null,
     post_comment_id  bigint,
     reply_id         bigint,
     reply_comment_id bigint
@@ -820,4 +831,105 @@ alter table user_oauth
 create unique index user_oauth_id_provider_user_id_index
     on user_oauth (provider_user_id, provider);
 
+
+-- =============================================
+-- 20. chat 表
+-- =============================================
+create table chat_session
+(
+    id                bigint              not null
+        primary key,
+    user_id_1         bigint              not null,
+    user_id_2         bigint              not null,
+    last_message      text,
+    last_message_time timestamp,
+    created_at        timestamp default CURRENT_TIMESTAMP,
+    deleted_by_user1  boolean   default false,
+    deleted_by_user2  boolean   default false,
+    msg_1             integer   default 0 not null,
+    msg_2             integer   default 0 not null,
+    constraint uk_users
+        unique (user_id_1, user_id_2)
+);
+
+comment on table chat_session is '聊天会话表：存储两个用户之间的聊天会话核心信息，确保一对用户仅一个会话';
+
+comment on column chat_session.id is '会话主键ID，唯一标识一个聊天会话';
+
+comment on column chat_session.user_id_1 is '会话参与方1，存储较小的用户ID，用于统一会话存储规则';
+
+comment on column chat_session.user_id_2 is '会话参与方2，存储较大的用户ID，与user_id_1配合确保会话唯一性';
+
+comment on column chat_session.last_message is '会话最后一条消息内容，用于会话列表快速展示';
+
+comment on column chat_session.last_message_time is '最后一条消息的发送时间，用于会话列表按时间排序';
+
+comment on column chat_session.created_at is '会话创建时间，默认值为当前系统时间';
+
+comment on column chat_session.deleted_by_user1 is 'user_id_1 是否删除了会话（拉黑对方），TRUE表示已删除';
+
+comment on column chat_session.deleted_by_user2 is 'user_id_2 是否删除了会话（拉黑对方），TRUE表示已删除';
+
+comment on constraint uk_users on chat_session is '唯一约束：限制user_id_1和user_id_2的组合唯一，避免同一对用户创建多个会话';
+
+alter table chat_session
+    owner to postgres;
+
+create index idx_user1
+    on chat_session (user_id_1);
+
+comment on index idx_user1 is '索引：加速通过user_id_1查询用户参与的所有会话';
+
+create index idx_user2
+    on chat_session (user_id_2);
+
+comment on index idx_user2 is '索引：加速通过user_id_2查询用户参与的所有会话';
+
+create table chat_message
+(
+    id          bigint not null
+        primary key,
+    session_id  bigint not null,
+    sender_id   bigint not null,
+    receiver_id bigint not null,
+    content     text   not null,
+    created_at  timestamp default CURRENT_TIMESTAMP
+);
+
+comment on table chat_message is '聊天消息表：存储每个会话中的具体聊天消息，关联到对应的聊天会话';
+
+comment on column chat_message.id is '消息主键ID，唯一标识一条聊天消息';
+
+comment on column chat_message.session_id is '消息所属会话ID，关联chat_session表的id字段';
+
+comment on column chat_message.sender_id is '消息发送者的用户ID';
+
+comment on column chat_message.receiver_id is '消息接收者的用户ID';
+
+comment on column chat_message.content is '消息的具体内容，不允许为空';
+
+comment on column chat_message.created_at is '消息发送时间，默认值为当前系统时间';
+
+alter table chat_message
+    owner to postgres;
+
+create index idx_session
+    on chat_message (session_id, created_at);
+
+comment on index idx_session is '复合索引：加速按会话ID查询消息，并按消息发送时间排序（聊天窗口加载消息的核心索引）';
+
+create table user_setting
+(
+    user_id bigint not null
+        constraint user_setting_pk
+            primary key,
+    json    jsonb
+);
+
+comment on column user_setting.user_id is '用户id';
+
+comment on column user_setting.json is '用户自定义数据';
+
+alter table user_setting
+    owner to postgres;
 

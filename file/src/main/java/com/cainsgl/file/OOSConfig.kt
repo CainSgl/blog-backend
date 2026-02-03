@@ -13,6 +13,7 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
 import org.springframework.web.multipart.MultipartFile
 import java.io.IOException
@@ -45,6 +46,9 @@ class FileService
 
     @Value("\${oos.bucketName}")
     lateinit var bucketName: String
+
+    @Resource
+    lateinit var redisTemplate: RedisTemplate<String, String>
 
     @Throws(IOException::class)
     fun upload(file: MultipartFile): String
@@ -92,17 +96,58 @@ class FileService
     }
 
     /**
-     * 生成预签名下载URL
+     * 生成预签名下载URL（带Redis缓存）
      * @param sha256Hash SHA256 hash 字符串
      * @param extension 文件扩展名（可选）
      * @param expiresInSeconds URL有效期（秒）
      * @param isDownload 是否作为附件下载（true）或内联显示（false）
      * @param filename 下载时的文件名（仅在isDownload=true时使用）
+     * @param shortUrl 文件的短链接ID（用于缓存key）
      * @return 预签名URL
      */
     fun getDownloadUrl(
-        sha256Hash: String, extension: String? = null, expiresInSeconds: Long = 300, isDownload: Boolean = false,
-        filename: String? = null
+        sha256Hash: String, extension: String? = null, expiresInSeconds: Long = 604800, isDownload: Boolean = false,
+        filename: String? = null, shortUrl: Long
+    ): String
+    {
+
+
+        // 如果提供了shortUrl，尝试从Redis获取缓存的URL
+        val cacheKey = "presigned_url:$shortUrl:${if (isDownload) "download" else "view"}"
+        val cachedUrl = redisTemplate.opsForValue().get(cacheKey)
+        if (!cachedUrl.isNullOrBlank())
+        {
+            log.info { "从缓存获取预签名URL: shortUrl=$shortUrl" }
+            return cachedUrl
+        }
+
+        // 缓存未命中，生成新的预签名URL
+        val newUrl= if (shortUrl < 100)
+        {
+
+           generatePresignedUrl(sha256Hash, extension, 2592000, isDownload, filename)
+
+        } else
+        {
+            generatePresignedUrl(sha256Hash, extension, expiresInSeconds, isDownload, filename)
+        }
+        if(shortUrl <100)
+        {
+            redisTemplate.opsForValue().set(cacheKey, newUrl, java.time.Duration.ofSeconds(2582000))
+        }else
+        {
+            redisTemplate.opsForValue().set(cacheKey, newUrl, java.time.Duration.ofSeconds(expiresInSeconds))
+        }
+        // 缓存7天（604800秒）
+        log.info { "生成并缓存预签名URL: shortUrl=$shortUrl, 有效期=7天" }
+        return newUrl
+    }
+
+    /**
+     * 实际生成预签名URL的内部方法
+     */
+    private fun generatePresignedUrl(
+        sha256Hash: String, extension: String?, expiresInSeconds: Long, isDownload: Boolean, filename: String?
     ): String
     {
         val objectKey = buildObjectKey(sha256Hash, extension)
@@ -131,26 +176,17 @@ class FileService
      * @return 包含policy、signature等字段的Map
      */
     fun generatePresignedPostSignature(
-        sha256Hash: String,
-        extension: String,
-        expiresInSeconds: Long = 6
+        sha256Hash: String, extension: String, expiresInSeconds: Long = 6
     ): Map<String, String>
     {
         val objectKey = buildObjectKey(sha256Hash, extension)
-        val input = PreSignedPostSignatureInput()
-            .setBucket(bucketName)
-            .setKey(objectKey)
-            .setExpires(expiresInSeconds)
+        val input = PreSignedPostSignatureInput().setBucket(bucketName).setKey(objectKey).setExpires(expiresInSeconds)
 
         val output = tos.preSignedPostSignature(input)
-        
+
         return mapOf(
-            "url" to "https://${bucketName}.tos-cn-hongkong.volces.com",
-            "key" to objectKey,
-            "policy" to output.policy,
-            "algorithm" to output.algorithm,
-            "credential" to output.credential,
-            "date" to output.date,
+            "url" to "https://${bucketName}.tos-cn-hongkong.volces.com", "key" to objectKey, "policy" to output.policy,
+            "algorithm" to output.algorithm, "credential" to output.credential, "date" to output.date,
             "signature" to output.signature
         )
     }

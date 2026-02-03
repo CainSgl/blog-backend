@@ -1,5 +1,6 @@
 package com.cainsgl.file.controller
 
+import cn.dev33.satoken.annotation.SaCheckRole
 import com.cainsgl.file.FileService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
@@ -97,9 +98,25 @@ class BackGroundController : InitializingBean
             sha256Hash = backgroundUrl,
             expiresInSeconds = URL_EXPIRES_SECONDS,
             isDownload = false,
-            filename=""
+            filename="",
+            shortUrl = num % backgrounds!!.size.toLong()+1
         )
         
         response.sendRedirect(downloadUrl)
+    }
+    @SaCheckRole("admin")
+    @GetMapping("/background/reset")
+    fun reset():Any?
+    {
+        val loadedBackgrounds = redisTemplate.opsForList().range(WELCOME_REDIS_PREFIX_BACKGROUND, 0, -1)
+        if (loadedBackgrounds.isNullOrEmpty())
+        {
+            log.error { "无法加载背景图片列表" }
+        } else
+        {
+            log.info { "成功加载 ${loadedBackgrounds.size} 张背景图片" }
+        }
+        this.backgrounds = loadedBackgrounds
+        return loadedBackgrounds
     }
 }

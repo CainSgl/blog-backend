@@ -492,4 +492,31 @@ class PostController
         }
         return ResultCode.SUCCESS
     }
+
+    @PostMapping("/overview")
+    fun overview(@RequestBody @Valid request: OverviewPostRequest): Any
+    {
+        // 创建分页参数，只有第一页才查询总数
+        val pageParam = Page<PostEntity>(request.page, request.size).apply {
+            if (request.page > 1) {
+                setSearchCount(false)
+            }
+        }
+        
+        val queryWrapper = QueryWrapper<PostEntity>().apply {
+            select(PostEntity.BASIC_COL)
+            eq("status", ArticleStatus.PUBLISHED)
+            orderByDesc("published_at")
+        }
+        
+        val result = postService.page(pageParam, queryWrapper)
+        
+        return PageResponse(
+            records = result.records,
+            total = if (request.page == 1L) result.total else 0L,
+            pages = result.pages,
+            current = result.current,
+            size = result.size
+        )
+    }
 }

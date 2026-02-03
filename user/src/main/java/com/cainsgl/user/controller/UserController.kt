@@ -11,6 +11,7 @@ import com.cainsgl.user.dto.response.UserGetResponse
 import com.cainsgl.user.service.UserExtraInfoServiceImpl
 import com.cainsgl.user.service.UserServiceImpl
 import com.cainsgl.user.service.CheckInServiceImpl
+import com.cainsgl.user.service.UserDocumentService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
 import org.springframework.web.bind.annotation.*
@@ -32,6 +33,9 @@ class UserController
 
     @Resource
     lateinit var checkInService: CheckInServiceImpl
+
+    @Resource
+    lateinit var userDocumentService: UserDocumentService
 
 
     /**
@@ -86,15 +90,63 @@ class UserController
     }
 
     @GetMapping("/search")
-    fun search(@RequestParam keyword: String): Any
+    fun search(
+        @RequestParam keyword: String,
+        @RequestParam(required = false) size: Int = 20,
+        @RequestParam(required = false) searchAfter: List<Any>? = null
+    ): Any
     {
-        //直接根据id搜索用户
-        val user = userService.getById(keyword.toLongOrNull() ?: 0)
-        if (user != null)
+        // 先尝试根据 ID 精确搜索
+        val userId = keyword.toLongOrNull()
+        if (userId != null)
         {
-            return UserGetResponse(user, userExtraInfoService.getBySaveOnNull(user.id!!))
+            val user = userService.getById(userId)
+            if (user != null)
+            {
+                return mapOf(
+                    "data" to listOf(UserGetResponse(user, userExtraInfoService.getBySaveOnNull(user.id!!))),
+                    "total" to 1L,
+                    "hasMore" to false,
+                    "searchAfter" to null
+                )
+            }
         }
-        return ResultCode.RESOURCE_NOT_FOUND
+
+        // 使用 ES 搜索昵称
+        val searchResult = userDocumentService.search(keyword, size, searchAfter)
+        
+        // 根据 ES 返回的 ID 列表，从数据库回表查询完整用户信息
+        val userIds = searchResult.data.map { it.id }
+        if (userIds.isEmpty())
+        {
+            return mapOf(
+                "data" to emptyList<UserGetResponse>(),
+                "total" to 0L,
+                "hasMore" to false,
+                "searchAfter" to null
+            )
+        }
+
+        // 批量查询用户信息
+        val users = userService.listByIds(userIds)
+        val userMap = users.associateBy { it.id!! }
+
+        // 按照 ES 返回的顺序组装结果，并附加热信息
+        val result = searchResult.data.mapNotNull { doc ->
+            userMap[doc.id]?.let { user ->
+                UserGetResponse(
+                    user.calculateLevelInfo().sanitizeSystemSensitiveData(),
+                    userExtraInfoService.getBySaveOnNull(user.id!!)
+                )
+            }
+        }
+
+        return mapOf(
+            "data" to result,
+            "total" to searchResult.total,
+            "hasMore" to searchResult.hasMore,
+            "searchAfter" to searchResult.searchAfter
+        )
     }
 
     /**

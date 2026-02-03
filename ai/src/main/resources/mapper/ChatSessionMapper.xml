@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cainsgl.ai.repository.ChatSessionMapper">
+    
+    <select id="findSessionByUsers" resultType="com.cainsgl.ai.entity.ChatSessionEntity">
+        SELECT * FROM chat_session
+        WHERE (user_id_1 = #{userId1} AND user_id_2 = #{userId2})
+           OR (user_id_1 = #{userId2} AND user_id_2 = #{userId1})
+        LIMIT 1
+    </select>
+    
+    <select id="findUserSessions" resultType="com.cainsgl.ai.entity.ChatSessionEntity">
+        SELECT * FROM chat_session
+        WHERE (
+            (user_id_1 = #{userId} AND deleted_by_user1 = false)
+            OR (user_id_2 = #{userId} AND deleted_by_user2 = false)
+        )
+        <if test="lastId != null">
+            AND id &lt; #{lastId}
+        </if>
+        ORDER BY last_message_time DESC NULLS LAST, id DESC
+        LIMIT #{pageSize}
+    </select>
+    
+    <select id="findUnreadSessions" resultType="com.cainsgl.ai.entity.ChatSessionEntity">
+        SELECT * FROM chat_session
+        WHERE (
+            (user_id_1 = #{userId} AND msg_1 > 0 AND deleted_by_user1 = false)
+            OR (user_id_2 = #{userId} AND msg_2 > 0 AND deleted_by_user2 = false)
+        )
+        ORDER BY last_message_time DESC NULLS LAST, id DESC
+        LIMIT #{pageSize}
+    </select>
+    
+    <update id="clearAllUnreadCount">
+        UPDATE chat_session
+        SET msg_1 = CASE WHEN user_id_1 = #{userId} THEN 0 ELSE msg_1 END,
+            msg_2 = CASE WHEN user_id_2 = #{userId} THEN 0 ELSE msg_2 END
+        WHERE id IN
+        <foreach collection="sessionIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+    
+    <update id="incrementUnreadCount">
+        UPDATE chat_session
+        SET msg_1 = CASE 
+                WHEN user_id_1 = #{userId} AND deleted_by_user1 = false 
+                THEN msg_1 + 1 
+                ELSE msg_1 
+            END,
+            msg_2 = CASE 
+                WHEN user_id_2 = #{userId} AND deleted_by_user2 = false 
+                THEN msg_2 + 1 
+                ELSE msg_2 
+            END
+        WHERE id = #{sessionId}
+    </update>
+    
+    <update id="clearUnreadCount">
+        UPDATE chat_session
+        SET msg_1 = CASE WHEN user_id_1 = #{userId} THEN 0 ELSE msg_1 END,
+            msg_2 = CASE WHEN user_id_2 = #{userId} THEN 0 ELSE msg_2 END
+        WHERE id = #{sessionId}
+    </update>
+    
+    <update id="deleteSessionByUser">
+        UPDATE chat_session
+        SET deleted_by_user1 = CASE WHEN user_id_1 = #{userId} THEN true ELSE deleted_by_user1 END,
+            deleted_by_user2 = CASE WHEN user_id_2 = #{userId} THEN true ELSE deleted_by_user2 END
+        WHERE id = #{sessionId}
+    </update>
+    
+    <update id="restoreSessionByUser">
+        UPDATE chat_session
+        SET deleted_by_user1 = CASE WHEN user_id_1 = #{userId} THEN false ELSE deleted_by_user1 END,
+            deleted_by_user2 = CASE WHEN user_id_2 = #{userId} THEN false ELSE deleted_by_user2 END
+        WHERE id = #{sessionId}
+    </update>
+    
+    <select id="findDeletedSessions" resultType="com.cainsgl.ai.entity.ChatSessionEntity">
+        SELECT * FROM chat_session
+        WHERE (user_id_1 = #{userId} AND deleted_by_user1 = true)
+           OR (user_id_2 = #{userId} AND deleted_by_user2 = true)
+        ORDER BY last_message_time DESC NULLS LAST, id DESC
+        LIMIT #{pageSize} OFFSET #{page}
+    </select>
+    
+    <select id="countDeletedSessions" resultType="long">
+        SELECT COUNT(*) FROM chat_session
+        WHERE (user_id_1 = #{userId} AND deleted_by_user1 = true)
+           OR (user_id_2 = #{userId} AND deleted_by_user2 = true)
+    </select>
+    
+</mapper>

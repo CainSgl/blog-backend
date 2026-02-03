@@ -34,6 +34,10 @@ class UserHotInfoUtils
         {
             addCount(count, userId, "articleViewCount")
         }
+        fun RedisTemplate<Any, Any>.changeMessageCount(count: Long, userId: Long)
+        {
+            addCount(count, userId, "msgMessageCount")
+        }
         fun RedisTemplate<Any, Any>.changeMsgCount(count: Long, userId: Long,type:Int)
         {
             addCount(count, userId, "msgCount")

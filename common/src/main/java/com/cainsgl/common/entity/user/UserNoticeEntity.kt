@@ -33,7 +33,6 @@ data class UserNoticeEntity(
 
 enum class UserNoticeType(@JsonValue val str:String, @EnumValue val type: Int,val dbField:String,val check:Boolean=dbField != "unknown")
 {
-    //TODO
     REPLY("回复",0,"msgReplyCount"),
     LIKE_POST("点赞文章",1,"msgLikeCount"),
     LIKE_COMMENT("点赞评论",2,"msgLikeCount"),
