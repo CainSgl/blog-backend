@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
 import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page
 import com.cainsgl.api.user.follow.UserFollowService
+import com.cainsgl.article.document.PostDocument
 import com.cainsgl.article.dto.DirectoryTreeDTO
 import com.cainsgl.article.dto.request.CreateKnowledgeBaseRequest
 import com.cainsgl.article.dto.request.CursorKbRequest
@@ -25,8 +26,12 @@ import com.cainsgl.senstitve.config.SensitiveWord
 import jakarta.annotation.Resource
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Min
+import org.springframework.http.MediaType
 import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
+import java.time.LocalDateTime
+import java.util.concurrent.CompletableFuture
 
 @RestController
 @RequestMapping("/post/kb")
@@ -57,6 +62,9 @@ class KnowledgeBaseController
 
     @Resource
     lateinit var postOperationService: PostOperationServiceImpl
+
+    @Resource
+    lateinit var postHistoryService: PostHistoryServiceImpl
 
 
     @GetMapping
@@ -290,5 +298,208 @@ class KnowledgeBaseController
     fun cursor(@RequestBody request: CursorKbRequest): Any
     {
         return knowledgeBaseService.cursor(request.lastCreatedAt, request.lastLike, request.lastId, request.pageSize)
+    }
+
+    /**
+     * 流式返回公开知识库下所有未公开的文档
+     * @param kbId 知识库ID
+     * @return SSE流式响应
+     */
+    @GetMapping("/publish-all-posts", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    fun publishAllPosts(@RequestParam @Min(value = 1, message = "知识库id非法") kbId: Long): SseEmitter
+    {
+        val userId = StpUtil.getLoginIdAsLong()
+        val emitter = SseEmitter(300000L) // 5分钟超时
+        
+        // 验证知识库所有权
+        val kb = knowledgeBaseService.getById(kbId)
+        if (kb == null || kb.userId != userId)
+        {
+            emitter.completeWithError(BusinessException("知识库不存在或无权限操作"))
+            return emitter
+        }
+
+        CompletableFuture.runAsync {
+            try
+            {
+                // 查询该知识库下所有未公开的文档（需要完整信息）
+                val query = KtQueryWrapper(PostEntity::class.java)
+                    .eq(PostEntity::kbId, kbId)
+                    .eq(PostEntity::userId, userId)
+                    .`in`(PostEntity::status, listOf(
+                        ArticleStatus.DRAFT,
+                        ArticleStatus.PENDING_REVIEW,
+                        ArticleStatus.OFF_SHELF,
+                        ArticleStatus.NO_KB
+                    ))
+
+                val unpublishedPosts = postService.list(query)
+                
+                if (unpublishedPosts.isEmpty())
+                {
+                    emitter.send(SseEmitter.event()
+                        .name("info")
+                        .data(mapOf("message" to "没有需要公开的文档")))
+                    emitter.complete()
+                    return@runAsync
+                }
+
+                emitter.send(SseEmitter.event()
+                    .name("start")
+                    .data(mapOf("total" to unpublishedPosts.size)))
+
+                var successCount = 0
+                var failCount = 0
+
+                // 批量发布文档，参考PostController.publish的逻辑
+                unpublishedPosts.forEach { post ->
+                    try
+                    {
+                        // 获取编辑文档的最新版本
+                        val historyQuery = KtQueryWrapper(com.cainsgl.common.entity.article.PostHistoryEntity::class.java)
+                            .select(
+                                com.cainsgl.common.entity.article.PostHistoryEntity::id,
+                                com.cainsgl.common.entity.article.PostHistoryEntity::content,
+                                com.cainsgl.common.entity.article.PostHistoryEntity::version,
+                                com.cainsgl.common.entity.article.PostHistoryEntity::userId
+                            )
+                            .eq(com.cainsgl.common.entity.article.PostHistoryEntity::postId, post.id)
+                            .eq(com.cainsgl.common.entity.article.PostHistoryEntity::userId, userId)
+                            .orderByDesc(com.cainsgl.common.entity.article.PostHistoryEntity::version)
+                            .last("LIMIT 1")
+                        
+                        val history = postHistoryService.getOne(historyQuery)
+                        
+                        if (history == null || history.content.isNullOrEmpty())
+                        {
+                            failCount++
+                            emitter.send(SseEmitter.event()
+                                .name("progress")
+                                .data(mapOf(
+                                    "postId" to post.id,
+                                    "title" to post.title,
+                                    "status" to "failed",
+                                    "message" to "没有历史版本或内容为空",
+                                    "processed" to (successCount + failCount),
+                                    "total" to unpublishedPosts.size
+                                )))
+                            return@forEach
+                        }
+
+                        // 内容清理：XSS过滤和敏感词替换
+                        val sanitizedContent = sensitiveWord.replace(
+                            com.cainsgl.article.util.XssSanitizerUtils.sanitize(history.content!!)!!
+                        )!!
+
+                        // 检查内容是否有变更
+                        if (post.content == sanitizedContent)
+                        {
+                            // 内容没变，只更新状态
+                            val updateWrapper = KtUpdateWrapper(PostEntity::class.java)
+                                .eq(PostEntity::id, post.id)
+                                .eq(PostEntity::userId, userId)
+                                .set(PostEntity::status, ArticleStatus.PUBLISHED)
+                                .set(PostEntity::publishedAt, LocalDateTime.now())
+                            
+                            postService.update(updateWrapper)
+                            successCount++
+                            
+                            emitter.send(SseEmitter.event()
+                                .name("progress")
+                                .data(mapOf(
+                                    "postId" to post.id,
+                                    "title" to post.title,
+                                    "status" to "success",
+                                    "processed" to (successCount + failCount),
+                                    "total" to unpublishedPosts.size
+                                )))
+                            return@forEach
+                        }
+
+                        // 更新post内容和状态
+                        post.content = sanitizedContent
+                        post.version = history.version
+                        post.status = ArticleStatus.PUBLISHED
+                        post.publishedAt = LocalDateTime.now()
+                        
+                        // 更新历史版本内容（防止XSS攻击）
+                        history.content = sanitizedContent
+                        history.createdAt = LocalDateTime.now()
+                        postHistoryService.updateById(history)
+                        
+                        // 创建新的历史版本供作者继续编辑
+                        postHistoryService.save(
+                            com.cainsgl.common.entity.article.PostHistoryEntity(
+                                userId = userId,
+                                postId = post.id,
+                                version = history.version!! + 1,
+                                createdAt = LocalDateTime.now(),
+                                content = sanitizedContent
+                            )
+                        )
+                        
+                        // 更新post实体
+                        postService.updateById(post)
+                        
+                        // 同步到Elasticsearch
+                        if (sanitizedContent.isNotEmpty())
+                        {
+                            postDocumentService.save(
+                                PostDocument(
+                                    id = post.id!!,
+                                    title = post.title ?: "",
+                                    summary = post.summary,
+                                    img = post.img,
+                                    content = sanitizedContent,
+                                    tags = post.tags
+                                )
+                            )
+                        }
+                        
+                        // 清除缓存
+                        postService.removeCache(post.id!!)
+                        
+                        successCount++
+                        emitter.send(SseEmitter.event()
+                            .name("progress")
+                            .data(mapOf(
+                                "postId" to post.id,
+                                "title" to post.title,
+                                "status" to "success",
+                                "processed" to (successCount + failCount),
+                                "total" to unpublishedPosts.size
+                            )))
+                    }
+                    catch (e: Exception)
+                    {
+                        failCount++
+                        emitter.send(SseEmitter.event()
+                            .name("error")
+                            .data(mapOf(
+                                "postId" to post.id,
+                                "title" to post.title,
+                                "message" to (e.message ?: "未知错误")
+                            )))
+                    }
+                }
+
+                // 发送完成事件
+                emitter.send(SseEmitter.event()
+                    .name("complete")
+                    .data(mapOf(
+                        "total" to unpublishedPosts.size,
+                        "success" to successCount,
+                        "failed" to failCount
+                    )))
+                
+                emitter.complete()
+            }
+            catch (e: Exception)
+            {
+                emitter.completeWithError(e)
+            }
+        }
+
+        return emitter
     }
 }

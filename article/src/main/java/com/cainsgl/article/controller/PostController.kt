@@ -318,7 +318,7 @@ class PostController
         history.content = sanitizedContent
         history.createdAt = LocalDateTime.now()
         Thread.ofVirtual().start {
-            //TODO 后续这里的内容交给mq
+            //TODO 后续这里的内容可以交给mq
             postHistoryService.updateById(history)
             //注：这里再发布一个最新版本，是为了作者下次编辑文档的时候，返回他就好了
             postHistoryService.save(
