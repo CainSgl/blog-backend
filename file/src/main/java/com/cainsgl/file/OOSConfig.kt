@@ -25,13 +25,15 @@ class OOSConfig(@Value("\${oos.secretId}") var accessKey: String, @Value("\${oos
     @Bean
     fun oosClient(): TOSV2
     {
-        val endpoint = "tos-cn-hongkong.volces.com"
-        val region = "hongkong"
+        val endpoint = "tos-cn-beijing.volces.com"
+        val region = "cn-beijing"
         val connectTimeoutMills = 20000
         val config = TransportConfig.builder().connectTimeoutMills(connectTimeoutMills).build()
+
         val configuration = TOSClientConfiguration.builder().transportConfig(config).region(region).endpoint(endpoint)
             .credentials(StaticCredentials(accessKey, secretKey)).build()
         val tos = TOSV2ClientBuilder().build(configuration)
+
         return tos
     }
 }
@@ -185,7 +187,7 @@ class FileService
         val output = tos.preSignedPostSignature(input)
 
         return mapOf(
-            "url" to "https://${bucketName}.tos-cn-hongkong.volces.com", "key" to objectKey, "policy" to output.policy,
+            "url" to "https://${bucketName}.tos-cn-beijing.volces.com", "key" to objectKey, "policy" to output.policy,
             "algorithm" to output.algorithm, "credential" to output.credential, "date" to output.date,
             "signature" to output.signature
         )

@@ -65,10 +65,10 @@ class UserController
     @PutMapping
     fun update(@RequestBody request: UpdateUserRequest): Any
     {
+        val userId = StpUtil.getLoginIdAsLong()
+        
         if (request.username != null)
         {
-            //返回
-            val userId = StpUtil.getLoginIdAsLong()
             val update = KtUpdateWrapper(UserEntity::class.java).eq(UserEntity::id, userId).isNull(UserEntity::username)
                 .ne(UserEntity::username, request.username).set(UserEntity::username, request.username)
             return if (userService.update(update))
@@ -79,13 +79,27 @@ class UserController
                 Result.error("用户名重复，请重新输入")
             }
         }
-        val userEntity = UserEntity(id = StpUtil.getLoginIdAsLong()).apply {
+        
+        val userEntity = UserEntity(id = userId).apply {
             nickname = request.nickname
             avatarUrl = request.avatarUrl
             bio = request.bio
             gender = request.gender
         }
         userService.updateById(userEntity)
+        
+        // 如果昵称有更新，同步到 ES（updateById 中已处理，这里是双重保险）
+        if (request.nickname != null)
+        {
+            try
+            {
+                userDocumentService.save(com.cainsgl.user.document.UserDocument(id = userId, nickname = request.nickname))
+            } catch (e: Exception)
+            {
+                log.warn { "同步用户昵称到 ES 失败: userId=$userId, error=${e.message}" }
+            }
+        }
+        
         return ResultCode.SUCCESS
     }
 
