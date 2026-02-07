@@ -19,6 +19,7 @@ import com.cainsgl.common.annotation.RateLimitByToken
 import com.cainsgl.common.dto.response.PageResponse
 import com.cainsgl.common.dto.response.ResultCode
 import com.cainsgl.common.entity.article.ArticleStatus
+import com.cainsgl.common.entity.article.DirectoryEntity
 import com.cainsgl.common.entity.article.PostEntity
 import com.cainsgl.common.entity.article.PostHistoryEntity
 import com.cainsgl.common.exception.BusinessException
@@ -171,6 +172,9 @@ class PostController
             if (postService.remove(query))
             {
                 postDocumentService.delete(id)
+                //尝试删除dir里的文章
+                val query= KtQueryWrapper(DirectoryEntity::class.java).eq(DirectoryEntity::id, id).eq(DirectoryEntity::postId, id)
+                directoryService.remove(query)
             } else
             {
                 return@execute ResultCode.RESOURCE_NOT_FOUND

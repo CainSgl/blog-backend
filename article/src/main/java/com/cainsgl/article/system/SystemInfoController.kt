@@ -104,6 +104,7 @@ class SystemInfoController
             response.status = HttpServletResponse.SC_NOT_MODIFIED
             return ResultCode.SUCCESS
         }
+        post.content=postService.getPostContent(id)
         response.setHeader("ETag", post.version.toString())
         return post
     }
@@ -114,6 +115,7 @@ class SystemInfoController
     ): Any
     {
         val post = postService.getPostBaseInfo(id)
+
         if (post?.kbId != 1L)
         {
             return ResultCode.RESOURCE_NOT_FOUND
@@ -124,6 +126,7 @@ class SystemInfoController
             response.status = HttpServletResponse.SC_NOT_MODIFIED
             return ResultCode.SUCCESS
         }
+        post.content=postService.getPostContent(id)
         response.setHeader("ETag", post.version.toString())
         return post
     }

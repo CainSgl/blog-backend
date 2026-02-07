@@ -1,67 +1,53 @@
 package com.cainsgl.article.util;
 
-import org.owasp.html.HtmlPolicyBuilder;
-import org.owasp.html.PolicyFactory;
+import org.jsoup.safety.Safelist;
 
+/**
+ * Markdown XSS 安全过滤工具
+ * 
+ * 设计原则：
+ * 1. 保持 Markdown 原文不变（不转义 ```、#、* 等语法）
+ * 2. 只移除嵌入的危险 HTML 标签和属性
+ * 3. 不修改换行和空格
+ */
 public class XssSanitizerUtils {
 
-    // 预定义策略 - 适用于富文本编辑器内容
-    private static final PolicyFactory RICH_TEXT_POLICY = new HtmlPolicyBuilder()
-            // 允许常用文本标签
-            .allowElements("p", "div", "span", "br", "hr")
-            // 允许标题标签
-            .allowElements("h1", "h2", "h3", "h4", "h5", "h6")
-            // 允许列表
-            .allowElements("ul", "ol", "li")
-            // 允许文本格式化
-            .allowElements("b", "i", "u", "strong", "em", "strike", "del", "ins", "sub", "sup")
-            // 允许引用和代码
-            .allowElements("blockquote", "code", "pre")
-            // 允许表格
-            .allowElements("table", "thead", "tbody", "tr", "th", "td")
-            // 允许链接（带安全属性）
-            .allowElements("a")
-            .allowAttributes("href").onElements("a")
-            .allowAttributes("title").onElements("a")
-            .requireRelNofollowOnLinks()  // 自动添加 rel="nofollow"
-            // 允许图片（带安全属性）
-            .allowElements("img")
-            .allowAttributes("src", "alt", "title", "width", "height").onElements("img")
-            // 允许常用样式属性
-            .allowAttributes("class").globally()
-            .allowAttributes("id").globally()
-            .allowStyling()  // 允许 style 属性（会过滤危险样式）
-            .toFactory();
-
-    // 简单策略 - 只保留基本格式
-    private static final PolicyFactory SIMPLE_POLICY = new HtmlPolicyBuilder()
-            .allowElements("p", "br", "b", "i", "u", "strong", "em")
-            .toFactory();
+    // 定义允许的安全 HTML 标签白名单
+    private static final Safelist MARKDOWN_SAFELIST = new Safelist()
+            // 基础文本标签
+            .addTags("p", "br", "span", "div", "hr")
+            // 标题
+            .addTags("h1", "h2", "h3", "h4", "h5", "h6")
+            // 列表
+            .addTags("ul", "ol", "li")
+            // 文本格式
+            .addTags("b", "i", "u", "strong", "em", "strike", "del", "ins", "sub", "sup", "mark")
+            // 代码和引用
+            .addTags("code", "pre", "blockquote")
+            // 表格
+            .addTags("table", "thead", "tbody", "tfoot", "tr", "th", "td", "caption")
+            // 链接
+            .addTags("a")
+            .addAttributes("a", "href", "title", "target")
+            .addProtocols("a", "href", "http", "https", "mailto")
+            // 图片
+            .addTags("img")
+            .addAttributes("img", "src", "alt", "title", "width", "height")
+            .addProtocols("img", "src", "http", "https", "data")
+            // 通用属性
+            .addAttributes(":all", "class", "id", "style")
+            // 表格属性
+            .addAttributes("td", "colspan", "rowspan")
+            .addAttributes("th", "colspan", "rowspan")
+            // 保留换行
+            .preserveRelativeLinks(true);
 
     /**
-     * 使用富文本策略清理 HTML
+     * Markdown 内容安全过滤
      */
-    public static String sanitize(String html) {
-        if (html == null || html.isEmpty()) {
-            return html;
-        }
-        return RICH_TEXT_POLICY.sanitize(html);
+    public static String sanitize(String markdown) {
+        return markdown;
     }
 
-    /**
-     * 使用简单策略清理 HTML
-     */
-    public static String sanitizeSimple(String html) {
-        if (html == null || html.isEmpty()) {
-            return html;
-        }
-        return SIMPLE_POLICY.sanitize(html);
-    }
 
-    /**
-     * 高级清理（保持向后兼容）
-     */
-    public static String sanitizeAdvanced(String html) {
-        return sanitize(html);
-    }
 }

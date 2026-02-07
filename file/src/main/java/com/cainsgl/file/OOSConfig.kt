@@ -36,6 +36,20 @@ class OOSConfig(@Value("\${oos.secretId}") var accessKey: String, @Value("\${oos
 
         return tos
     }
+    @Bean
+    fun frontOssClient(): TOSV2
+    {
+        val endpoint = "tos-cn-hongkong.volces.com"
+        val region = "hongkong"
+        val connectTimeoutMills = 20000
+        val config = TransportConfig.builder().connectTimeoutMills(connectTimeoutMills).build()
+
+        val configuration = TOSClientConfiguration.builder().transportConfig(config).region(region).endpoint(endpoint)
+            .credentials(StaticCredentials(accessKey, secretKey)).build()
+        val tos = TOSV2ClientBuilder().build(configuration)
+
+        return tos
+    }
 }
 
 private val log = KotlinLogging.logger {}
@@ -43,7 +57,7 @@ private val log = KotlinLogging.logger {}
 @Component
 class FileService
 {
-    @Resource
+    @Resource(name = "oosClient")
     lateinit var tos: TOSV2
 
     @Value("\${oos.bucketName}")
