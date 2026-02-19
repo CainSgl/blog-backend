@@ -34,6 +34,10 @@ class PostDocumentService
         //对title和summary去除标签
         postDocument.title = postDocument.title.let { str -> Jsoup.parse(str).text() }
         postDocument.summary = postDocument.summary?.let { str -> Jsoup.parse(str).text() }
+        //清洗标签，去除权重信息（格式：标签名:0.x）
+        postDocument.tags = postDocument.tags?.map { tag -> 
+            tag.substringBefore(':').trim()
+        }?.filter { it.isNotEmpty() }
         elasticsearchOperations.save(postDocument, IndexCoordinates.of("posts"))
     }
 
@@ -49,6 +53,12 @@ class PostDocumentService
         //去除title和summary中的标签
         postDocuments.forEach { it.title = it.title.let { str -> Jsoup.parse(str).text() } }
         postDocuments.forEach { it.summary = it.summary?.let { str -> Jsoup.parse(str).text() } }
+        //清洗标签，去除权重信息（格式：标签名:0.x）
+        postDocuments.forEach { doc ->
+            doc.tags = doc.tags?.map { tag -> 
+                tag.substringBefore(':').trim()
+            }?.filter { it.isNotEmpty() }
+        }
         elasticsearchOperations.save(postDocuments, IndexCoordinates.of("posts"))
     }
 
@@ -105,9 +115,10 @@ class PostDocumentService
         if (useTag)
         {
             shouldQueries.add(
-                Query.Builder().terms(
-                        TermsQuery.Builder().field("tags").terms { t -> t.value(listOf(FieldValue.of(query))) }
-                            .boost(2.5f).build()).build())
+                Query.Builder().term { t -> 
+                    t.field("tags").value(query).boost(2.5f)
+                }.build()
+            )
         }
 
         boolQueryBuilder.should(shouldQueries)
@@ -138,8 +149,10 @@ class PostDocumentService
         val documents = searchHits.searchHits.map { hit ->
             val doc = hit.content
             val highlightFields = hit.highlightFields
+            // 只有当高亮存在时才替换，否则保留原值
             highlightFields["title"]?.firstOrNull()?.let { doc.title = it }
             highlightFields["summary"]?.firstOrNull()?.let { doc.summary = it }
+            // 确保 summary 不为 null 时才返回（如果原始数据有 summary）
             doc
         }
         val nextSearchAfter = searchHits.searchHits.lastOrNull()?.sortValues

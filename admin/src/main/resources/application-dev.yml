@@ -1,0 +1,4 @@
+logging:
+  level:
+    com.cainsgl.admin: DEBUG
+    org.springframework.web: DEBUG

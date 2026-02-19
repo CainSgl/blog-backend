@@ -18,7 +18,7 @@ class PostsCommentServiceImpl : ServiceImpl<PostsCommentMapper, PostsCommentEnti
     {
         return baseMapper.selectByCursor(postId,  lastCreatedAt, lastLikeCount,lastId)
     }
-    fun addCommentCount(id: Long, commentsCount: Int) :Boolean{
+    fun addReplyCount(id: Long, commentsCount: Int) :Boolean{
         val update= KtUpdateWrapper(PostsCommentEntity::class.java).eq(PostsCommentEntity::id,id).setSql("reply_count = reply_count + $commentsCount")
          return update(update)
     }

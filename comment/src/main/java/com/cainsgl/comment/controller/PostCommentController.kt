@@ -88,4 +88,17 @@ class PostCommentController
         redisTemplate.opsForValue().increment(key, increment)
         return ResultCode.SUCCESS
     }
+
+    @DeleteMapping
+    fun deletePostComment(@RequestParam id: Long): ResultCode
+    {
+        val userId = StpUtil.getLoginIdAsLong()
+        val query = KtQueryWrapper(PostsCommentEntity::class.java).eq(PostsCommentEntity::id, id).eq(PostsCommentEntity::userId, userId)
+        transactionTemplate.execute {
+            val entity = postsCommentService.getOne(query) ?: return@execute
+            postsCommentService.removeById(id)
+            changePostCommentCount.changePostCommentCount(entity.postId!!, -1)
+        }
+        return ResultCode.SUCCESS
+    }
 }

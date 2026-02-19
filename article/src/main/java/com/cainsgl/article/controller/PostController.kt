@@ -4,7 +4,6 @@ package com.cainsgl.article.controller
 import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
-import com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page
 import com.cainsgl.api.ai.AiService
 import com.cainsgl.api.user.extra.UserExtraInfoService
@@ -155,13 +154,22 @@ class PostController
 
         return GetPostResponse(postService.getContentByEntity(post), operate)
     }
+    @GetMapping("/basic")
+    fun basic(@RequestParam id: Long): Any
+    {
+        val post = postService.getPostBaseInfo(id) ?: return ResultCode.RESOURCE_NOT_FOUND
+        return post;
+    }
     @GetMapping("/batch")
     fun getBatch(@RequestParam ids: List<Long>): List<PostEntity>?
     {
-        val query= KtQueryWrapper(PostEntity::class.java).select(PostEntity::id,PostEntity::title, PostEntity::viewCount,PostEntity::likeCount,
-            PostEntity::createdAt,PostEntity::img).`in`(PostEntity::id,ids).ge(PostEntity::status, ArticleStatus.PUBLISHED)
-       return postService.list(query)
+        val query = KtQueryWrapper(PostEntity::class.java).select(
+            PostEntity::id, PostEntity::title, PostEntity::viewCount, PostEntity::likeCount, PostEntity::createdAt,
+            PostEntity::img
+        ).`in`(PostEntity::id, ids).ge(PostEntity::status, ArticleStatus.PUBLISHED)
+        return postService.list(query)
     }
+
     @DeleteMapping
     fun delete(@RequestParam id: Long): Any
     {
@@ -173,7 +181,8 @@ class PostController
             {
                 postDocumentService.delete(id)
                 //尝试删除dir里的文章
-                val query= KtQueryWrapper(DirectoryEntity::class.java).eq(DirectoryEntity::id, id).eq(DirectoryEntity::postId, id)
+                val query = KtQueryWrapper(DirectoryEntity::class.java).eq(DirectoryEntity::id, id)
+                    .eq(DirectoryEntity::postId, id)
                 directoryService.remove(query)
             } else
             {
@@ -182,6 +191,7 @@ class PostController
             return@execute ResultCode.SUCCESS
         } ?: ResultCode.UNKNOWN_ERROR
     }
+
     @GetMapping("/top")
     fun getTopPostByUserId(@RequestParam id: Long): Any
     {
@@ -194,7 +204,6 @@ class PostController
         query.last("limit 10")
         return postService.list(query)
     }
-
 
 
     @PostMapping
@@ -223,7 +232,7 @@ class PostController
             }
             redisTemplate.changePostCount(1, userId)
             //发送消息
-          //  rocketMQClientTemplate.asyncSendNormalMessage("article:post", postEntity.id, null)
+            //  rocketMQClientTemplate.asyncSendNormalMessage("article:post", postEntity.id, null)
             return@execute CreatePostResponse(postEntity, dirId)
         } ?: ResultCode.UNKNOWN_ERROR
     }
@@ -336,7 +345,7 @@ class PostController
                 return@start
             }
             //发送消息，这里不需要回调，也不需要保证可靠，不是强一致的需求，毕竟只是一次版本的迭代，问题不大
-    //        rocketMQClientTemplate.asyncSendNormalMessage("article:publish", request.id, null)
+            //        rocketMQClientTemplate.asyncSendNormalMessage("article:publish", request.id, null)
             postDocumentService.save(
                 PostDocument(
                     id = post.id!!, title = post.title ?: "", summary = post.summary, img = post.img,
@@ -358,8 +367,6 @@ class PostController
         //剩下的异步去处理就好了
         return ResultCode.SUCCESS
     }
-
-
 
 
     @PostMapping("/search")
@@ -447,7 +454,7 @@ class PostController
             }
             if (!request.keyword.isNullOrEmpty())
             {
-                like("title", request.keyword.lowercase())
+                apply("title ILIKE CONCAT('%', {0}, '%')", request.keyword)
             }
             if (request.onlyTitle)
             {
@@ -476,23 +483,25 @@ class PostController
     }
 
     @GetMapping("/setKb")
-    fun setKb(@RequestParam id: Long,@RequestParam kbId: Long): Any
+    fun setKb(@RequestParam id: Long, @RequestParam kbId: Long): Any
     {
-        val userId=StpUtil.getLoginIdAsLong()
-        val update= KtUpdateWrapper(PostEntity::class.java).eq(PostEntity::id,id).eq(PostEntity::userId,userId).eq(
-            PostEntity::status, ArticleStatus.NO_KB).set(PostEntity::kbId,kbId).set(PostEntity::status, ArticleStatus.DRAFT)
+        val userId = StpUtil.getLoginIdAsLong()
+        val query =
+            KtQueryWrapper(PostEntity::class.java).select(PostEntity::title, PostEntity::id).eq(PostEntity::id, id)
+                .eq(PostEntity::userId, userId).eq(
+                PostEntity::status, ArticleStatus.NO_KB
+            )
         transactionTemplate.execute { status ->
-            if (postService.update(update))
+            val entity = postService.getOne(query) ?: return@execute ResultCode.RESOURCE_NOT_FOUND
+            entity.kbId = kbId
+            entity.status=ArticleStatus.DRAFT
+            //更新成功，去kb里创建
+            val id = directoryService.saveDirectory(kbId, userId, entity.title?:"来自回收站的未命名文档", null,postId=entity.id)
+            if (id == -1L)
             {
-                //更新成功，去kb里创建
-                val id=   directoryService.saveDirectory(kbId, userId, "该文档来自回收站，请重新命名", null)
-                if(id==-1L)
-                {
-                    status.setRollbackOnly();
-                    return@execute ResultCode.PARAM_INVALID;
-                }
+                status.setRollbackOnly();
+                return@execute ResultCode.PARAM_INVALID;
             }
-            return@execute ResultCode.SUCCESS
         }
         return ResultCode.SUCCESS
     }
@@ -502,25 +511,23 @@ class PostController
     {
         // 创建分页参数，只有第一页才查询总数
         val pageParam = Page<PostEntity>(request.page, request.size).apply {
-            if (request.page > 1) {
+            if (request.page > 1)
+            {
                 setSearchCount(false)
             }
         }
-        
+
         val queryWrapper = QueryWrapper<PostEntity>().apply {
             select(PostEntity.BASIC_COL)
             eq("status", ArticleStatus.PUBLISHED)
             orderByDesc("published_at")
         }
-        
+
         val result = postService.page(pageParam, queryWrapper)
-        
+
         return PageResponse(
-            records = result.records,
-            total = if (request.page == 1L) result.total else 0L,
-            pages = result.pages,
-            current = result.current,
-            size = result.size
+            records = result.records, total = if (request.page == 1L) result.total else 0L, pages = result.pages,
+            current = result.current, size = result.size
         )
     }
 }

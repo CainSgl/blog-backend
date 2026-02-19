@@ -1,6 +1,7 @@
 package com.cainsgl.comment.controller
 
 import cn.dev33.satoken.stp.StpUtil
+import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
 import com.cainsgl.comment.dto.request.CreateParagraphRequest
 import com.cainsgl.comment.entity.ParCommentEntity
 import com.cainsgl.comment.entity.ParagraphEntity
@@ -56,5 +57,18 @@ class ParagraphController {
             redisTemplate.changeCommentCount(1,userId)
             return@execute ResultCode.SUCCESS
         }?: ResultCode.UNKNOWN_ERROR
+    }
+
+    @DeleteMapping("/comment")
+    fun deleteParComment(@RequestParam id: Long): ResultCode
+    {
+        val userId = StpUtil.getLoginIdAsLong()
+        val query = KtQueryWrapper(ParCommentEntity::class.java).eq(ParCommentEntity::id, id).eq(ParCommentEntity::userId, userId)
+        transactionTemplate.execute {
+            val entity = commentService.getOne(query) ?: return@execute
+            commentService.removeById(id)
+            paragraphService.addCount(postId = entity.postId!!, version = entity.version!!, dataId = entity.dataId!!, -1)
+        }
+        return ResultCode.SUCCESS
     }
 }

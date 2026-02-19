@@ -25,7 +25,7 @@ data class PostDocument(
     @Field(type = FieldType.Text, analyzer = "ik_smart", searchAnalyzer = "ik_smart")
     var content: String?,
 
-    @Field(type = FieldType.Text, analyzer = "ik_smart", searchAnalyzer = "ik_smart", store = false)
+    @Field(type = FieldType.Text, analyzer = "ik_smart", searchAnalyzer = "ik_smart")
     var summary: String?,
     @Field(type = FieldType.Keyword)
     var img: String?,

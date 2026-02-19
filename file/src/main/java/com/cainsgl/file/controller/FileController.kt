@@ -55,24 +55,33 @@ class FileController
         // 提取文件扩展名
         val extension = request.filename.substringAfterLast(".", "")
         
-        // 检查文件是否已存在（通过SHA256去重）- 使用自定义 Mapper 方法
+        // 检查文件是否已存在（通过SHA256去重）
         val existingFile = fileUrlService.baseMapper.findByUserIdAndUrl(request.sha256)
         
         if (existingFile != null)
         {
-            // 文件已存在，无需上传，释放刚才分配的空间
-           // userService.mallocMemory(userId, -request.fileSize.toInt())
-            return PresignedUploadResponse(
-                url = "",
-                key = "",
-                policy = "",
-                algorithm = "",
-                credential = "",
-                date = "",
-                signature = "",
-                fileId = existingFile.shortUrl,
-                needUpload = false
-            )
+            // 数据库中有记录，但需要验证 OSS 中文件是否真实存在
+            val fileExistsInOss = fileService.isFileExistInOss(request.sha256, extension)
+            
+            if (fileExistsInOss)
+            {
+                // 文件在 OSS 中真实存在，无需上传
+                return PresignedUploadResponse(
+                    url = "",
+                    key = "",
+                    policy = "",
+                    algorithm = "",
+                    credential = "",
+                    date = "",
+                    signature = "",
+                    fileId = existingFile.shortUrl,
+                    needUpload = false
+                )
+            } else
+            {
+                // 数据库有记录但 OSS 文件不存在，删除数据库记录并继续上传流程
+                fileUrlService.removeById(existingFile.shortUrl)
+            }
         }
         
         // 生成预签名POST表单数据

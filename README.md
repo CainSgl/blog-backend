@@ -1,6 +1,6 @@
 1.0Beta
 项目构成
-推荐使用jdk24
+推荐使用jdk25
 
 所有模块均依赖于common
 common包含了

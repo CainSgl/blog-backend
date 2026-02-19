@@ -80,7 +80,25 @@ class ReplyController
         val query = KtQueryWrapper(ReplyEntity::class.java).eq(ReplyEntity::id, id)
         return replyService.getOne(query)
     }
+    @DeleteMapping
+    fun deleteReply(@RequestParam id: Long): ResultCode
+    {
+        val userId= StpUtil.getLoginIdAsLong();
+        val query= KtQueryWrapper(ReplyEntity::class.java).eq(ReplyEntity::id, id).eq(ReplyEntity::userId, userId);
+        transactionTemplate.execute {
+            val entity = replyService.getOne(query) ?: return@execute
+            if(entity.postCommentId != null)
+            {
+                //文章评论，-1
+                postsCommentService.addReplyCount(entity.postCommentId!!,-1);
+            }else if(entity.parCommentId != null)
+            {
+                parCommentService.addReplyCount(entity.parCommentId!!,-1);
+            }
 
+        }
+        return ResultCode.SUCCESS;
+    }
 
     @GetMapping("/notice")
     fun getReplyForNotice(@RequestParam ids: List<Long>): List<NoticeReplyResponse>
@@ -185,7 +203,7 @@ class ReplyController
                 )
             } else
             {
-                postsCommentService.addCommentCount(id = request.postCommentId!!, 1)
+                postsCommentService.addReplyCount(id = request.postCommentId!!, 1)
             }
             replyService.save(replyEntity)
             redisTemplate.changeCommentCount(1, userId)

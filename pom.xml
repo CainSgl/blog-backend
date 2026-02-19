@@ -36,11 +36,9 @@
         <module>consumer</module>
         <module>scheduler</module>
         <module>comment</module>
-
+        <module>admin</module>
         <!-- 聚合模块 -->
         <module>aggregate</module>
-
-
     </modules>
 
     <properties>

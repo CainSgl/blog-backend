@@ -653,7 +653,7 @@ create table reply
     user_id          bigint,
     content          varchar(255)                 not null,
     like_count       integer default 0            not null,
-    created_at       date    default CURRENT_DATE not null,
+    created_at       timestamp    default current_time not null,
     post_comment_id  bigint,
     reply_id         bigint,
     reply_comment_id bigint

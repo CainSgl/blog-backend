@@ -323,6 +323,18 @@ class FileService
     }
 
 
+    /**
+     * 检查文件是否存在于 OSS 中（通过 SHA256 hash）
+     * @param sha256Hash SHA256 hash 字符串
+     * @param extension 文件扩展名（可选）
+     * @return true 表示文件存在，false 表示不存在
+     */
+    fun isFileExistInOss(sha256Hash: String, extension: String? = null): Boolean
+    {
+        val objectKey = buildObjectKey(sha256Hash, extension)
+        return isFileExistInCos(objectKey)
+    }
+
     private fun isFileExistInCos(objectKey: String): Boolean
     {
         // 入参校验（避免空key导致无效请求）
