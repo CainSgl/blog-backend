@@ -84,9 +84,6 @@ object FineLockCacheUtils
         }
     }
 
-    /**
-     * 该方法使用ReentrantLock替代synchronized，避免虚拟线程钉住问题
-     */
     fun <T : Any> withFineLock(cacheKey: String, operate: () -> T?): T?
     {
         val lockObj = LOCK_OBJ_POOL.putIfAbsent(cacheKey, LockInt()) ?: LOCK_OBJ_POOL[cacheKey]!!

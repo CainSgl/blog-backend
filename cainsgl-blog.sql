@@ -446,7 +446,8 @@ create table file_url
     url        bytea,
     name       varchar(255) default '未命名文件'::character varying,
     created_at date         default now(),
-    file_size  integer
+    file_size  integer,
+    status smallint
 );
 
 alter table file_url
