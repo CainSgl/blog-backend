@@ -33,8 +33,26 @@ data class FileUrlEntity(
     
     @TableField("created_at")
     var createdAt: LocalDate? = null,
+    
+    /**
+     * 文件状态：0-待验证，1-可用，2-验证失败，3-已删除
+     */
+    @TableField("status")
+    var status: Int? = 0,
 ) {
     companion object {
-        val BASIC_COL = listOf("short_url", "name", "file_size", "created_at")
+        val BASIC_COL = listOf("short_url", "name", "file_size", "created_at", "status")
+    }
+    
+    /**
+     * 获取文件状态枚举
+     */
+    fun getFileStatus(): FileStatus = FileStatus.fromCodeOrDefault(status ?: 0)
+    
+    /**
+     * 设置文件状态
+     */
+    fun setFileStatus(fileStatus: FileStatus) {
+        this.status = fileStatus.code
     }
 }

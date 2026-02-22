@@ -35,6 +35,9 @@ class FileController
 
     @Resource
     lateinit var userService: UserService
+    
+    @Resource
+    lateinit var fileVerificationService: com.cainsgl.file.service.FileVerificationService
 
     @RateLimitByToken(message = "文件上传过于频繁", interval = 1000, limit = 1)
     @PostMapping("/presigned-upload")
@@ -80,20 +83,24 @@ class FileController
             }
         }
         
-        // 生成预签名POST表单数据
+        // 生成预签名url
         val presignedData = fileService.generatePresignedPostSignature(
             sha256Hash = request.sha256,
             extension = extension
         )
         
-        // 创建文件记录（状态为待上传）
+        // 创建文件记录
         val fileUrlEntity = FileUrlEntity(
             userId = userId,
             url = request.sha256,
             name = request.filename,
-            fileSize = request.fileSize.toInt()
+            fileSize = request.fileSize.toInt(),
+            status = 0
         )
         fileUrlService.save(fileUrlEntity)
+        
+        // 添加延迟验证任务（30分钟后验证）
+        fileVerificationService.addVerificationTask(fileUrlEntity.shortUrl!!)
         
         return PresignedUploadResponse(
             url = presignedData["url"]!!,
