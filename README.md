@@ -5,6 +5,9 @@
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.10-brightgreen)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.3.0-purple)
 
+请查看部署教程
+[cainsgl的小站](https://cainsgl.top/p/2025574517708091394)
+
 一个基于现代化技术栈的高性能个人博客系统，支持单体/微服务架构无缝切换，集成AI能力、向量检索、全文搜索等特性。
 
 ## 核心特性
