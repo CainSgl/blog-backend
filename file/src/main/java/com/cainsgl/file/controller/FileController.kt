@@ -5,6 +5,7 @@ import cn.dev33.satoken.stp.StpUtil
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
 import com.cainsgl.api.user.UserService
+import com.cainsgl.common.annotation.RateLimitByToken
 import com.cainsgl.common.dto.request.CursorList
 import com.cainsgl.common.dto.response.Result
 import com.cainsgl.common.dto.response.ResultCode
@@ -35,12 +36,7 @@ class FileController
     @Resource
     lateinit var userService: UserService
 
-    /**
-     * 获取预签名上传凭证（前端直传）
-     * 1. 检查文件是否已存在（通过SHA256）
-     * 2. 如果存在，直接返回文件信息，无需上传
-     * 3. 如果不存在，生成预签名POST表单数据供前端直传
-     */
+    @RateLimitByToken(message = "文件上传过于频繁", interval = 1000, limit = 1)
     @PostMapping("/presigned-upload")
     fun getPresignedUpload(@RequestBody @Valid request: PresignedUploadRequest): Any
     {

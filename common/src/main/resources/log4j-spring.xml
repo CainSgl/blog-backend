@@ -1,25 +1,34 @@
 <Configuration status="WARN">
+    <Properties>
+        <!-- 应用名称，从环境变量读取，默认为 unknown -->
+        <Property name="APP_NAME">${env:APP_NAME:-unknown}</Property>
+        <Property name="APP_VERSION">${env:APP_VERSION:-unknown}</Property>
+    </Properties>
+
     <Appenders>
-        <Console name="Console" target="SYSTEM_OUT">
+        <!-- JSON 格式输出到控制台，供 Fluent Bit 收集 -->
+        <Console name="JsonConsole" target="SYSTEM_OUT">
+            <EcsLayout serviceName="${APP_NAME}" serviceVersion="${APP_VERSION}">
+                <!-- 添加自定义字段 -->
+                <KeyValuePair key="app" value="${APP_NAME}"/>
+                <KeyValuePair key="version" value="${APP_VERSION}"/>
+                <KeyValuePair key="trace_id" value="%X{traceId}"/>
+                <KeyValuePair key="span_id" value="%X{spanId}"/>
+                <KeyValuePair key="user_id" value="%X{userId}"/>
+                <KeyValuePair key="request_path" value="%X{requestPath}"/>
+            </EcsLayout>
+        </Console>
+
+        <Console name="HumanConsole" target="SYSTEM_OUT">
             <PatternLayout charset="UTF-8"
                            pattern="[%X{traceId}]%clr{%d{yyyy-MM-dd HH:mm:ss.SSS}}{faint} %clr{%5p} %clr{---}{faint} %clr{[%15.15t]}{faint} %clr{%-40.40c{1.}}{cyan} %clr{:}{faint} %m%n"/>
         </Console>
-        <Socket name="LOGSTASH"
-                host="${spring:logstash.host}"
-                port="${spring:logstash.port}"
-                protocol="TCP">
-            <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
-            <JsonLayout complete="false" compact="true" charset="UTF-8" eventEol="true">
-                <!-- traceId 从 MDC 中读取；未设置时为空字符串，不影响日志。为避免强耦合，不依赖应用具体实现 -->
-                <KeyValuePair key="traceId" value="%X{traceId}"/>
-            </JsonLayout>
-        </Socket>
     </Appenders>
 
     <Loggers>
         <Root level="INFO">
-            <AppenderRef ref="Console"/>
-            <AppenderRef ref="LOGSTASH"/>
+            <!-- 默认使用 JSON 格式，可通过环境变量 LOG_FORMAT=human 切换为人类可读格式 -->
+            <AppenderRef ref="${env:LOG_FORMAT:-JsonConsole}"/>
         </Root>
     </Loggers>
 </Configuration>

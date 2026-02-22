@@ -48,6 +48,7 @@ class TokenRateLimiter
     fun checkAccess(method: String, key: String, interval: Long, limit: Int): Boolean
     {
         val redisKey = "$RATE_LIMIT_KEY_PREFIX$method:$key"
+        //TODO 这里是有可能突然崩溃导致redis的key始终无法释放，可以用lua脚本或者后续扫描解决
         val currentCount = redisTemplate.opsForValue().increment(redisKey, 1)
         if (currentCount == 1L) {
             redisTemplate.expire(redisKey, interval, TimeUnit.MILLISECONDS)
