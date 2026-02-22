@@ -47,9 +47,7 @@ class FileVerificationService(
             }
             
             // 检查 OSS 文件是否存在
-            val exists = fileService.isFileExistInOss(sha256Hash, extension)
-            
-            if (exists) {
+            if (fileService.isFileExistInOss(sha256Hash, extension)) {
                 updateFileStatus(shortUrl, FileStatus.AVAILABLE)
                 return true
             } else {

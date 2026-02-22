@@ -15,9 +15,7 @@ class FileVerificationTask(
     private val fileVerificationService: FileVerificationService
 ) {
     
-    /**
-     * 每分钟执行一次文件验证
-     */
+
     @Scheduled(cron = "0 * * * * ?")
     fun verifyFiles() {
         try {

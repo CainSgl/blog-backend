@@ -3,16 +3,19 @@ package com.cainsgl.common.util
 import org.springframework.data.redis.core.RedisTemplate
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.locks.ReentrantLock
 
 class LockInt
 {
+    val lock = ReentrantLock()
     private var num: Int = 0
+    
     fun tryRemove(): Boolean
     {
         return --num == 0
     }
 
-    fun lock()
+    fun increment()
     {
         num++
     }
@@ -82,13 +85,15 @@ object FineLockCacheUtils
     }
 
     /**
-     * 该方法对于的synchronized部分，这里作了一层统一封装处理，保证不内存泄露。
+     * 该方法使用ReentrantLock替代synchronized，避免虚拟线程钉住问题
      */
     fun <T : Any> withFineLock(cacheKey: String, operate: () -> T?): T?
     {
         val lockObj = LOCK_OBJ_POOL.putIfAbsent(cacheKey, LockInt()) ?: LOCK_OBJ_POOL[cacheKey]!!
-        synchronized(lockObj) {
-            lockObj.lock()
+        lockObj.lock.lock()
+        try
+        {
+            lockObj.increment()
             try
             {
                 return operate()
@@ -99,6 +104,9 @@ object FineLockCacheUtils
                     LOCK_OBJ_POOL.remove(cacheKey)
                 }
             }
+        } finally
+        {
+            lockObj.lock.unlock()
         }
     }
 }

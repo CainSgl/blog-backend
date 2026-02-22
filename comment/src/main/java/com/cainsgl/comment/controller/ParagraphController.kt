@@ -42,20 +42,33 @@ class ParagraphController {
         val userId=StpUtil.getLoginIdAsLong()
         val content=sensitiveWord.replace(request.content)
         val comment=ParCommentEntity(userId=userId,dataId =request.dataId,version = request.version, postId = request.postId, content = content)
-        return transactionTemplate.execute {
+        
+        var isParagraphExists = false
+        
+        // 第一个事务：尝试创建 paragraph
+        transactionTemplate.execute {
             try {
                 paragraphService.save(ParagraphEntity(postId = request.postId,dataId = request.dataId,version = request.version))
             } catch (e: DuplicateKeyException) {
-                // 说明在阅读的时候，其他用户去创建他了，直接去用redis自增评论数量即可
-                commentService.save(comment)
-                paragraphService.incrementCount(postId = request.postId, version = request.version,dataId = request.dataId)
-                return@execute ResultCode.SUCCESS
+                // 说明在阅读的时候，其他用户去创建他了
+                isParagraphExists = true
+                // 标记回滚以结束当前事务
+                it.setRollbackOnly()
             }
-            // 说明确实是第一次创建的
+        }
+        
+        // 第二个事务：保存评论
+        return transactionTemplate.execute {
             commentService.save(comment)
-            paragraphService.addCount(postId = request.postId, version = request.version,dataId = request.dataId,1)
-            redisTemplate.changeCommentCount(1,userId)
-            return@execute ResultCode.SUCCESS
+            if (isParagraphExists) {
+                // paragraph 已存在，只需增加计数
+                paragraphService.incrementCount(postId = request.postId, version = request.version,dataId = request.dataId)
+            } else {
+                // 第一次创建，设置初始计数
+                paragraphService.addCount(postId = request.postId, version = request.version,dataId = request.dataId,1)
+                redisTemplate.changeCommentCount(1,userId)
+            }
+            ResultCode.SUCCESS
         }?: ResultCode.UNKNOWN_ERROR
     }
 
@@ -68,6 +81,7 @@ class ParagraphController {
             val entity = commentService.getOne(query) ?: return@execute
             commentService.removeById(id)
             paragraphService.addCount(postId = entity.postId!!, version = entity.version!!, dataId = entity.dataId!!, -1)
+            paragraphService.incrementCount(postId = entity.postId!!, version = entity.version!!, dataId = entity.dataId!!, -1)
         }
         return ResultCode.SUCCESS
     }
