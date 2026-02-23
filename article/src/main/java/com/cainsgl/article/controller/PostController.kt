@@ -136,16 +136,23 @@ class PostController
             return postService.getContentByEntity(post)
         }
 
-        // 获取用户操作信息（点赞、收藏等）
-        val operate = if (userId != null)
+        // 增加文章阅读量（无论是否登录）
+        if (post.kbId != 1L && post.kbId != 2L)
         {
             Thread.ofVirtual().start {
-                if (post.kbId != 1L && post.kbId != 2L)
+                postService.addViewCount(post.id!!, 1)
+                // 如果用户已登录，记录用户相关信息
+                if (userId != null)
                 {
                     redisTemplate.changeViewCount(1L, userId)
                     postViewHistoryService.createHistory(post.id!!, userId)
                 }
             }
+        }
+
+        // 获取用户操作信息（点赞、收藏等）
+        val operate = if (userId != null)
+        {
             postOperationService.getOperateByUserIdAndPostId(userId, post.id!!)
         } else
         {
