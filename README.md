@@ -1,4 +1,5 @@
 # 个人博客系统 - 高性能微服务架构
+cainsgl.top
 
 ![Version](https://img.shields.io/badge/version-1.0Beta-blue)
 ![JDK](https://img.shields.io/badge/JDK-25-orange)
@@ -917,13 +918,12 @@ blog-backend/
 - 提升并发处理能力
 - JDK原生支持，无需额外依赖
 
-## 未来规划
+# 未来功能预测
 
 ### 功能增强
 - [ ] 实时消息推送（WebSocket）
 - [ ] 文章协同编辑
 - [ ] 图片智能压缩
-- [ ] CDN加速
 - [ ] 多语言支持
 
 ### 性能优化
@@ -937,12 +937,8 @@ blog-backend/
 - [ ] 智能推荐系统
 - [ ] 内容审核
 - [ ] 自动纠错
+- [ ] AI知识库Skills
 
-### 运维增强
-- [ ] 链路追踪（Jaeger）
-- [ ] 性能监控（Prometheus + Grafana）
-- [ ] 告警系统
-- [ ] 自动扩缩容
 
 ## 贡献指南
 
@@ -968,8 +964,8 @@ blog-backend/
 ## 联系方式
 
 - 作者：cainsgl
-- 邮箱：your-email@example.com
-- 博客：https://your-blog.com
+- 邮箱：cainsgl80@gmail.com
+- 博客：https://cainsgl.top
 
 ## 致谢
 

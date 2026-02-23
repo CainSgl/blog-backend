@@ -141,3 +141,8 @@ idle:
   task:
     check-interval: 30000
     cpu-threshold: 70.0
+
+# API性能监控配置
+api:
+  performance:
+    threshold: 3000  # 接口执行时间阈值（毫秒），超过此时间将记录错误日志
