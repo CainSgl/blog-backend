@@ -25,6 +25,28 @@ class PostHistoryGrpcService : PostHistoryService
         return response.postHistory.toEntity()
     }
 
+    override fun updateById(historyId: Long, content: String): Boolean
+    {
+        val request = com.cainsgl.grpc.article.UpdateByIdRequest.newBuilder()
+            .setHistoryId(historyId)
+            .setContent(content)
+            .build()
+        val response = postHistoryServiceGrpc.updateById(request)
+        return response.success
+    }
+
+    override fun createNewVersion(userId: Long, postId: Long, version: Int, content: String): Boolean
+    {
+        val request = com.cainsgl.grpc.article.CreateNewVersionRequest.newBuilder()
+            .setUserId(userId)
+            .setPostId(postId)
+            .setVersion(version)
+            .setContent(content)
+            .build()
+        val response = postHistoryServiceGrpc.createNewVersion(request)
+        return response.success
+    }
+
     private fun com.cainsgl.grpc.article.PostHistoryEntity.toEntity(): PostHistoryEntity
     {
         return PostHistoryEntity(

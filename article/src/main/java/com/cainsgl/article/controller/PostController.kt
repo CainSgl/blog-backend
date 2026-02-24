@@ -22,9 +22,11 @@ import com.cainsgl.common.entity.article.DirectoryEntity
 import com.cainsgl.common.entity.article.PostEntity
 import com.cainsgl.common.entity.article.PostHistoryEntity
 import com.cainsgl.common.exception.BusinessException
+import com.cainsgl.common.mq.MessagePublisher
 import com.cainsgl.common.util.user.UserHotInfoUtils.Companion.changePostCount
 import com.cainsgl.common.util.user.UserHotInfoUtils.Companion.changeViewCount
 import com.cainsgl.senstitve.config.SensitiveWord
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
 import jakarta.servlet.http.HttpServletRequest
@@ -52,7 +54,7 @@ class PostController
     lateinit var directoryService: DirectoryServiceImpl
 
     @Resource
-    lateinit var rocketMQClientTemplate: RocketMQClientTemplate
+    lateinit var messagePublisher: MessagePublisher
 
     @Resource
     lateinit var transactionTemplate: TransactionTemplate
@@ -75,6 +77,9 @@ class PostController
     @Resource
     lateinit var redisTemplate: RedisTemplate<Any, Any>
 
+    @Resource
+    lateinit var objectMapper: ObjectMapper
+
     //来自其他模块的，只能通过Service来访问
     @Resource
     lateinit var userExtraInfoService: UserExtraInfoService
@@ -96,8 +101,6 @@ class PostController
     ): Any
     {
         val post = postService.getPostBaseInfo(id) ?: return ResultCode.RESOURCE_NOT_FOUND
-
-        // 获取当前用户ID（如果已登录）
         val userId = if (StpUtil.isLogin()) StpUtil.getLoginIdAsLong() else null
         val isAuthor = userId != null && userId == post.userId
 
@@ -296,8 +299,7 @@ class PostController
         query.eq(PostEntity::id, request.id)
         query.eq(PostEntity::userId, userId)
         //拿到最新发布版本
-        val post = postService.getOne(query) ?: //没对应的数据
-        return ResultCode.RESOURCE_NOT_FOUND
+        val post = postService.getOne(query) ?:return ResultCode.RESOURCE_NOT_FOUND //没对应的数据
 
         //获取编辑文档的最新版本，用来发布
         val historyQuery = KtQueryWrapper(PostHistoryEntity::class.java).select(
@@ -334,20 +336,20 @@ class PostController
         history.content = sanitizedContent
         history.createdAt = LocalDateTime.now()
 
-        // 发送MQ消息处理文章发布后的异步任务
-        sendPostPublishMessage(
-            PostPublishMessage(
-                postId = post.id!!,
-                historyId = history.id!!,
-                userId = history.userId!!,
-                version = history.version!!,
-                content = sanitizedContent!!,
-                title = post.title ?: "",
-                summary = post.summary,
-                img = post.img,
-                tags = post.tags
-            )
+        
+        // 发送消息处理文章发布后的异步任务
+        val message = PostPublishMessage(
+            postId = post.id!!,
+            historyId = history.id!!,
+            userId = history.userId!!,
+            version = history.version!!,
+            content = sanitizedContent!!,
+            title = post.title ?: "",
+            summary = post.summary,
+            img = post.img,
+            tags = post.tags
         )
+        messagePublisher.publish("article:publish", objectMapper.writeValueAsString(message))
         val embedding = aiService.getEmbedding(post.content!!)
         post.vecotr = embedding
         post.status = ArticleStatus.PUBLISHED
@@ -497,23 +499,6 @@ class PostController
         return ResultCode.SUCCESS
     }
 
-    /**
-     * 发送文章发布MQ消息
-     */
-    private fun sendPostPublishMessage(message: PostPublishMessage) {
-        try {
-            val future = java.util.concurrent.CompletableFuture<org.apache.rocketmq.client.apis.producer.SendReceipt>()
-            rocketMQClientTemplate.asyncSendNormalMessage(
-                "article:publish",
-                message,
-                future
-            )
-            log.info { "发送文章发布MQ消息成功, postId=${message.postId}" }
-        } catch (e: Exception) {
-            log.error(e) { "发送文章发布MQ消息失败, postId=${message.postId}" }
-            // MQ发送失败不影响主流程，记录日志即可
-        }
-    }
 
     @PostMapping("/overview")
     fun overview(@RequestBody @Valid request: OverviewPostRequest): Any

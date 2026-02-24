@@ -9,4 +9,6 @@ interface PostService {
     fun addViewCount(id:Long,count:Int):Boolean
     @Deprecated("直接操作redis即可，无需grpc远程调用")
     fun addCommentCount(id:Long,count:Int):Boolean
+    fun saveToElasticsearch(postId: Long, title: String, summary: String?, img: String?, content: String, tags: List<String>?): Boolean
+    fun removeCache(postId: Long)
 }
