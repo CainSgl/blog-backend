@@ -8,7 +8,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page
 import com.cainsgl.api.ai.AiService
 import com.cainsgl.api.user.extra.UserExtraInfoService
 import com.cainsgl.api.user.follow.UserFollowService
-import com.cainsgl.article.document.PostDocument
+import com.cainsgl.article.dto.PostPublishMessage
 import com.cainsgl.article.dto.request.*
 import com.cainsgl.article.dto.response.CreatePostResponse
 import com.cainsgl.article.dto.response.GetPostResponse
@@ -30,6 +30,7 @@ import jakarta.annotation.Resource
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
+import org.apache.rocketmq.client.core.RocketMQClientTemplate
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.bind.annotation.*
@@ -38,12 +39,7 @@ import java.time.LocalDateTime
 
 private val log = KotlinLogging.logger {}
 
-/**
- * 这里的逻辑是这样的，其他用户只能访问对应文章的历史版本，或者发布版本
- * 历史版本的产生只有作者公布才会产生，发布后，文章的发布版本为历史版本的最新版，并且生成一个新的历史版本提供给当前作者继续使用和保存
- * 每次修改都是修改的历史版本的最新版本（其他人不可见）
- * 也就是一个文档会被至少存档4份，一份是post的content（这里比较冗余是版本遗留问题），一份是历史分支的两份（最新一份是方便作者在原来的基础上开发！获取的是最新版本），以及原来发布的那份，可以作为历史版本回溯，一份是postClone表，也是历史版本的遗留导致的，他是为了验证用户是否更新了版本来重新登录向量，预计在最新版本移除
- */
+
 @RestController
 @RequestMapping("/post")
 class PostController
@@ -55,8 +51,8 @@ class PostController
     @Resource
     lateinit var directoryService: DirectoryServiceImpl
 
-//    @Resource
-//    lateinit var rocketMQClientTemplate: RocketMQClientTemplate
+    @Resource
+    lateinit var rocketMQClientTemplate: RocketMQClientTemplate
 
     @Resource
     lateinit var transactionTemplate: TransactionTemplate
@@ -136,16 +132,23 @@ class PostController
             return postService.getContentByEntity(post)
         }
 
-        // 获取用户操作信息（点赞、收藏等）
-        val operate = if (userId != null)
+        // 增加文章阅读量（无论是否登录）
+        if (post.kbId != 1L && post.kbId != 2L)
         {
             Thread.ofVirtual().start {
-                if (post.kbId != 1L && post.kbId != 2L)
+                postService.addViewCount(post.id!!, 1)
+                // 如果用户已登录，记录用户相关信息
+                if (userId != null)
                 {
                     redisTemplate.changeViewCount(1L, userId)
                     postViewHistoryService.createHistory(post.id!!, userId)
                 }
             }
+        }
+
+        // 获取用户操作信息（点赞、收藏等）
+        val operate = if (userId != null)
+        {
             postOperationService.getOperateByUserIdAndPostId(userId, post.id!!)
         } else
         {
@@ -330,33 +333,21 @@ class PostController
         //重新写回历史版本，防止有人查看历史版本被攻击
         history.content = sanitizedContent
         history.createdAt = LocalDateTime.now()
-        Thread.ofVirtual().start {
-            //TODO 后续这里的内容可以交给mq
-            postHistoryService.updateById(history)
-            //注：这里再发布一个最新版本，是为了作者下次编辑文档的时候，返回他就好了
-            postHistoryService.save(
-                PostHistoryEntity(
-                    userId = history.userId, postId = post.id, version = history.version!! + 1,
-                    createdAt = LocalDateTime.now(), content = sanitizedContent
-                )
+
+        // 发送MQ消息处理文章发布后的异步任务
+        sendPostPublishMessage(
+            PostPublishMessage(
+                postId = post.id!!,
+                historyId = history.id!!,
+                userId = history.userId!!,
+                version = history.version!!,
+                content = sanitizedContent!!,
+                title = post.title ?: "",
+                summary = post.summary,
+                img = post.img,
+                tags = post.tags
             )
-            if (post.content!!.isEmpty())
-            {
-                return@start
-            }
-            //发送消息，这里不需要回调，也不需要保证可靠，不是强一致的需求，毕竟只是一次版本的迭代，问题不大
-            //        rocketMQClientTemplate.asyncSendNormalMessage("article:publish", request.id, null)
-            postDocumentService.save(
-                PostDocument(
-                    id = post.id!!, title = post.title ?: "", summary = post.summary, img = post.img,
-                    content = post.content, tags = post.tags
-                )
-            )
-            //延时双删
-            //删除缓存
-            Thread.sleep(1000)
-            postService.removeCache(post.id!!)
-        }
+        )
         val embedding = aiService.getEmbedding(post.content!!)
         post.vecotr = embedding
         post.status = ArticleStatus.PUBLISHED
@@ -504,6 +495,24 @@ class PostController
             }
         }
         return ResultCode.SUCCESS
+    }
+
+    /**
+     * 发送文章发布MQ消息
+     */
+    private fun sendPostPublishMessage(message: PostPublishMessage) {
+        try {
+            val future = java.util.concurrent.CompletableFuture<org.apache.rocketmq.client.apis.producer.SendReceipt>()
+            rocketMQClientTemplate.asyncSendNormalMessage(
+                "article:publish",
+                message,
+                future
+            )
+            log.info { "发送文章发布MQ消息成功, postId=${message.postId}" }
+        } catch (e: Exception) {
+            log.error(e) { "发送文章发布MQ消息失败, postId=${message.postId}" }
+            // MQ发送失败不影响主流程，记录日志即可
+        }
     }
 
     @PostMapping("/overview")
