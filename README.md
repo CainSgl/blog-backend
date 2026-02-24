@@ -6,6 +6,9 @@ cainsgl.top
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.10-brightgreen)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.3.0-purple)
 
+请查看部署教程
+[cainsgl的小站](https://cainsgl.top/about/view/2025574517720674305)
+
 一个基于现代化技术栈的高性能个人博客系统，支持单体/微服务架构无缝切换，集成AI能力、向量检索、全文搜索等特性。
 
 ## 核心特性
@@ -845,9 +848,7 @@ blog-backend/
 违禁词模块是一个伪模块，他监听本地文件来适应k8s的环境
 
 如果只想使用单体架构
-你可以直接将功能加在对应的aggregate模块里，而无需考虑其他。所有的api在单体架构下都会在前面加上/api，这是为了和前端的请求进行区分，方便和nginx做集成
-
-
+你可以直接将功能加在对应的aggregate模块里，而无需考虑其他。所有的api在单体架构下都会在前面加上/api，这是为了和前端的请求进行区分，方便网关集成。
 
 
 ## 如何扩展一个Service？
@@ -870,12 +871,6 @@ blog-backend/
 2. 暴露对应的接口
 3. 实现自动生成的gRPC服务暴露代码
 4. 为了兼容单体架构创建对应的代理类，它就是自动帮我们发送代码给对应的模块
-
-其中有些步骤很重复，你可以将下面的prompt发送给AI为你自动生成代码。
-
-前提是你的对应模块已经实现，并且service已经实现了。
-
-详情请查看`GRPC_GENERATOR_PROMPT.md`
 
 ### 违禁词模块说明
 
@@ -920,25 +915,6 @@ blog-backend/
 
 # 未来功能预测
 
-### 功能增强
-- [ ] 实时消息推送（WebSocket）
-- [ ] 文章协同编辑
-- [ ] 图片智能压缩
-- [ ] 多语言支持
-
-### 性能优化
-- [ ] 引入本地缓存（Caffeine）
-- [ ] 数据库读写分离
-- [ ] 分库分表
-- [ ] 静态资源CDN
-
-### AI能力
-- [ ] 文章质量评分
-- [ ] 智能推荐系统
-- [ ] 内容审核
-- [ ] 自动纠错
-- [ ] AI知识库Skills
-
 
 ## 贡献指南
 
@@ -950,12 +926,6 @@ blog-backend/
 3. 提交更改（`git commit -m 'Add some AmazingFeature'`）
 4. 推送到分支（`git push origin feature/AmazingFeature`）
 5. 提交Pull Request
-
-### 代码规范
-- 遵循Kotlin官方代码风格
-- 添加必要的注释和文档
-- 编写单元测试
-- 确保所有测试通过
 
 ## 许可证
 
