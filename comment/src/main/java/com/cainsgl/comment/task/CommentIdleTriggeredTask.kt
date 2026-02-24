@@ -41,12 +41,19 @@ class CommentIdleTriggeredTask
     @Value("\${idle.task.db-batch-size:30}")
     private val dbBatchSize: Int = 30 // 数据库批量更新大小
 
-    private val getAndDeleteScript = """
+    // 两阶段删除：先移动到备份key，处理成功后再删除备份
+    private val getAndMoveScript = """
         local data = redis.call('HGETALL', KEYS[1])
         if #data > 0 then
-            redis.call('DEL', KEYS[1])
+            redis.call('RENAME', KEYS[1], KEYS[2])
+            redis.call('EXPIRE', KEYS[2], 3600)
         end
         return data
+    """.trimIndent()
+
+    private val deleteBackupScript = """
+        redis.call('DEL', KEYS[1])
+        return 1
     """.trimIndent()
 
     @Scheduled(fixedRateString = "\${idle.task.check-interval:5000}")
@@ -79,6 +86,7 @@ class CommentIdleTriggeredTask
             
             // 创建批量更新器
             val batchUpdater = BatchParagraphCountUpdater(paragraphService.baseMapper, dbBatchSize)
+            val backupKeys = mutableListOf<String>()
             
             cursor.use {
                 var processedCount = 0
@@ -87,8 +95,11 @@ class CommentIdleTriggeredTask
                     val key = cursor.next()
                     
                     try {
-                        // 使用Lua脚本原子性地获取并删除key
-                        val entries = getAndDeleteHash(key)
+                        // 生成备份key
+                        val backupKey = "${key}:backup"
+                        
+                        // 使用Lua脚本原子性地获取并移动到备份key
+                        val entries = getAndMoveToBackup(key, backupKey)
                         if (entries.isEmpty()) continue
                         
                         // 提取postId和version
@@ -101,14 +112,20 @@ class CommentIdleTriggeredTask
                         
                         // 使用批量更新器累积更新
                         batchUpdater.update(postId, version, entries)
+                        
+                        // 记录备份key，待数据库更新成功后删除
+                        backupKeys.add(backupKey)
                         processedCount++
                     } catch (e: Exception) {
                         logger.error(e) { "处理key失败: $key" }
                     }
                 }
                 
-                // 刷新残留数据
+                // 刷新残留数据到数据库
                 batchUpdater.flush()
+                
+                // 数据库更新成功后，删除所有备份key
+                deleteBackupKeys(backupKeys)
                 
                 // 只在处理了数据时才打印日志
                 if (processedCount > 0) {
@@ -120,15 +137,16 @@ class CommentIdleTriggeredTask
         }
     }
 
-    private fun getAndDeleteHash(key: String): Map<String, Long> {
+    private fun getAndMoveToBackup(key: String, backupKey: String): Map<String, Long> {
         return try {
             // 使用 RedisCallback 直接操作底层连接，绕过序列化器
             val result = redisTemplate.execute<Any> { connection ->
                 val keyBytes = RedisSerializer.string().serialize(key)!!
-                val scriptBytes = getAndDeleteScript.toByteArray()
+                val backupKeyBytes = RedisSerializer.string().serialize(backupKey)!!
+                val scriptBytes = getAndMoveScript.toByteArray()
                 
                 // 执行 Lua 脚本
-                connection.eval(scriptBytes, org.springframework.data.redis.connection.ReturnType.MULTI, 1, keyBytes)
+                connection.eval(scriptBytes, org.springframework.data.redis.connection.ReturnType.MULTI, 2, keyBytes, backupKeyBytes)
             }
             
             // 处理返回结果
@@ -148,6 +166,27 @@ class CommentIdleTriggeredTask
         } catch (e: Exception) {
             logger.error(e) { "执行Lua脚本失败: $key" }
             emptyMap()
+        }
+    }
+
+    private fun deleteBackupKeys(backupKeys: List<String>) {
+        if (backupKeys.isEmpty()) return
+        
+        try {
+            backupKeys.forEach { backupKey ->
+                try {
+                    redisTemplate.execute<Any> { connection ->
+                        val keyBytes = RedisSerializer.string().serialize(backupKey)!!
+                        val scriptBytes = deleteBackupScript.toByteArray()
+                        connection.eval(scriptBytes, org.springframework.data.redis.connection.ReturnType.INTEGER, 1, keyBytes)
+                    }
+                } catch (e: Exception) {
+                    logger.warn(e) { "删除备份key失败: $backupKey (将在1小时后自动过期)" }
+                }
+            }
+            logger.debug { "成功删除 ${backupKeys.size} 个备份key" }
+        } catch (e: Exception) {
+            logger.error(e) { "批量删除备份key失败" }
         }
     }
 }

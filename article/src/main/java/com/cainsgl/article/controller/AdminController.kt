@@ -7,11 +7,12 @@ import com.cainsgl.article.service.PostDocumentService
 import com.cainsgl.article.service.PostServiceImpl
 import com.cainsgl.common.entity.article.ArticleStatus
 import com.cainsgl.common.entity.article.PostEntity
+import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.Resource
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-
+private val log = KotlinLogging.logger {}
 @RestController
 @RequestMapping("/admin/post")
 class AdminController
@@ -94,12 +95,21 @@ class AdminController
 
             posts.forEach { post ->
                 try {
+                    val postId = post.id
+                    if (postId == null) {
+                        failedCount++
+                        processedCount++
+                        return@forEach
+                    }
+                    
                     if (post.content.isNullOrEmpty()) {
+                        failedCount++
+                        processedCount++
                         return@forEach
                     }
                     
                     // 调用loadVector方法进行向量化
-                    val success = postChunkVectorService.loadVector(post.id!!)
+                    val success = postChunkVectorService.loadVector(post)
                     if (success) {
                         successCount++
                     } else {
@@ -107,12 +117,19 @@ class AdminController
                     }
                     processedCount++
                 } catch (e: Exception) {
+                    log.error{ e }
                     failedCount++
                     processedCount++
                 }
             }
 
-            lastId = posts.last().id!!
+            // 安全获取最后一个ID
+            val lastPost = posts.lastOrNull()
+            val lastPostId = lastPost?.id
+            if (lastPostId == null) {
+                break
+            }
+            lastId = lastPostId
             
             if (posts.size < 50) {
                 break
@@ -123,7 +140,7 @@ class AdminController
             "success" to true,
             "message" to "批量向量化完成",
             "processed" to processedCount,
-            "success" to successCount,
+            "successCount" to successCount,
             "failed" to failedCount
         )
     }
