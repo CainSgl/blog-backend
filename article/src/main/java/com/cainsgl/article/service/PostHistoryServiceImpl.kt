@@ -29,6 +29,23 @@ class PostHistoryServiceImpl : ServiceImpl<PostHistoryMapper, PostHistoryEntity>
             .eq(PostHistoryEntity::postId, postId).orderByDesc(PostHistoryEntity::version).last("LIMIT 1 OFFSET 1")
         return baseMapper.selectOne(historyQuery)
     }
+    
+    override fun updateById(historyId: Long, content: String): Boolean {
+        val entity = PostHistoryEntity(id = historyId, content = content)
+        return updateById(entity)
+    }
+    
+    override fun createNewVersion(userId: Long, postId: Long, version: Int, content: String): Boolean {
+        val entity = PostHistoryEntity(
+            userId = userId,
+            postId = postId,
+            version = version,
+            content = content,
+            createdAt = java.time.LocalDateTime.now()
+        )
+        return save(entity)
+    }
+    
     fun getByCache(postId:Long): List<PostHistoryEntity>?
     {
        return redisTemplate.getWithFineLock("$HISTORY_REDIS_PREFIX_KEY$postId",{ Duration.ofMinutes(10)},{

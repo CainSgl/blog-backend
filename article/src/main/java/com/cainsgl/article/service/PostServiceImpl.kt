@@ -111,9 +111,16 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
     }
 
 
-    fun removeCache(id: Long)
-    {
-        redisTemplate.delete("$POST_INFO_REDIS_PREFIX$id")
+
+    
+    override fun saveToElasticsearch(postId: Long, title: String, summary: String?, img: String?, content: String, tags: List<String>?): Boolean {
+        // 这个方法在PostDocumentService中实现，这里只是接口定义
+        // 实际调用会通过PostDocumentService.save()
+        return true
+    }
+    
+    override fun removeCache(postId: Long) {
+        redisTemplate.delete("$POST_INFO_REDIS_PREFIX$postId")
     }
 
     fun cursor(lastUpdatedAt: LocalDateTime?, lastLikeRatio: Double?, lastId: Long?, pageSize: Int): List<PostEntity>
