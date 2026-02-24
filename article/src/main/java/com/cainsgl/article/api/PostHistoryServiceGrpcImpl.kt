@@ -34,6 +34,31 @@ class PostHistoryServiceGrpcImpl : PostHistoryServiceGrpc.PostHistoryServiceImpl
         responseObserver.onCompleted()
     }
 
+    override fun updateById(request: com.cainsgl.grpc.article.UpdateByIdRequest, responseObserver: StreamObserver<com.cainsgl.grpc.article.RemoveVectorResponse>)
+    {
+        val success = postHistoryService.updateById(request.historyId, request.content)
+        val response = com.cainsgl.grpc.article.RemoveVectorResponse.newBuilder()
+            .setSuccess(success)
+            .build()
+        responseObserver.onNext(response)
+        responseObserver.onCompleted()
+    }
+
+    override fun createNewVersion(request: com.cainsgl.grpc.article.CreateNewVersionRequest, responseObserver: StreamObserver<com.cainsgl.grpc.article.RemoveVectorResponse>)
+    {
+        val success = postHistoryService.createNewVersion(
+            userId = request.userId,
+            postId = request.postId,
+            version = request.version,
+            content = request.content
+        )
+        val response = com.cainsgl.grpc.article.RemoveVectorResponse.newBuilder()
+            .setSuccess(success)
+            .build()
+        responseObserver.onNext(response)
+        responseObserver.onCompleted()
+    }
+
     private fun PostHistoryEntity.toProto(): com.cainsgl.grpc.article.PostHistoryEntity
     {
         return com.cainsgl.grpc.article.PostHistoryEntity.newBuilder()

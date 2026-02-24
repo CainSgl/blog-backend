@@ -30,12 +30,5 @@ data class UpdateDirectoryRequest(
     val kbId: Long,
     @field:Min(value = 1, message ="父级目录id非法")
     val parentId: Long?,
-    val name: String?,
-    //  val sortNum: Short?
-)
-data class DeleteDirectoryRequest(
-    @field:Min(value = 1, message ="知识库id非法")
-    val kbId: Long,
-    @field:Min(value = 1,message = "目录id非法")
-    val dirId: Long
+    val name: String?
 )

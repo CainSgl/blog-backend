@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.core.task.TaskExecutor
 import org.springframework.data.redis.connection.RedisConnectionFactory
 import org.springframework.data.redis.core.RedisTemplate
+import org.springframework.data.redis.listener.RedisMessageListenerContainer
 import org.springframework.data.redis.serializer.StringRedisSerializer
 import org.springframework.scheduling.concurrent.ConcurrentTaskExecutor
 import java.util.concurrent.Executors
@@ -33,6 +34,15 @@ class RedisConfig
         template.afterPropertiesSet()
         return template
     }
+
+    @Bean
+    fun redisMessageListenerContainer(connectionFactory: RedisConnectionFactory): RedisMessageListenerContainer
+    {
+        val container = RedisMessageListenerContainer()
+        container.setConnectionFactory(connectionFactory)
+        return container
+    }
+
     @Bean
     fun taskExecutor(): TaskExecutor?
     {

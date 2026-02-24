@@ -66,12 +66,27 @@ message AddViewCountRequest{
     int32 count=2;
 }
 
+message SaveToElasticsearchRequest {
+    int64 post_id = 1;
+    string title = 2;
+    optional string summary = 3;
+    optional string img = 4;
+    string content = 5;
+    repeated string tags = 6;
+}
+
+message RemoveCacheRequest {
+    int64 post_id = 1;
+}
+
 service PostService {
     rpc getByIds (GetPostsByIdsRequest) returns (GetPostsByIdsResponse);
     rpc getById (GetPostByIdRequest) returns (GetPostByIdResponse);
     rpc getVectorById (GetVectorByIdRequest) returns(GetVectorByIdResponse);
     rpc addViewCount (AddViewCountRequest) returns (RemoveVectorResponse);
     rpc addCommentCount (AddViewCountRequest) returns (RemoveVectorResponse);
+    rpc saveToElasticsearch (SaveToElasticsearchRequest) returns (RemoveVectorResponse);
+    rpc removeCache (RemoveCacheRequest) returns (RemoveVectorResponse);
 }
 
 message ReloadVectorRequest {
@@ -118,8 +133,22 @@ message GetPostHistoryByIdResponse {
     PostHistoryEntity post_history = 2;
 }
 
+message UpdateByIdRequest {
+    int64 history_id = 1;
+    string content = 2;
+}
+
+message CreateNewVersionRequest {
+    int64 user_id = 1;
+    int64 post_id = 2;
+    int32 version = 3;
+    string content = 4;
+}
+
 service PostHistoryService {
     rpc getLastById (GetPostHistoryByIdRequest) returns (GetPostHistoryByIdResponse);
+    rpc updateById (UpdateByIdRequest) returns (RemoveVectorResponse);
+    rpc createNewVersion (CreateNewVersionRequest) returns (RemoveVectorResponse);
 }
 
 

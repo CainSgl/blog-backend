@@ -1,4 +1,5 @@
 # 个人博客系统 - 高性能微服务架构
+cainsgl.top
 
 ![Version](https://img.shields.io/badge/version-1.0Beta-blue)
 ![JDK](https://img.shields.io/badge/JDK-25-orange)
@@ -912,7 +913,8 @@ blog-backend/
 - 提升并发处理能力
 - JDK原生支持，无需额外依赖
 
-## 未来规划
+# 未来功能预测
+
 
 ## 贡献指南
 
@@ -932,7 +934,7 @@ blog-backend/
 ## 联系方式
 
 - 作者：cainsgl
-- 邮箱：cainsg80@gamli.com
+- 邮箱：cainsgl80@gmail.com
 - 博客：https://cainsgl.top
 
 ## 致谢

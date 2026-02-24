@@ -12,20 +12,33 @@ import org.apache.rocketmq.client.apis.message.MessageView
 import org.springframework.stereotype.Component
 
 /**
+ * 文章发布消息DTO
+ */
+data class PostPublishMessage(
+    val postId: Long,
+    val historyId: Long,
+    val userId: Long,
+    val version: Int,
+    val content: String,
+    val title: String,
+    val summary: String?,
+    val img: String?,
+    val tags: List<String>?
+)
+
+/**
  * 文章发布消费者
  */
 private val log = KotlinLogging.logger {}
 @Component
 @RocketMQMessageListener(
-    consumerGroup = "article-add-consumer",
+    consumerGroup = "article-publish-consumer",
     topic = "article",
     tag = "publish",
     consumptionThreadCount=15
 )
-class ArticlePublishConsumer : BaseConsumer<Long>(Long::class.java) {
+class ArticlePublishConsumer : BaseConsumer<PostPublishMessage>(PostPublishMessage::class.java) {
 
-//    @Resource
-//    lateinit var postCloneGrpcService: PostCloneGrpcService
     @Resource
     lateinit var postHistoryService: PostHistoryService
     @Resource
@@ -33,15 +46,49 @@ class ArticlePublishConsumer : BaseConsumer<Long>(Long::class.java) {
     @Resource
     lateinit var postChunkVectorService: PostChunkVectorService
 
-    override fun doConsume(message: Long, messageView: MessageView): ConsumeResult {
-        // 发布了，同步到clone里去
-        val postId=message
-        //获取旧数据，方便后续重新加载向量不用全量加载
-        val oldData = postHistoryService.getLastById(postId)
-        //从向量数据库删除原来可能存在的，并重新发布向量，这里就是差量更新了，具体实现跟这里就无关了
-        postChunkVectorService.reloadVector(postId,oldData?.content)
-        log.info { "消费者成功让文档：$postId,向量化" }
-        return ConsumeResult.SUCCESS
+    override fun doConsume(message: PostPublishMessage, messageView: MessageView): ConsumeResult {
+        try {
+            // 1. 更新历史版本
+            postHistoryService.updateById(message.historyId, message.content)
+            log.info { "更新历史版本成功, historyId=${message.historyId}" }
+            
+            // 2. 创建新的历史版本供作者继续编辑
+            postHistoryService.createNewVersion(
+                userId = message.userId,
+                postId = message.postId,
+                version = message.version + 1,
+                content = message.content
+            )
+            log.info { "创建新历史版本成功, postId=${message.postId}, version=${message.version + 1}" }
+            
+            // 3. 保存到ES文档（通过gRPC调用）
+            if (message.content.isNotEmpty()) {
+                postService.saveToElasticsearch(
+                    postId = message.postId,
+                    title = message.title,
+                    summary = message.summary,
+                    img = message.img,
+                    content = message.content,
+                    tags = message.tags
+                )
+                log.info { "保存到ES成功, postId=${message.postId}" }
+            }
+            
+            // 4. 延时双删缓存
+            Thread.sleep(1000)
+            postService.removeCache(message.postId)
+            log.info { "清除缓存成功, postId=${message.postId}" }
+            
+            // 5. 重新加载向量
+            val oldData = postHistoryService.getLastById(message.postId)
+            postChunkVectorService.reloadVector(message.postId, oldData?.content)
+            log.info { "向量化成功, postId=${message.postId}" }
+            
+            return ConsumeResult.SUCCESS
+        } catch (e: Exception) {
+            log.error(e) { "消费文章发布消息失败, postId=${message.postId}" }
+            return ConsumeResult.FAILURE
+        }
     }
 }
 
