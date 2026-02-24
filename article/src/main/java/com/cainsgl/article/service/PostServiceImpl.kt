@@ -31,6 +31,9 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
     @Resource
     lateinit var hotKeyValidator: HotKeyValidator
 
+    @Resource
+    lateinit var postDocumentService: PostDocumentService
+
     companion object
     {
         const val POST_INFO_REDIS_PREFIX = "post:"
@@ -114,9 +117,21 @@ class PostServiceImpl : ServiceImpl<PostMapper, PostEntity>(), PostService, ISer
 
     
     override fun saveToElasticsearch(postId: Long, title: String, summary: String?, img: String?, content: String, tags: List<String>?): Boolean {
-        // 这个方法在PostDocumentService中实现，这里只是接口定义
-        // 实际调用会通过PostDocumentService.save()
-        return true
+        return try {
+            postDocumentService.save(
+                com.cainsgl.article.document.PostDocument(
+                    id = postId,
+                    title = title,
+                    summary = summary,
+                    img = img,
+                    content = content,
+                    tags = tags ?: emptyList()
+                )
+            )
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
     
     override fun removeCache(postId: Long) {

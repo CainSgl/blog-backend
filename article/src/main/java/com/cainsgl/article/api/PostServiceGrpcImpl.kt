@@ -70,6 +70,30 @@ class PostServiceGrpcImpl : PostServiceGrpc.PostServiceImplBase()
         responseObserver.onNext(response)
         responseObserver.onCompleted()
     }
+
+    override fun saveToElasticsearch(request: SaveToElasticsearchRequest, responseObserver: StreamObserver<RemoveVectorResponse>)
+    {
+        val success = postService.saveToElasticsearch(
+            postId = request.postId,
+            title = request.title,
+            summary = if (request.hasSummary()) request.summary else null,
+            img = if (request.hasImg()) request.img else null,
+            content = request.content,
+            tags = request.tagsList
+        )
+        val response = RemoveVectorResponse.newBuilder().setSuccess(success).build()
+        responseObserver.onNext(response)
+        responseObserver.onCompleted()
+    }
+
+    override fun removeCache(request: RemoveCacheRequest, responseObserver: StreamObserver<RemoveVectorResponse>)
+    {
+        postService.removeCache(request.postId)
+        val response = RemoveVectorResponse.newBuilder().setSuccess(true).build()
+        responseObserver.onNext(response)
+        responseObserver.onCompleted()
+    }
+
     private fun PostEntity.toProto(): com.cainsgl.grpc.article.PostEntity
     {
         return com.cainsgl.grpc.article.PostEntity.newBuilder()

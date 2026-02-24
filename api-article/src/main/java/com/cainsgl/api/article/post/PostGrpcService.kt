@@ -67,6 +67,29 @@ class PostGrpcService : PostService
         return response.success
     }
 
+    override fun saveToElasticsearch(postId: Long, title: String, summary: String?, img: String?, content: String, tags: List<String>?): Boolean
+    {
+        val builder = com.cainsgl.grpc.article.SaveToElasticsearchRequest.newBuilder()
+            .setPostId(postId)
+            .setTitle(title)
+            .setContent(content)
+        
+        summary?.let { builder.setSummary(it) }
+        img?.let { builder.setImg(it) }
+        tags?.let { builder.addAllTags(it) }
+        
+        val response = postServiceGrpc.saveToElasticsearch(builder.build())
+        return response.success
+    }
+
+    override fun removeCache(postId: Long)
+    {
+        val request = com.cainsgl.grpc.article.RemoveCacheRequest.newBuilder()
+            .setPostId(postId)
+            .build()
+        postServiceGrpc.removeCache(request)
+    }
+
     private fun com.cainsgl.grpc.article.PostEntity.toEntity(): PostEntity
     {
         return PostEntity(
